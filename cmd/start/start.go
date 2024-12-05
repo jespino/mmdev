@@ -22,15 +22,15 @@ func StartCmd() *cobra.Command {
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Server").
-				SetBorder(true).
-				ScrollToEnd()
+				SetBorder(true)
+			serverView.ScrollToBottom()
 
 			clientView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
-				SetBorder(true).
-				ScrollToEnd()
+				SetBorder(true)
+			clientView.ScrollToBottom()
 
 			// Track if views are at bottom for auto-scroll
 			serverAtBottom := true
@@ -117,7 +117,7 @@ func StartCmd() *cobra.Command {
 					app.QueueUpdateDraw(func() {
 						fmt.Fprintln(serverView, text)
 						if serverAtBottom {
-							serverView.ScrollToEnd()
+							serverView.ScrollToBottom()
 						}
 					})
 				}
@@ -131,7 +131,7 @@ func StartCmd() *cobra.Command {
 					app.QueueUpdateDraw(func() {
 						fmt.Fprintln(clientView, text)
 						if clientAtBottom {
-							clientView.ScrollToEnd()
+							clientView.ScrollToBottom()
 						}
 					})
 				}
