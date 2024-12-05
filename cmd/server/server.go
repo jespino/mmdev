@@ -171,8 +171,8 @@ func runWithWatcher() error {
 				fmt.Fprintf(os.Stderr, "Error killing process: %v\n", err)
 			}
 			cmd.Wait()
-			if err := cleanup(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error during cleanup: %v\n", err)
+			if err := docker.StopDockerServices(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error stopping docker services: %v\n", err)
 			}
 		}
 		cmd = startServer()
