@@ -53,7 +53,21 @@ func StartCmd() *cobra.Command {
 				case tcell.KeyRune:
 					switch event.Rune() {
 					case 'q':
+						// Stop the application
 						app.Stop()
+						
+						// Kill the client process
+						if err := clientCmd.Process.Kill(); err != nil {
+							fmt.Printf("Error killing client process: %v\n", err)
+						}
+						
+						// Run server cleanup
+						cleanup := exec.Command("make", "stop-server")
+						cleanup.Dir = "server"
+						if err := cleanup.Run(); err != nil {
+							fmt.Printf("Error during server cleanup: %v\n", err)
+						}
+						
 						return nil
 					case 'h':
 						flex.SetDirection(tview.FlexRow)
@@ -121,17 +135,6 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("application error: %w", err)
 			}
 
-			// Cleanup on exit
-			cleanup := exec.Command("make", "stop-server")
-			cleanup.Dir = "server"
-			if err := cleanup.Run(); err != nil {
-				fmt.Printf("Error during server cleanup: %v\n", err)
-			}
-			
-			if err := clientCmd.Process.Kill(); err != nil {
-				fmt.Printf("Error killing client process: %v\n", err)
-			}
-			
 			return nil
 		},
 	}
