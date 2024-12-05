@@ -43,6 +43,9 @@ This command starts both the server and client in a split view with live output 
 mmdev server start    # Start the server
 mmdev server start -w # Start with file watching
 mmdev server lint     # Run server code linting
+mmdev server generate layers  # Generate app/store layers and plugin API
+mmdev server generate mocks   # Generate mock files
+mmdev server generate all     # Generate all code (layers and mocks)
 ```
 
 ### Client Commands
