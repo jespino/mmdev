@@ -46,27 +46,31 @@ func StartCmd() *cobra.Command {
 
 			var clientCmd, serverCmd *exec.Cmd
 
+			// Function to gracefully stop all processes
+			stopProcesses := func() {
+				app.Stop()
+				
+				// Send SIGTERM to client process
+				if clientCmd != nil && clientCmd.Process != nil {
+					if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+						fmt.Printf("Error sending SIGTERM to client process: %v\n", err)
+					}
+				}
+				
+				// Send SIGTERM to server process
+				if serverCmd != nil && serverCmd.Process != nil {
+					if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+						fmt.Printf("Error sending SIGTERM to server process: %v\n", err)
+					}
+				}
+			}
+
 			// Setup global key bindings at application level
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
-						// Stop the application
-						app.Stop()
-						
-						// Send SIGTERM to client process
-						if clientCmd != nil && clientCmd.Process != nil {
-							if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
-								fmt.Printf("Error sending SIGTERM to client process: %v\n", err)
-							}
-						}
-						
-						// Send SIGTERM to server process
-						if serverCmd != nil && serverCmd.Process != nil {
-							if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
-								fmt.Printf("Error sending SIGTERM to server process: %v\n", err)
-							}
-						}
+						stopProcesses()
 						return nil
 					case 'h':
 						flex.SetDirection(tview.FlexRow)
@@ -78,7 +82,7 @@ func StartCmd() *cobra.Command {
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc {
-					app.Stop()
+					stopProcesses()
 					return nil
 				}
 				return event
