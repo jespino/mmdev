@@ -94,6 +94,12 @@ func runServer() error {
 }
 
 func runWithWatcher() error {
+	// Start docker services
+	if err := docker.StartDockerServices(); err != nil {
+		return fmt.Errorf("failed to start docker services: %w", err)
+	}
+	defer docker.StopDockerServices()
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
