@@ -22,6 +22,7 @@ func main() {
 		client.ClientCmd(),
 		start.StartCmd(),
 		docker.DockerCmd(),
+		generate.GenerateCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
