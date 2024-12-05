@@ -14,8 +14,41 @@ func ServerCmd() *cobra.Command {
 		Short: "Server related commands",
 	}
 
-	cmd.AddCommand(StartCmd())
+	cmd.AddCommand(
+		StartCmd(),
+		LintCmd(),
+	)
 	return cmd
+}
+
+func LintCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "lint",
+		Short: "Run linting on the server code",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			serverDir := "./server"
+			if _, err := os.Stat(serverDir); os.IsNotExist(err) {
+				return fmt.Errorf("server directory not found at %s", serverDir)
+			}
+
+			// Change to server directory
+			if err := os.Chdir(serverDir); err != nil {
+				return fmt.Errorf("failed to change to server directory: %w", err)
+			}
+
+			// Run make lint
+			makeCmd := exec.Command("make", "lint")
+			makeCmd.Stdout = os.Stdout
+			makeCmd.Stderr = os.Stderr
+			makeCmd.Env = os.Environ()
+
+			if err := makeCmd.Run(); err != nil {
+				return fmt.Errorf("failed to run linting: %w", err)
+			}
+
+			return nil
+		},
+	}
 }
 
 func StartCmd() *cobra.Command {
