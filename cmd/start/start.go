@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
@@ -146,14 +147,28 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("application error: %w", err)
 			}
 
-			// Wait for both processes to finish
-			if err := serverCmd.Wait(); err != nil {
-				fmt.Printf("Server process ended with error: %v\n", err)
-			}
-			if err := clientCmd.Wait(); err != nil {
-				fmt.Printf("Client process ended with error: %v\n", err)
-			}
+			// Create a WaitGroup to wait for both processes
+			var wg sync.WaitGroup
+			wg.Add(2)
 
+			// Wait for server in a goroutine
+			go func() {
+				defer wg.Done()
+				if err := serverCmd.Wait(); err != nil {
+					fmt.Printf("Server process ended with error: %v\n", err)
+				}
+			}()
+
+			// Wait for client in a goroutine 
+			go func() {
+				defer wg.Done()
+				if err := clientCmd.Wait(); err != nil {
+					fmt.Printf("Client process ended with error: %v\n", err)
+				}
+			}()
+
+			// Wait for both processes to complete
+			wg.Wait()
 			return nil
 		},
 	}
