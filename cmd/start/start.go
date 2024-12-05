@@ -37,28 +37,6 @@ func StartCmd() *cobra.Command {
 				SetBorder(true)
 			clientView.SetWrap(true)
 
-			// Set up input capture for views
-			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				switch event.Key() {
-				case tcell.KeyRune:
-					switch event.Rune() {
-					case 'h', 'v', 'q':
-						return event
-					}
-				}
-				return event
-			})
-
-			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				switch event.Key() {
-				case tcell.KeyRune:
-					switch event.Rune() {
-					case 'h', 'v', 'q':
-						return event
-					}
-				}
-				return event
-			})
 
 			// Create flex layout
 			flex := tview.NewFlex()
@@ -68,12 +46,9 @@ func StartCmd() *cobra.Command {
 
 			var clientCmd, serverCmd *exec.Cmd
 
-			// Setup key bindings
+			// Setup global key bindings at application level
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				switch event.Key() {
-				case tcell.KeyEsc:
-					fallthrough
-				case tcell.KeyRune:
+				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
 						// Stop the application
@@ -92,7 +67,6 @@ func StartCmd() *cobra.Command {
 								fmt.Printf("Error sending SIGTERM to server process: %v\n", err)
 							}
 						}
-
 						return nil
 					case 'h':
 						flex.SetDirection(tview.FlexRow)
@@ -103,6 +77,9 @@ func StartCmd() *cobra.Command {
 						app.Draw()
 						return nil
 					}
+				} else if event.Key() == tcell.KeyEsc {
+					app.Stop()
+					return nil
 				}
 				return event
 			})
