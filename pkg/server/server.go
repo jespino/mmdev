@@ -62,15 +62,15 @@ func (m *Manager) Start() error {
 		"-tags", "debug",
 		"./cmd/mattermost",
 	})...)
-	
+
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(),
 		"MM_SERVICESETTINGS_SITEURL=http://localhost:8065",
 		"MM_SERVICESETTINGS_LISTENADDRESS=:8065",
-		"MM_SQLSETTINGS_DATASOURCE=mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&timeout=30s",
-		"MM_SQLSETTINGS_DRIVERNAME=mysql",
+		"MM_SQLSETTINGS_DATASOURCE=postgres://mmuser:mostest@localhost/mattermost_test?sslmode=disable\u0026connect_timeout=10\u0026binary_parameters=yes",
+		"MM_SQLSETTINGS_DRIVERNAME=postgres",
 		"MM_LOGSETTINGS_ENABLECONSOLE=true",
 		"MM_LOGSETTINGS_CONSOLELEVEL=DEBUG",
 		"MM_LOGSETTINGS_ENABLEFILE=false",
