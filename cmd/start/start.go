@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -87,7 +88,7 @@ func StartCmd() *cobra.Command {
 					// Send SIGTERM to client process
 					if clientCmd != nil && clientCmd.Process != nil {
 						fmt.Fprintf(clientView, "[yellow]Sending SIGTERM to client process...[white]\n")
-						if err := clientCmd.Cancel(); err != nil {
+						if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
 							fmt.Fprintf(clientView, "[red]Error sending SIGTERM to client process: %v[white]\n", err)
 							clientCmd.Process.Kill()
 						}
@@ -100,7 +101,7 @@ func StartCmd() *cobra.Command {
 					// Send SIGTERM to server process
 					if serverCmd != nil && serverCmd.Process != nil {
 						fmt.Fprintf(serverView, "[yellow]Sending SIGTERM to server process...[white]\n")
-						if err := serverCmd.Cancel(); err != nil {
+						if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
 							fmt.Fprintf(serverView, "[red]Error sending SIGTERM to server process: %v[white]\n", err)
 							serverCmd.Cancel()
 						}
@@ -141,7 +142,7 @@ func StartCmd() *cobra.Command {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
-						go stopProcesses()
+						stopProcesses()
 						return nil
 					case 'h':
 						currentDirection = tview.FlexRow
@@ -161,7 +162,7 @@ func StartCmd() *cobra.Command {
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc {
-					go stopProcesses()
+					stopProcesses()
 					return nil
 				}
 				return event
@@ -224,9 +225,6 @@ func StartCmd() *cobra.Command {
 			if err := app.SetRoot(flex, true).Run(); err != nil {
 				return fmt.Errorf("application error: %w", err)
 			}
-
-			serverCmd.Wait()
-			clientCmd.Wait()
 
 			fmt.Fprintf(serverView, "[green]All processes stopped successfully[white]\n")
 			fmt.Fprintf(clientView, "[green]All processes stopped successfully[white]\n")
