@@ -75,6 +75,17 @@ func (m *Manager) ensureDependencies() error {
 		return nil
 	}
 
+	// Run nvm use first
+	nvmCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use")
+	nvmCmd.Dir = m.baseDir
+	nvmCmd.Stdout = os.Stdout
+	nvmCmd.Stderr = os.Stderr
+	nvmCmd.Env = os.Environ()
+	
+	if err := nvmCmd.Run(); err != nil {
+		return fmt.Errorf("failed to run nvm use: %w", err)
+	}
+
 	// Install dependencies
 	cmd := exec.Command("npm", "install")
 	cmd.Dir = m.baseDir
