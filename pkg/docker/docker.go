@@ -129,6 +129,16 @@ func (m *Manager) EnableService(service Service) {
 	m.services = append(m.services, service)
 }
 
+// SetupDefaultServices configures the manager with the default set of services
+func (m *Manager) SetupDefaultServices() {
+	m.EnableService(Minio)
+	m.EnableService(OpenLDAP)
+	m.EnableService(Elasticsearch)
+	m.EnableService(Postgres)
+	m.EnableService(Inbucket)
+	m.EnableService(Redis)
+}
+
 // Start starts the Docker services
 func (m *Manager) Start() error {
 	// Create network if it doesn't exist
