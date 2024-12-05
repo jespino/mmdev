@@ -393,12 +393,16 @@ func (m *Manager) Start() error {
 		}
 
 		containerName := fmt.Sprintf("mmdev-%s", service)
-		for hostPort := range config.ExposedPorts {
-			if err := m.waitForPort(containerName, hostPort); err != nil {
-				return fmt.Errorf("service %s failed to become ready: %w", service, err)
+		
+		// Skip waiting for Inbucket
+		if service != Inbucket {
+			for hostPort := range config.ExposedPorts {
+				if err := m.waitForPort(containerName, hostPort); err != nil {
+					return fmt.Errorf("service %s failed to become ready: %w", service, err)
+				}
 			}
+			fmt.Printf("Service %s ports are ready\n", service)
 		}
-		fmt.Printf("Service %s ports are ready\n", service)
 
 		// Additional service-specific health checks
 		switch service {
