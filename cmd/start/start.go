@@ -36,11 +36,34 @@ var (
 		Foreground(lipgloss.Color("196"))
 )
 
-var availableCommands = []string{
-	"clear",
-	"help",
-	"restart",
-	"status",
+type Command struct {
+	Name        string
+	Subcommands []string
+	Description string
+}
+
+var availableCommands = []Command{
+	{
+		Name:        "clear",
+		Description: "Clear all output",
+	},
+	{
+		Name:        "help",
+		Description: "Show help information",
+	},
+	{
+		Name: "restart",
+		Subcommands: []string{
+			"server",
+			"client",
+			"all",
+		},
+		Description: "Restart processes (server|client|all)",
+	},
+	{
+		Name:        "status",
+		Description: "Show process status",
+	},
 }
 
 type model struct {
@@ -215,7 +238,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if currentInput == "" {
 					return m, nil
 				}
-				
+
 				// If we have suggestions, cycle through them
 				if len(m.suggestions) > 0 {
 					currentSuggestion := m.suggestions[0]
@@ -223,15 +246,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.cmdInput.SetValue(currentSuggestion)
 					return m, nil
 				}
-				
+
 				// Generate new suggestions
+				parts := strings.Fields(currentInput)
 				m.suggestions = []string{}
-				for _, cmd := range availableCommands {
-					if strings.HasPrefix(cmd, currentInput) {
-						m.suggestions = append(m.suggestions, cmd)
+
+				if len(parts) == 1 {
+					// Suggest main commands
+					for _, cmd := range availableCommands {
+						if strings.HasPrefix(cmd.Name, parts[0]) {
+							m.suggestions = append(m.suggestions, cmd.Name)
+						}
+					}
+				} else if len(parts) == 2 {
+					// Suggest subcommands
+					for _, cmd := range availableCommands {
+						if cmd.Name == parts[0] && len(cmd.Subcommands) > 0 {
+							for _, sub := range cmd.Subcommands {
+								if strings.HasPrefix(sub, parts[1]) {
+									m.suggestions = append(m.suggestions, fmt.Sprintf("%s %s", parts[0], sub))
+								}
+							}
+						}
 					}
 				}
-				
+
 				if len(m.suggestions) > 0 {
 					m.cmdInput.SetValue(m.suggestions[0])
 				}
@@ -397,13 +436,56 @@ func (m *model) executeCommand(cmd string) tea.Cmd {
 			m.showHelp = true
 			return nil
 		case "restart":
-			return tea.Batch(
-				func() tea.Msg {
-					return outputMsg{text: "Restarting processes...\n", src: "both"}
-				},
-				m.shutdown,
-				m.startProcesses,
-			)
+			if len(parts) == 1 || parts[1] == "all" {
+				return tea.Batch(
+					func() tea.Msg {
+						return outputMsg{text: "Restarting all processes...\n", src: "both"}
+					},
+					m.shutdown,
+					m.startProcesses,
+				)
+			} else if parts[1] == "server" {
+				if m.serverCmd != nil && m.serverCmd.Process != nil {
+					m.serverCmd.Process.Signal(syscall.SIGTERM)
+					m.serverRunning = false
+					return tea.Batch(
+						func() tea.Msg {
+							return outputMsg{text: "Restarting server...\n", src: "server"}
+						},
+						func() tea.Msg {
+							m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
+							serverOut, _ := m.serverCmd.StdoutPipe()
+							m.serverCmd.Stderr = m.serverCmd.Stdout
+							m.serverCmd.Start()
+							m.serverRunning = true
+							go m.handleOutput(serverOut, &m.serverOutput, "server")
+							return nil
+						},
+					)
+				}
+			} else if parts[1] == "client" {
+				if m.clientCmd != nil && m.clientCmd.Process != nil {
+					m.clientCmd.Process.Signal(syscall.SIGTERM)
+					m.clientRunning = false
+					return tea.Batch(
+						func() tea.Msg {
+							return outputMsg{text: "Restarting client...\n", src: "client"}
+						},
+						func() tea.Msg {
+							m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
+							clientOut, _ := m.clientCmd.StdoutPipe()
+							m.clientCmd.Stderr = m.clientCmd.Stdout
+							m.clientCmd.Start()
+							m.clientRunning = true
+							go m.handleOutput(clientOut, &m.clientOutput, "client")
+							return nil
+						},
+					)
+				}
+			}
+			return func() tea.Msg {
+				return outputMsg{text: "Invalid restart command. Use: restart [server|client|all]\n", src: "both"}
+			}
 		case "status":
 			status := fmt.Sprintf("Server: %v\nClient: %v\n", 
 				m.serverRunning, m.clientRunning)
