@@ -64,7 +64,10 @@ func cleanup() error {
 	}
 
 	// Stop docker services
-	dockerManager := docker.NewManager(".")
+	dockerManager, err := docker.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to create docker manager: %w", err)
+	}
 	if err := dockerManager.Stop(); err != nil {
 		return fmt.Errorf("failed to stop docker services: %w", err)
 	}
@@ -74,7 +77,10 @@ func cleanup() error {
 
 func runServer() error {
 	// Start docker services
-	dockerManager := docker.NewManager(".")
+	dockerManager, err := docker.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to create docker manager: %w", err)
+	}
 	dockerManager.EnableService(docker.Minio)
 	dockerManager.EnableService(docker.OpenLDAP)
 	dockerManager.EnableService(docker.Elasticsearch)

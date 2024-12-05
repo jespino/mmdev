@@ -74,7 +74,10 @@ func StartCmd() *cobra.Command {
 						}
 
 						// Stop docker services
-						dockerManager := docker.NewManager("server")
+						dockerManager, err := docker.NewManager()
+						if err != nil {
+							fmt.Printf("Error creating docker manager: %v\n", err)
+						}
 						if err := dockerManager.Stop(); err != nil {
 							fmt.Printf("Error stopping docker services: %v\n", err)
 						}
@@ -94,7 +97,10 @@ func StartCmd() *cobra.Command {
 			})
 
 			// Start docker services
-			dockerManager := docker.NewManager("server")
+			dockerManager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
 			dockerManager.EnableService(docker.Minio)
 			dockerManager.EnableService(docker.OpenLDAP)
 			dockerManager.EnableService(docker.Elasticsearch)

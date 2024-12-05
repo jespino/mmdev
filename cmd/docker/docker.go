@@ -24,7 +24,10 @@ func StartCmd() *cobra.Command {
 		Use:   "start",
 		Short: "Start docker services",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			manager := docker.NewManager("server")
+			manager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
 			
 			// Enable default services
 			manager.EnableService(docker.Minio)
@@ -42,7 +45,10 @@ func StopCmd() *cobra.Command {
 		Use:   "stop",
 		Short: "Stop docker services",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			manager := docker.NewManager("server")
+			manager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
 			return manager.Stop()
 		},
 	}
@@ -54,7 +60,10 @@ func CleanCmd() *cobra.Command {
 		Use:   "clean",
 		Short: "Remove docker containers and volumes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			manager := docker.NewManager("server")
+			manager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
 			return manager.Clean()
 		},
 	}
