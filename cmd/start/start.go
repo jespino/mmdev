@@ -64,6 +64,21 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
+			// Create command input field
+			cmdInput := tview.NewInputField().
+				SetLabel("> ").
+				SetFieldWidth(50).
+				SetDoneFunc(func(key tcell.Key) {
+					if key == tcell.KeyEnter {
+						cmd := cmdInput.GetText()
+						if cmd == "noop" {
+							cmdInput.SetText("")
+						}
+					}
+				})
+			cmdInput.SetBorder(true)
+			cmdInput.SetTitle("Command")
+
 			// Create help indicator
 			helpIndicator := tview.NewTextView().
 				SetText("Press ? for help").
@@ -73,7 +88,7 @@ func StartCmd() *cobra.Command {
 			// Create flex layout and track direction
 			flex := tview.NewFlex()
 			topFlex := tview.NewFlex().
-				AddItem(nil, 0, 1, false).
+				AddItem(cmdInput, 0, 2, false).
 				AddItem(helpIndicator, 15, 0, false)
 
 			// Create help modal
@@ -146,6 +161,8 @@ func StartCmd() *cobra.Command {
 			}
 
 			// Setup global key bindings at application level
+			// Set initial focus to command input
+			app.SetFocus(cmdInput)
 			app.EnableMouse(true)
 			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
 				x, y := event.Position()
