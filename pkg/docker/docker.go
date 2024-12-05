@@ -209,8 +209,7 @@ func (m *Manager) Stop() error {
 	for _, container := range containers {
 		if container.Labels["com.docker.compose.project"] == "mmdev" {
 			fmt.Printf("Stopping container %s\n", container.Names[0])
-			timeout := 10
-			if err := m.client.ContainerStop(m.ctx, container.ID, &timeout); err != nil {
+			if err := m.client.ContainerStop(m.ctx, container.ID, container.StopOptions{Timeout: new(int)}); err != nil {
 				return fmt.Errorf("failed to stop container %s: %w", container.Names[0], err)
 			}
 			if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
