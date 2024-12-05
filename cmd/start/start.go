@@ -28,9 +28,9 @@ func StartCmd() *cobra.Command {
 			serverView.SetTitle("Server")
 			serverView.SetBorder(true)
 			serverView.SetMaxLines(2000)
-				SetMouseFunc(func(event *tcell.EventMouse) bool {
+				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(serverView)
-					return true
+					return action, event
 				})
 			serverView.SetWrap(true)
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -53,9 +53,9 @@ func StartCmd() *cobra.Command {
 			clientView.SetTitle("Client")
 			clientView.SetBorder(true)
 			clientView.SetMaxLines(2000)
-				SetMouseFunc(func(event *tcell.EventMouse) bool {
+				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(clientView)
-					return true
+					return action, event
 				})
 			clientView.SetWrap(true)
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
