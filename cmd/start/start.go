@@ -21,6 +21,21 @@ func StartCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app := tview.NewApplication()
 
+			// Create command input field
+			cmdInput := tview.NewInputField().
+				SetLabel("> ").
+				SetFieldWidth(50).
+				SetDoneFunc(func(key tcell.Key) {
+					if key == tcell.KeyEnter {
+						cmd := cmdInput.GetText()
+						if cmd == "noop" {
+							cmdInput.SetText("")
+						}
+					}
+				})
+			cmdInput.SetBorder(true)
+			cmdInput.SetTitle("Command")
+
 			// Create text views for server and client output
 			serverView := tview.NewTextView()
 			serverView.SetDynamicColors(true)
