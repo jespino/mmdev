@@ -207,10 +207,6 @@ func runWithWatcher() error {
 					cmd.Process.Kill()
 				}
 				<-done // Wait for process to finish
-				fmt.Println("Stopping docker services...")
-				if err := docker.StopDockerServices(); err != nil {
-					fmt.Fprintf(os.Stderr, "Error stopping docker services: %v\n", err)
-				}
 			}
 			fmt.Println("Starting new server instance...")
 			cmd = startServer()
