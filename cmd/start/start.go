@@ -64,8 +64,17 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
+			// Create help indicator
+			helpIndicator := tview.NewTextView().
+				SetText("Press ? for help").
+				SetTextColor(tcell.ColorYellow)
+			helpIndicator.SetTextAlign(tview.AlignRight)
+
 			// Create flex layout and track direction
 			flex := tview.NewFlex()
+			topFlex := tview.NewFlex().
+				AddItem(nil, 0, 1, false).
+				AddItem(helpIndicator, 15, 0, false)
 
 			// Create help modal
 			helpModal := tview.NewModal().
@@ -82,9 +91,17 @@ func StartCmd() *cobra.Command {
 				})
 			currentDirection := tview.FlexRow
 			isHelpOpen := false
-			flex.SetDirection(currentDirection).
+			
+			mainFlex := tview.NewFlex().
+				SetDirection(currentDirection).
 				AddItem(serverView, 0, 1, false).
 				AddItem(clientView, 0, 1, false)
+
+			flex.SetDirection(tview.FlexColumn).
+				AddItem(tview.NewFlex().
+					SetDirection(tview.FlexRow).
+					AddItem(topFlex, 1, 0, false).
+					AddItem(mainFlex, 0, 1, false), 0, 1, false)
 
 			var clientCmd, serverCmd *exec.Cmd
 
