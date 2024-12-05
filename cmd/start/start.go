@@ -27,18 +27,28 @@ var (
 	// Subtle style for scroll indicators
 	subtleStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240"))
+
+	// Status indicators
+	statusStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("86"))
+
+	errorStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("196"))
 )
 
 type model struct {
-	serverView   viewport.Model
-	clientView   viewport.Model
-	cmdInput     textinput.Model
-	serverCmd    *exec.Cmd
-	clientCmd    *exec.Cmd
-	showHelp     bool
-	serverOutput strings.Builder
-	clientOutput strings.Builder
-	err          error
+	serverView    viewport.Model
+	clientView    viewport.Model
+	cmdInput      textinput.Model
+	serverCmd     *exec.Cmd
+	clientCmd     *exec.Cmd
+	showHelp      bool
+	serverOutput  strings.Builder
+	clientOutput  strings.Builder
+	err           error
+	serverRunning bool
+	clientRunning bool
+	lastCommand   string
 }
 
 func initialModel() model {
@@ -53,10 +63,12 @@ func initialModel() model {
 	cv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
 	
 	return model{
-		serverView: sv,
-		clientView: cv,
-		cmdInput:   cmdInput,
-		showHelp:   false,
+		serverView:    sv,
+		clientView:    cv,
+		cmdInput:      cmdInput,
+		showHelp:      false,
+		serverRunning: false,
+		clientRunning: false,
 	}
 }
 
@@ -87,10 +99,14 @@ func (m *model) startProcesses() tea.Msg {
 	if err := m.serverCmd.Start(); err != nil {
 		return errMsg{err}
 	}
+	m.serverRunning = true
+
 	if err := m.clientCmd.Start(); err != nil {
 		m.serverCmd.Process.Kill()
+		m.serverRunning = false
 		return errMsg{err}
 	}
+	m.clientRunning = true
 
 	// Handle output in goroutines
 	go m.handleOutput(serverOut, &m.serverOutput, "server")
@@ -125,9 +141,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, m.shutdown
-		case "?":
+		case "?", "h":
 			m.showHelp = !m.showHelp
 			return m, nil
+		case "ctrl+l":
+			m.serverOutput.Reset()
+			m.clientOutput.Reset()
+			return m, func() tea.Msg {
+				return outputMsg{text: "", src: "both"}
+			}
 		case "enter":
 			if m.cmdInput.Focused() {
 				cmd := m.cmdInput.Value()
@@ -189,11 +211,18 @@ func (m model) View() string {
 	if m.showHelp {
 		return `
 Keyboard shortcuts:
-  q, ctrl+c  Quit
-  ?          Toggle help
-  :          Focus command input
-  tab        Toggle input focus
-  ↑/↓        Scroll output
+  q, ctrl+c    Quit
+  ?, h         Toggle help
+  :            Focus command input
+  tab, esc     Toggle input focus
+  ↑/↓          Scroll output
+  ctrl+l       Clear output
+  
+Commands:
+  clear        Clear all output
+  help         Show this help
+  restart      Restart both processes
+  status       Show process status
 Press any key to close help
 `
 	}
@@ -206,10 +235,20 @@ Press any key to close help
 		clientIndicator = subtleStyle.Render("↓")
 	}
 
+	serverStatus := statusStyle.Render("●")
+	if !m.serverRunning {
+		serverStatus = errorStyle.Render("○")
+	}
+	
+	clientStatus := statusStyle.Render("●")
+	if !m.clientRunning {
+		clientStatus = errorStyle.Render("○")
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render("Server Output: ")+serverIndicator,
+		titleStyle.Render("Server Output: ")+serverStatus+" "+serverIndicator,
 		m.serverView.View(),
-		titleStyle.Render("Client Output: ")+clientIndicator,
+		titleStyle.Render("Client Output: ")+clientStatus+" "+clientIndicator,
 		m.clientView.View(),
 		infoStyle.Render("Command (Enter to execute):"),
 		m.cmdInput.View(),
@@ -248,6 +287,7 @@ func (m model) executeCommand(cmd string) tea.Cmd {
 			return nil
 		}
 
+		m.lastCommand = cmd
 		switch parts[0] {
 		case "clear":
 			m.serverOutput.Reset()
@@ -256,10 +296,22 @@ func (m model) executeCommand(cmd string) tea.Cmd {
 		case "help":
 			m.showHelp = true
 			return nil
+		case "restart":
+			return tea.Batch(
+				func() tea.Msg {
+					return outputMsg{text: "Restarting processes...\n", src: "both"}
+				},
+				m.shutdown,
+				m.startProcesses,
+			)
+		case "status":
+			status := fmt.Sprintf("Server: %v\nClient: %v\n", 
+				m.serverRunning, m.clientRunning)
+			return outputMsg{text: status, src: "both"}
 		default:
 			return outputMsg{
 				text: fmt.Sprintf("Unknown command: %s\n", cmd),
-				src:  "server",
+				src: "server",
 			}
 		}
 	}
