@@ -62,9 +62,23 @@ func StartCmd() *cobra.Command {
 
 			// Setup key bindings
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				if event.Key() == tcell.KeyEsc {
-					app.Stop()
-					return nil
+				switch event.Key() {
+				case tcell.KeyEsc:
+					fallthrough
+				case tcell.KeyRune:
+					switch event.Rune() {
+					case 'q':
+						app.Stop()
+						return nil
+					case 'h':
+						flex.SetDirection(tview.FlexRow)
+						app.Draw()
+						return nil
+					case 'v':
+						flex.SetDirection(tview.FlexColumn)
+						app.Draw()
+						return nil
+					}
 				}
 				return event
 			})
