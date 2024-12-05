@@ -11,6 +11,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
+	"github.com/jespino/mmdev/pkg/docker"
 	"github.com/jespino/mmdev/pkg/server"
 )
 
@@ -56,18 +57,45 @@ func LintCmd() *cobra.Command {
 }
 
 func cleanup() error {
+	// Stop server
 	manager := server.NewManager(".")
 	if err := manager.Stop(); err != nil {
 		return fmt.Errorf("failed to cleanup server: %w", err)
 	}
+
+	// Stop docker services
+	dockerManager := docker.NewManager(".")
+	if err := dockerManager.Stop(); err != nil {
+		return fmt.Errorf("failed to stop docker services: %w", err)
+	}
+
 	return nil
 }
 
 func runServer() error {
-	manager := server.NewManager(".")
+	// Start docker services
+	dockerManager := docker.NewManager(".")
+	dockerManager.EnableService(docker.Minio)
+	dockerManager.EnableService(docker.OpenLDAP)
+	dockerManager.EnableService(docker.Elasticsearch)
 	
+	if err := dockerManager.Start(); err != nil {
+		return fmt.Errorf("failed to start docker services: %w", err)
+	}
+	
+	// Start server
+	manager := server.NewManager(".")
 	if err := manager.Start(); err != nil {
+		// Stop docker services on error
+		if stopErr := dockerManager.Stop(); stopErr != nil {
+			fmt.Printf("Warning: failed to stop docker services: %v\n", stopErr)
+		}
 		return fmt.Errorf("failed to run server: %w", err)
+	}
+
+	// Stop docker services
+	if err := dockerManager.Stop(); err != nil {
+		return fmt.Errorf("failed to stop docker services: %w", err)
 	}
 
 	return nil

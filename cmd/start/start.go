@@ -9,6 +9,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
+	"github.com/jespino/mmdev/pkg/docker"
 )
 
 func StartCmd() *cobra.Command {
@@ -66,11 +67,16 @@ func StartCmd() *cobra.Command {
 							}
 						}
 						
-						// Run server cleanup
-						cleanup := exec.Command("make", "stop-server")
-						cleanup.Dir = "server"
+						// Stop server
+						cleanup := exec.Command("pkill", "-f", "mattermost")
 						if err := cleanup.Run(); err != nil {
 							fmt.Printf("Error during server cleanup: %v\n", err)
+						}
+
+						// Stop docker services
+						dockerManager := docker.NewManager("server")
+						if err := dockerManager.Stop(); err != nil {
+							fmt.Printf("Error stopping docker services: %v\n", err)
 						}
 						
 						return nil
@@ -87,9 +93,20 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
+			// Start docker services
+			dockerManager := docker.NewManager("server")
+			dockerManager.EnableService(docker.Minio)
+			dockerManager.EnableService(docker.OpenLDAP)
+			dockerManager.EnableService(docker.Elasticsearch)
+			
+			if err := dockerManager.Start(); err != nil {
+				return fmt.Errorf("failed to start docker services: %w", err)
+			}
+
 			// Start server process
-			serverCmd := exec.Command("make", "run-server")
+			serverCmd := exec.Command("go", "run", "./cmd/mattermost")
 			serverCmd.Dir = "server"
+			serverCmd.Env = append(os.Environ(), "MM_SERVICESETTINGS_ENABLELOCALMODE=true")
 			serverOut, err := serverCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create server stdout pipe: %w", err)
