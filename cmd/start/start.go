@@ -45,6 +45,8 @@ func StartCmd() *cobra.Command {
 				AddItem(serverView, 0, 1, false).
 				AddItem(clientView, 0, 1, false)
 
+			var clientCmd *exec.Cmd
+
 			// Setup key bindings
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				switch event.Key() {
@@ -84,8 +86,6 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
-			var clientCmd *exec.Cmd
-			
 			// Start server process
 			serverCmd := exec.Command("make", "run-server")
 			serverCmd.Dir = "server"
@@ -96,7 +96,7 @@ func StartCmd() *cobra.Command {
 			serverCmd.Stderr = serverCmd.Stdout
 
 			// Start client process
-			clientCmd := exec.Command("make", "run")
+			clientCmd = exec.Command("make", "run")
 			clientCmd.Dir = "webapp"
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
