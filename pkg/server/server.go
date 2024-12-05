@@ -40,10 +40,14 @@ func (m *Manager) Start() error {
 		}
 	}
 
-	// Ensure prepackaged plugins directory exists
-	pluginsDir := filepath.Join(m.baseDir, "prepackaged_plugins")
-	if err := os.MkdirAll(pluginsDir, 0755); err != nil {
-		return fmt.Errorf("failed to create prepackaged plugins directory: %w", err)
+	// Ensure required directories exist
+	for _, dir := range []string{
+		filepath.Join(m.baseDir, "prepackaged_plugins"),
+		filepath.Join(m.baseDir, "bin"),
+	} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
 	}
 
 	// Set build flags
@@ -55,13 +59,22 @@ func (m *Manager) Start() error {
 		"-X github.com/mattermost/mattermost/server/public/model.BuildEnterpriseReady=false",
 	}
 
-	// Run the server
-	cmd := exec.Command("go", append([]string{
-		"run",
+	// Build the server binary
+	buildCmd := exec.Command("go", "build",
 		"-ldflags", strings.Join(ldflags, " "),
 		"-tags", "debug",
-		"./cmd/mattermost",
-	})...)
+		"-o", "bin/mattermost",
+		"./cmd/mattermost")
+	buildCmd.Dir = m.baseDir
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	if err := buildCmd.Run(); err != nil {
+		return fmt.Errorf("failed to build server: %w", err)
+	}
+
+	// Run the compiled binary
+	cmd := exec.Command("./bin/mattermost")
 
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
