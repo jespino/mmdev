@@ -109,20 +109,16 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to start docker services: %w", err)
 			}
 
-			// Start server process
-			serverCmd := exec.Command("go", "run", "./cmd/mattermost")
-			serverCmd.Dir = "server"
-			serverCmd.Env = append(os.Environ(), "MM_SERVICESETTINGS_ENABLELOCALMODE=true")
+			// Start server process using mmdev command
+			serverCmd := exec.Command("mmdev", "server", "start", "--watch")
 			serverOut, err := serverCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create server stdout pipe: %w", err)
 			}
 			serverCmd.Stderr = serverCmd.Stdout
 
-			// Start client process using webapp manager
-			clientCmd = exec.Command("npm", "run", "dev")
-			clientCmd.Dir = "webapp"
-			clientCmd.Env = os.Environ()
+			// Start client process using mmdev command
+			clientCmd = exec.Command("mmdev", "webapp", "start", "--watch")
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)
@@ -137,27 +133,30 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to start client: %w", err)
 			}
 
-			// Handle server output
-			go func() {
-				scanner := bufio.NewScanner(serverOut)
-				for scanner.Scan() {
-					text := scanner.Text()
+			// Function to handle output with auto-scroll
+			handleOutput := func(view *tview.TextView, output *bufio.Scanner) {
+				for output.Scan() {
+					text := output.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprint(serverView, text+"\n")
+						_, _, _, height := view.GetInnerRect()
+						row, _ := view.GetScrollOffset()
+						maxRow := view.GetRowCount()
+						
+						fmt.Fprint(view, text+"\n")
+						
+						// Auto-scroll only if we're at the bottom
+						if maxRow-row <= height {
+							view.ScrollToEnd()
+						}
 					})
 				}
-			}()
+			}
+
+			// Handle server output
+			go handleOutput(serverView, bufio.NewScanner(serverOut))
 
 			// Handle client output
-			go func() {
-				scanner := bufio.NewScanner(clientOut)
-				for scanner.Scan() {
-					text := scanner.Text()
-					app.QueueUpdateDraw(func() {
-						fmt.Fprint(clientView, text+"\n")
-					})
-				}
-			}()
+			go handleOutput(clientView, bufio.NewScanner(clientOut))
 
 			// Run the application
 			if err := app.SetRoot(flex, true).Run(); err != nil {
