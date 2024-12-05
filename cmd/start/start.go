@@ -21,20 +21,6 @@ func StartCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app := tview.NewApplication()
 
-			// Create help modal
-			helpModal := tview.NewModal().
-				SetText("Keyboard Shortcuts:\n\n" +
-					"q or ESC - Quit application\n" +
-					"h - Horizontal split layout\n" +
-					"v - Vertical split layout\n" +
-					"TAB - Switch focus between views\n" +
-					"PgUp/PgDn - Scroll current view\n" +
-					"? - Show/hide this help").
-				AddButtons([]string{"Close"}).
-				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-					app.SetRoot(flex, true)
-				})
-
 			// Create text views for server and client output
 			serverView := tview.NewTextView()
 			serverView.SetDynamicColors(true)
@@ -80,6 +66,20 @@ func StartCmd() *cobra.Command {
 
 			// Create flex layout and track direction
 			flex := tview.NewFlex()
+
+			// Create help modal
+			helpModal := tview.NewModal().
+				SetText("Keyboard Shortcuts:\n\n" +
+					"q or ESC - Quit application\n" +
+					"h - Horizontal split layout\n" +
+					"v - Vertical split layout\n" +
+					"TAB - Switch focus between views\n" +
+					"PgUp/PgDn - Scroll current view\n" +
+					"? - Show/hide this help").
+				AddButtons([]string{"Close"}).
+				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					app.SetRoot(flex, true)
+				})
 			currentDirection := tview.FlexRow
 			flex.SetDirection(currentDirection).
 				AddItem(serverView, 0, 1, false).
@@ -176,7 +176,7 @@ func StartCmd() *cobra.Command {
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc || event.Key() == tcell.KeyEnter {
-					if app.GetRoot() == helpModal {
+					if app.GetFocus() == helpModal {
 						app.SetRoot(flex, true)
 					} else {
 						go stopProcesses()
