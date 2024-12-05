@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -35,6 +37,61 @@ type ServiceConfig struct {
 	Env          []string
 	Volumes      map[string]string // host:container
 	Command      []string
+}
+
+func (m *Manager) waitForPort(containerName, port string) error {
+	deadline := time.Now().Add(60 * time.Second)
+	for time.Now().Before(deadline) {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%s", port), time.Second)
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("timeout waiting for port %s", port)
+}
+
+func (m *Manager) waitForPostgres() error {
+	deadline := time.Now().Add(60 * time.Second)
+	for time.Now().Before(deadline) {
+		cmd := exec.Command("pg_isready", "-h", "localhost", "-p", "5432", "-U", "mmuser")
+		if err := cmd.Run(); err == nil {
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("postgres is not ready")
+}
+
+func (m *Manager) waitForElasticsearch() error {
+	deadline := time.Now().Add(60 * time.Second)
+	for time.Now().Before(deadline) {
+		resp, err := http.Get("http://localhost:9200/_cluster/health")
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("elasticsearch is not ready")
+}
+
+func (m *Manager) waitForMinio() error {
+	deadline := time.Now().Add(60 * time.Second)
+	for time.Now().Before(deadline) {
+		resp, err := http.Get("http://localhost:9000/minio/health/live")
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("minio is not ready")
 }
 
 var serviceConfigs = map[Service]ServiceConfig{
@@ -327,8 +384,38 @@ func (m *Manager) Start() error {
 	}
 
 	// Wait for containers to be ready
-	time.Sleep(5 * time.Second)
+	fmt.Println("Waiting for services to be ready...")
+	for _, service := range m.services {
+		config, ok := serviceConfigs[service]
+		if !ok {
+			continue
+		}
 
+		containerName := fmt.Sprintf("mmdev-%s", service)
+		for hostPort := range config.ExposedPorts {
+			if err := m.waitForPort(containerName, hostPort); err != nil {
+				return fmt.Errorf("service %s failed to become ready: %w", service, err)
+			}
+		}
+
+		// Additional service-specific health checks
+		switch service {
+		case Postgres:
+			if err := m.waitForPostgres(); err != nil {
+				return fmt.Errorf("postgres failed health check: %w", err)
+			}
+		case Elasticsearch:
+			if err := m.waitForElasticsearch(); err != nil {
+				return fmt.Errorf("elasticsearch failed health check: %w", err)
+			}
+		case Minio:
+			if err := m.waitForMinio(); err != nil {
+				return fmt.Errorf("minio failed health check: %w", err)
+			}
+		}
+	}
+
+	fmt.Println("All services are ready!")
 	return nil
 }
 
