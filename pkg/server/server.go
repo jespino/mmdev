@@ -20,8 +20,8 @@ func NewManager(baseDir string) *Manager {
 	}
 }
 
-// Start starts the Mattermost server
-func (m *Manager) Start() error {
+// Start starts the Mattermost server and returns the command
+func (m *Manager) Start() (*exec.Cmd, error) {
 	if err := m.validateBaseDir(); err != nil {
 		return err
 	}
@@ -92,7 +92,10 @@ func (m *Manager) Start() error {
 		"MM_PLUGINSETTINGS_CLIENTDIRECTORY=client/plugins",
 	)
 
-	return cmd.Run()
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start server: %w", err)
+	}
+	return cmd, nil
 }
 
 // Stop stops the Mattermost server

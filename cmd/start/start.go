@@ -90,6 +90,10 @@ func StartCmd() *cobra.Command {
 			})
 
 
+			// Create channels to track process completion
+			serverDone := make(chan error, 1)
+			clientDone := make(chan error, 1)
+
 			// Start server process using mmdev command
 			serverCmd = exec.Command("mmdev", "server", "start", "--watch")
 			serverOut, err := serverCmd.StdoutPipe()
@@ -111,8 +115,17 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to start server: %w", err)
 			}
 			if err := clientCmd.Start(); err != nil {
+				serverCmd.Process.Kill()
 				return fmt.Errorf("failed to start client: %w", err)
 			}
+
+			// Monitor process completion
+			go func() {
+				serverDone <- serverCmd.Wait()
+			}()
+			go func() {
+				clientDone <- clientCmd.Wait()
+			}()
 
 			// Function to handle output with auto-scroll using ANSIWriter
 			handleOutput := func(view *tview.TextView, reader io.Reader) {
@@ -147,28 +160,21 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("application error: %w", err)
 			}
 
-			// Create a WaitGroup to wait for both processes
-			var wg sync.WaitGroup
-			wg.Add(2)
-
-			// Wait for server in a goroutine
-			go func() {
-				defer wg.Done()
-				if err := serverCmd.Wait(); err != nil {
+			// Wait for both processes to complete
+			select {
+			case err := <-serverDone:
+				if err != nil {
 					fmt.Printf("Server process ended with error: %v\n", err)
 				}
-			}()
-
-			// Wait for client in a goroutine 
-			go func() {
-				defer wg.Done()
-				if err := clientCmd.Wait(); err != nil {
+				clientCmd.Process.Signal(syscall.SIGTERM)
+				<-clientDone
+			case err := <-clientDone:
+				if err != nil {
 					fmt.Printf("Client process ended with error: %v\n", err)
 				}
-			}()
-
-			// Wait for both processes to complete
-			wg.Wait()
+				serverCmd.Process.Signal(syscall.SIGTERM)
+				<-serverDone
+			}
 			return nil
 		},
 	}

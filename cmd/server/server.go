@@ -72,9 +72,14 @@ func runServer() error {
 	done := make(chan error, 1)
 
 	// Start server in a goroutine
+	manager := server.NewManager(".")
+	cmd, err := manager.Start()
+	if err != nil {
+		done <- err
+		return
+	}
 	go func() {
-		manager := server.NewManager(".")
-		done <- manager.Start()
+		done <- cmd.Wait()
 	}()
 
 	// Wait for either server completion or interrupt
