@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -139,7 +140,8 @@ func StartCmd() *cobra.Command {
 					app.QueueUpdateDraw(func() {
 						_, _, _, height := view.GetInnerRect()
 						row, _ := view.GetScrollOffset()
-						lines := len(view.GetBufferLines())
+						content := view.GetText(false)
+						lines := len(strings.Split(content, "\n"))
 						
 						fmt.Fprint(view, text+"\n")
 						
