@@ -107,8 +107,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprint(serverView, text + "\n")
-						}
+						fmt.Fprint(serverView, text+"\n")
 					})
 				}
 			}()
@@ -119,8 +118,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprint(clientView, text + "\n")
-						}
+						fmt.Fprint(clientView, text+"\n")
 					})
 				}
 			}()
