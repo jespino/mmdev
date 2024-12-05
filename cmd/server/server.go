@@ -1,7 +1,5 @@
 package server
 
-var watch bool
-
 import (
 	"fmt"
 	"os"
@@ -14,6 +12,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 )
+
+var watch bool
 
 func ServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
