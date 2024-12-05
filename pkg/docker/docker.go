@@ -23,6 +23,9 @@ const (
 	OpenLDAP      Service = "openldap"
 	Elasticsearch Service = "elasticsearch"
 	MySQLReplica  Service = "mysql-read-replica"
+	Postgres      Service = "postgres"
+	Inbucket      Service = "inbucket"
+	Redis         Service = "redis"
 )
 
 // ServiceConfig holds configuration for a Docker service
@@ -34,6 +37,31 @@ type ServiceConfig struct {
 }
 
 var serviceConfigs = map[Service]ServiceConfig{
+	Postgres: {
+		Image: "postgres:12",
+		ExposedPorts: map[string]string{
+			"5432": "5432",
+		},
+		Env: []string{
+			"POSTGRES_USER=mmuser",
+			"POSTGRES_PASSWORD=mostest",
+			"POSTGRES_DB=mattermost_test",
+		},
+	},
+	Inbucket: {
+		Image: "inbucket/inbucket:3.0.3",
+		ExposedPorts: map[string]string{
+			"9000": "10000",
+			"2500": "2500",
+			"1100": "1100",
+		},
+	},
+	Redis: {
+		Image: "redis:7",
+		ExposedPorts: map[string]string{
+			"6379": "6379",
+		},
+	},
 	Minio: {
 		Image: "minio/minio:RELEASE.2024-03-03T17-50-39Z",
 		ExposedPorts: map[string]string{

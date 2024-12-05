@@ -34,6 +34,9 @@ func StartCmd() *cobra.Command {
 			manager.EnableService(docker.Minio)
 			manager.EnableService(docker.OpenLDAP)
 			manager.EnableService(docker.Elasticsearch)
+			manager.EnableService(docker.Postgres)
+			manager.EnableService(docker.Inbucket)
+			manager.EnableService(docker.Redis)
 			
 			return manager.Start()
 		},
