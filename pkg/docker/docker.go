@@ -162,8 +162,10 @@ func (m *Manager) Start() error {
 			if pullStatus.ID != "" {
 				layerStatus[pullStatus.ID] = pullStatus.Status
 
-				// Clear previous lines
-				fmt.Printf("\033[%dA\033[2K", len(layerStatus))
+				// Move cursor to bottom of terminal
+				fmt.Print("\033[9999B")
+				
+				// Clear lines and move up
 				for range layerStatus {
 					fmt.Print("\033[2K\033[A")
 				}
@@ -173,18 +175,24 @@ func (m *Manager) Start() error {
 				for id := range layerStatus {
 					layerIDs = append(layerIDs, id)
 				}
-				// Sort to maintain consistent order
 				sort.Strings(layerIDs)
 				
 				for _, id := range layerIDs {
 					progress := ""
-					if strings.Contains(layerStatus[id], "Download") && pullStatus.ID == id {
-						progress = pullStatus.Progress
+					if strings.Contains(layerStatus[id], "Download") {
+						if pullStatus.ID == id {
+							progress = pullStatus.Progress
+						} else if strings.Contains(layerStatus[id], "complete") {
+							progress = "[=========================>] 100%"
+						}
 					}
 					fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
 				}
 			} else {
+				// Move cursor to bottom and print status
+				fmt.Print("\033[9999B")
 				fmt.Printf("%s\n", pullStatus.Status)
+				fmt.Print("\033[A")
 			}
 		}
 		fmt.Println()
