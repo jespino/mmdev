@@ -1,11 +1,9 @@
 package start
 
 import (
+	"bufio"
 	"fmt"
-	"io"
-	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -87,7 +85,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintf(serverView, "%s\n", text)
+						serverView.Write([]byte(text + "\n"))
 					})
 				}
 			}()
@@ -98,7 +96,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintf(clientView, "%s\n", text)
+						clientView.Write([]byte(text + "\n"))
 					})
 				}
 			}()
