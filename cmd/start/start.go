@@ -68,7 +68,6 @@ func StartCmd() *cobra.Command {
 			// Create command input field
 			cmdInput = tview.NewInputField().
 				SetLabel("Command: ").
-				SetFieldWidth(50).
 				SetDoneFunc(func(key tcell.Key) {
 					if key == tcell.KeyEnter {
 						cmd := cmdInput.GetText()
@@ -89,8 +88,8 @@ func StartCmd() *cobra.Command {
 			// Create flex layout and track direction
 			flex := tview.NewFlex()
 			topFlex := tview.NewFlex().
-				AddItem(cmdInput, 0, 2, false).
-				AddItem(helpIndicator, 15, 0, false)
+				AddItem(cmdInput, 0, 4, false).
+				AddItem(helpIndicator, 0, 1, false)
 
 			// Create help modal
 			helpModal := tview.NewModal().
@@ -108,7 +107,7 @@ func StartCmd() *cobra.Command {
 				})
 			currentDirection := tview.FlexRow
 			isHelpOpen := false
-			
+
 			mainFlex := tview.NewFlex().
 				SetDirection(currentDirection).
 				AddItem(serverView, 0, 1, false).
