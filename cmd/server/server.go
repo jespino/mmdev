@@ -139,8 +139,20 @@ func runWithWatcher() error {
 	var mu sync.Mutex
 	restart := make(chan struct{}, 1)
 
+	// Create a channel to listen for interrupt signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
 	// Start the server initially
 	cmd = startServer()
+
+	// Create a channel to signal server completion
+	done := make(chan error, 1)
+	if cmd != nil {
+		go func() {
+			done <- cmd.Wait()
+		}()
+	}
 
 	// Debounce function to prevent multiple restarts
 	lastRestart := time.Now()
@@ -184,25 +196,52 @@ func runWithWatcher() error {
 		}
 	}()
 
-	// Handle restarts
-	for range restart {
-		fmt.Println("\nRestarting server...")
-		if cmd != nil && cmd.Process != nil {
-			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-				fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
-				cmd.Process.Kill()
+	// Handle restarts and signals
+	for {
+		select {
+		case <-restart:
+			fmt.Println("\nRestarting server...")
+			if cmd != nil && cmd.Process != nil {
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+					cmd.Process.Kill()
+				}
+				<-done // Wait for process to finish
+				fmt.Println("Stopping docker services...")
+				if err := docker.StopDockerServices(); err != nil {
+					fmt.Fprintf(os.Stderr, "Error stopping docker services: %v\n", err)
+				}
 			}
-			cmd.Wait()
+			fmt.Println("Starting new server instance...")
+			cmd = startServer()
+			if cmd != nil {
+				go func() {
+					done <- cmd.Wait()
+				}()
+			}
+
+		case <-sigChan:
+			fmt.Println("\nReceived interrupt signal. Shutting down...")
+			if cmd != nil && cmd.Process != nil {
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+					cmd.Process.Kill()
+				}
+				<-done // Wait for process to finish
+			}
 			fmt.Println("Stopping docker services...")
 			if err := docker.StopDockerServices(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error stopping docker services: %v\n", err)
+				fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 			}
-		}
-		fmt.Println("Starting new server instance...")
-		cmd = startServer()
-	}
+			return nil
 
-	return nil
+		case err := <-done:
+			if err != nil {
+				fmt.Printf("Server process ended with error: %v\n", err)
+			}
+			return err
+		}
+	}
 }
 
 func startServer() *exec.Cmd {
