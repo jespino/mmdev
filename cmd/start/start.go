@@ -23,6 +23,10 @@ var (
 
 	infoStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240"))
+
+	// Subtle style for scroll indicators
+	subtleStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240"))
 )
 
 type model struct {
@@ -42,9 +46,15 @@ func initialModel() model {
 	cmdInput.Placeholder = "Enter command..."
 	cmdInput.Focus()
 
+	sv := viewport.New(0, 0)
+	cv := viewport.New(0, 0)
+	
+	sv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
+	cv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
+	
 	return model{
-		serverView: viewport.New(0, 0),
-		clientView: viewport.New(0, 0),
+		serverView: sv,
+		clientView: cv,
 		cmdInput:   cmdInput,
 		showHelp:   false,
 	}
@@ -118,10 +128,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "?":
 			m.showHelp = !m.showHelp
 			return m, nil
+		case "enter":
+			if m.cmdInput.Focused() {
+				cmd := m.cmdInput.Value()
+				m.cmdInput.SetValue("")
+				return m, m.executeCommand(cmd)
+			}
 		case ":":
 			m.cmdInput.Focus()
 			return m, textinput.Blink
-		case "tab":
+		case "tab", "esc":
 			if m.cmdInput.Focused() {
 				m.cmdInput.Blur()
 			} else {
@@ -182,12 +198,20 @@ Press any key to close help
 `
 	}
 
+	var serverIndicator, clientIndicator string
+	if m.serverView.VerticalScrollPercent() < 1.0 {
+		serverIndicator = subtleStyle.Render("↓")
+	}
+	if m.clientView.VerticalScrollPercent() < 1.0 {
+		clientIndicator = subtleStyle.Render("↓")
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render("Server Output:"),
+		titleStyle.Render("Server Output: ")+serverIndicator,
 		m.serverView.View(),
-		titleStyle.Render("Client Output:"),
+		titleStyle.Render("Client Output: ")+clientIndicator,
 		m.clientView.View(),
-		infoStyle.Render("Command:"),
+		infoStyle.Render("Command (Enter to execute):"),
 		m.cmdInput.View(),
 	)
 }
@@ -214,6 +238,31 @@ func (m model) shutdown() tea.Msg {
 
 	wg.Wait()
 	return tea.Quit()
+}
+
+func (m model) executeCommand(cmd string) tea.Cmd {
+	return func() tea.Msg {
+		// Split the command into parts
+		parts := strings.Fields(cmd)
+		if len(parts) == 0 {
+			return nil
+		}
+
+		switch parts[0] {
+		case "clear":
+			m.serverOutput.Reset()
+			m.clientOutput.Reset()
+			return outputMsg{text: "", src: "both"}
+		case "help":
+			m.showHelp = true
+			return nil
+		default:
+			return outputMsg{
+				text: fmt.Sprintf("Unknown command: %s\n", cmd),
+				src:  "server",
+			}
+		}
+	}
 }
 
 var program *tea.Program
