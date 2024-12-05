@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -169,13 +170,20 @@ func (m *Manager) Start() error {
 					fmt.Print("\033[2K\033[A")
 				}
 
-				// Print current status
-				for id, status := range layerStatus {
+				// Print current status in a stable order
+				var layerIDs []string
+				for id := range layerStatus {
+					layerIDs = append(layerIDs, id)
+				}
+				// Sort to maintain consistent order
+				sort.Strings(layerIDs)
+				
+				for _, id := range layerIDs {
 					progress := ""
-					if strings.Contains(status, "Download") && pullStatus.ID == id {
+					if strings.Contains(layerStatus[id], "Download") && pullStatus.ID == id {
 						progress = pullStatus.Progress
 					}
-					fmt.Printf("%s: %s %s\n", id, status, progress)
+					fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
 				}
 			} else {
 				fmt.Printf("%s\n", pullStatus.Status)
