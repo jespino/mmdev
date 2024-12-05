@@ -151,6 +151,14 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("application error: %w", err)
 			}
 
+			// Wait for both processes to finish
+			if err := serverCmd.Wait(); err != nil {
+				fmt.Printf("Server process ended with error: %v\n", err)
+			}
+			if err := clientCmd.Wait(); err != nil {
+				fmt.Printf("Client process ended with error: %v\n", err)
+			}
+
 			return nil
 		},
 	}
