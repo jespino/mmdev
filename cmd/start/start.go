@@ -70,6 +70,7 @@ type model struct {
 	serverView    viewport.Model
 	clientView    viewport.Model
 	cmdInput      textinput.Model
+	selectedPane  string // "server" or "client"
 	serverCmd     *exec.Cmd
 	clientCmd     *exec.Cmd
 	showHelp      bool
@@ -101,6 +102,7 @@ func initialModel() model {
 		clientView:    cv,
 		cmdInput:      cmdInput,
 		showHelp:      false,
+		selectedPane:  "server",
 		serverRunning: false,
 		clientRunning: false,
 		cmdHistory:    make([]string, 0),
@@ -233,8 +235,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "tab":
-			if m.cmdInput.Focused() {
-				currentInput := m.cmdInput.Value()
+			if !m.cmdInput.Focused() {
+				// Toggle between panes when not in command input
+				if m.selectedPane == "server" {
+					m.selectedPane = "client"
+				} else {
+					m.selectedPane = "server"
+				}
+				return m, nil
+			}
+			// Command input tab completion
+			currentInput := m.cmdInput.Value()
 				if currentInput == "" {
 					return m, nil
 				}
@@ -279,6 +290,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cmdInput.Focus()
 			return m, nil
 			
+		case "pgup":
+			if !m.cmdInput.Focused() {
+				if m.selectedPane == "server" {
+					m.serverView.PageUp()
+				} else {
+					m.clientView.PageUp()
+				}
+			}
+			return m, nil
+		case "pgdown":
+			if !m.cmdInput.Focused() {
+				if m.selectedPane == "server" {
+					m.serverView.PageDown()
+				} else {
+					m.clientView.PageDown()
+				}
+			}
+			return m, nil
 		case "esc":
 			if m.cmdInput.Focused() {
 				m.cmdInput.Blur()
@@ -371,13 +400,23 @@ Press any key to close help
 		Foreground(lipgloss.Color("241")).
 		Render(fmt.Sprintf("%s | ? for help | : for command | q to quit", m.statusMsg))
 
+	serverTitle := "Server Output: "
+	if m.selectedPane == "server" {
+		serverTitle = "> " + serverTitle
+	}
+	
+	clientTitle := "Client Output: "
+	if m.selectedPane == "client" {
+		clientTitle = "> " + clientTitle
+	}
+
 	serverPane := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render("Server Output: ")+serverStatus+" "+serverIndicator,
+		titleStyle.Render(serverTitle)+serverStatus+" "+serverIndicator,
 		m.serverView.View(),
 	)
 
 	clientPane := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render("Client Output: ")+clientStatus+" "+clientIndicator,
+		titleStyle.Render(clientTitle)+clientStatus+" "+clientIndicator,
 		m.clientView.View(),
 	)
 
