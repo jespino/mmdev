@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"fmt"
 	"github.com/jespino/mmdev/pkg/docker"
 	"github.com/spf13/cobra"
 )
