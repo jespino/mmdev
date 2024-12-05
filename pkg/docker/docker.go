@@ -53,13 +53,13 @@ func (m *Manager) Start() error {
 	// Build docker-compose command
 	args := []string{
 		"compose",
-		"-f", m.composeFile,
+		"--file", m.composeFile,
 	}
 
 	// Add override file if it exists
 	overridePath := filepath.Join(m.baseDir, "docker-compose.override.yaml")
 	if _, err := os.Stat(overridePath); err == nil {
-		args = append(args, "-f", "docker-compose.override.yaml")
+		args = append(args, "--file", "docker-compose.override.yaml")
 	}
 
 	// Add services and up command
@@ -91,7 +91,7 @@ func (m *Manager) Stop() error {
 		return err
 	}
 
-	cmd := exec.Command("docker", "compose", "-f", m.composeFile, "stop")
+	cmd := exec.Command("docker", "compose", "--file", m.composeFile, "stop")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -111,7 +111,7 @@ func (m *Manager) Clean() error {
 		return err
 	}
 
-	cmd := exec.Command("docker", "compose", "-f", m.composeFile, "down", "-v")
+	cmd := exec.Command("docker", "compose", "--file", m.composeFile, "down", "--volumes")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
