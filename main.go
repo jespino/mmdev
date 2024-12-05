@@ -6,7 +6,8 @@ import (
 
 	"github.com/jespino/mmdev/cmd/client"
 	"github.com/jespino/mmdev/cmd/docker"
-	"github.com/jespino/mmdev/cmd/server"
+	"github.com/jespino/mmdev/cmd/generate"
+	"github.com/jespino/mmdev/cmd/server" 
 	"github.com/jespino/mmdev/cmd/start"
 	"github.com/spf13/cobra"
 )
