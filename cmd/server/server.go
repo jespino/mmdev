@@ -85,12 +85,22 @@ func runServer() error {
 	// Wait for either server completion or interrupt
 	select {
 	case err := <-done:
+		fmt.Println("Server process ended, cleaning up...")
 		if err := docker.StopDockerServices(); err != nil {
 			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 		}
 		return err
 	case <-sigChan:
 		fmt.Println("\nReceived interrupt signal. Shutting down...")
+		if cmd != nil && cmd.Process != nil {
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+				cmd.Process.Kill()
+			}
+			// Wait for the process to finish
+			<-done
+		}
+		fmt.Println("Stopping docker services...")
 		if err := docker.StopDockerServices(); err != nil {
 			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 		}
@@ -178,14 +188,17 @@ func runWithWatcher() error {
 	for range restart {
 		fmt.Println("\nRestarting server...")
 		if cmd != nil && cmd.Process != nil {
-			if err := cmd.Process.Kill(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error killing process: %v\n", err)
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+				cmd.Process.Kill()
 			}
 			cmd.Wait()
+			fmt.Println("Stopping docker services...")
 			if err := docker.StopDockerServices(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error stopping docker services: %v\n", err)
 			}
 		}
+		fmt.Println("Starting new server instance...")
 		cmd = startServer()
 	}
 
