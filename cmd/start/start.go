@@ -56,9 +56,11 @@ func StartCmd() *cobra.Command {
 						// Stop the application
 						app.Stop()
 						
-						// Kill the client process
-						if err := clientCmd.Process.Kill(); err != nil {
-							fmt.Printf("Error killing client process: %v\n", err)
+						// Kill the client process if it exists
+						if clientCmd != nil && clientCmd.Process != nil {
+							if err := clientCmd.Process.Kill(); err != nil {
+								fmt.Printf("Error killing client process: %v\n", err)
+							}
 						}
 						
 						// Run server cleanup
@@ -82,6 +84,8 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
+			var clientCmd *exec.Cmd
+			
 			// Start server process
 			serverCmd := exec.Command("make", "run-server")
 			serverCmd.Dir = "server"
