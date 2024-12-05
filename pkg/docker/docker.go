@@ -34,6 +34,7 @@ type ServiceConfig struct {
 	ExposedPorts map[string]string // host:container
 	Env          []string
 	Volumes      map[string]string // host:container
+	Command      []string
 }
 
 var serviceConfigs = map[Service]ServiceConfig{
@@ -75,6 +76,7 @@ var serviceConfigs = map[Service]ServiceConfig{
 		Volumes: map[string]string{
 			"/tmp/minio/data": "/data",
 		},
+		Command: []string{"server", "/data", "--console-address", ":9001"},
 	},
 	OpenLDAP: {
 		Image: "osixia/openldap:1.5.0",
@@ -285,6 +287,7 @@ func (m *Manager) Start() error {
 				Image:        config.Image,
 				Env:          config.Env,
 				ExposedPorts: exposedPorts,
+				Cmd:          config.Command,
 			}
 
 			hostConfig := &containerTypes.HostConfig{
