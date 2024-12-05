@@ -39,10 +39,24 @@ func StartCmd() *cobra.Command {
 
 			// Set up input capture for views
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				switch event.Key() {
+				case tcell.KeyRune:
+					switch event.Rune() {
+					case 'h', 'v', 'q':
+						return event
+					}
+				}
 				return event
 			})
 
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				switch event.Key() {
+				case tcell.KeyRune:
+					switch event.Rune() {
+					case 'h', 'v', 'q':
+						return event
+					}
+				}
 				return event
 			})
 
