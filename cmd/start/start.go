@@ -27,9 +27,9 @@ func StartCmd() *cobra.Command {
 				SetScrollable(true).
 				SetTitle("Server").
 				SetBorder(true).
-				SetMaxLines(2000).
+				SetMaxLength(2000).
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-					app.SetFocus(serverView)
+					app.SetFocus(view)
 					return action, event
 				})
 			serverView.SetWrap(true)
@@ -50,9 +50,9 @@ func StartCmd() *cobra.Command {
 				SetScrollable(true).
 				SetTitle("Client").
 				SetBorder(true).
-				SetMaxLines(2000).
+				SetMaxLength(2000).
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-					app.SetFocus(clientView)
+					app.SetFocus(view)
 					return action, event
 				})
 			clientView.SetWrap(true)
