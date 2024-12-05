@@ -210,10 +210,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		verticalSpace := msg.Height - 3 // Reserve space for command input
-		m.serverView.Height = verticalSpace / 2
-		m.serverView.Width = msg.Width
-		m.clientView.Height = verticalSpace / 2
-		m.clientView.Width = msg.Width
+		m.serverView.Height = verticalSpace
+		m.serverView.Width = msg.Width / 2
+		m.clientView.Height = verticalSpace
+		m.clientView.Width = msg.Width / 2
 		return m, nil
 
 	case outputMsg:
@@ -289,11 +289,20 @@ Press any key to close help
 		Foreground(lipgloss.Color("241")).
 		Render(fmt.Sprintf("%s | ? for help | : for command | q to quit", m.statusMsg))
 
-	return lipgloss.JoinVertical(lipgloss.Left,
+	serverPane := lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render("Server Output: ")+serverStatus+" "+serverIndicator,
 		m.serverView.View(),
+	)
+
+	clientPane := lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render("Client Output: ")+clientStatus+" "+clientIndicator,
 		m.clientView.View(),
+	)
+
+	panes := lipgloss.JoinHorizontal(lipgloss.Top, serverPane, clientPane)
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		panes,
 		infoStyle.Render("Command (Enter to execute):"),
 		m.cmdInput.View(),
 		statusBar,
