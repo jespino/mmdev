@@ -22,7 +22,7 @@ func ClientCmd() *cobra.Command {
 }
 
 func LintCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "lint",
 		Short: "Run linting on the client code",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -67,4 +67,6 @@ func StartCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().Bool("watch", false, "Watch for changes and rebuild")
+	return cmd
 }
