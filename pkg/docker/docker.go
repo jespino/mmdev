@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"time"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -209,8 +211,7 @@ func (m *Manager) Stop() error {
 	for _, container := range containers {
 		if container.Labels["com.docker.compose.project"] == "mmdev" {
 			fmt.Printf("Stopping container %s\n", container.Names[0])
-			timeout := 10 * time.Second
-			if err := m.client.ContainerStop(m.ctx, container.ID, &timeout); err != nil {
+			if err := m.client.ContainerStop(m.ctx, container.ID, container.StopOptions{Timeout: new(int)}); err != nil {
 				return fmt.Errorf("failed to stop container %s: %w", container.Names[0], err)
 			}
 			if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
@@ -230,84 +231,5 @@ func (m *Manager) Stop() error {
 
 // Clean removes all Docker containers and volumes
 func (m *Manager) Clean() error {
-	if err := m.validateBaseDir(); err != nil {
-		return err
-	}
-
-	args := append(m.composeCmd[1:], "--file", m.composeFile, "down", "--volumes")
-	cmd := exec.Command(m.composeCmd[0], args...)
-	cmd.Dir = m.baseDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	fmt.Printf("Cleaning up Docker services and volumes...\n")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to clean docker services: %w", err)
-	}
-	fmt.Printf("Docker services and volumes cleaned successfully\n")
-
-	return nil
-}
-
-func (m *Manager) validateBaseDir() error {
-	if _, err := os.Stat(filepath.Join(m.baseDir, m.composeFile)); os.IsNotExist(err) {
-		return fmt.Errorf("docker-compose file not found in %s", m.baseDir)
-	}
-	return nil
-}
-
-func (m *Manager) postStartConfig() error {
-	for _, service := range m.services {
-		switch service {
-		case OpenLDAP:
-			if err := m.configureLDAP(); err != nil {
-				return fmt.Errorf("LDAP configuration failed: %w", err)
-			}
-		case MySQLReplica:
-			if err := m.configureMySQL(); err != nil {
-				return fmt.Errorf("MySQL configuration failed: %w", err)
-			}
-		}
-	}
-	return nil
-}
-
-func (m *Manager) configureLDAP() error {
-	ldifFile := "tests/ldap-data.ldif"
-	if _, err := os.Stat(filepath.Join(m.baseDir, ldifFile)); os.IsNotExist(err) {
-		return fmt.Errorf("LDAP data file not found: %s", ldifFile)
-	}
-
-	args := append(m.composeCmd[1:], "exec", "-T", "openldap")
-	cmd := exec.Command(m.composeCmd[0], append(args,
-		"ldapadd", "-x", "-D", "cn=admin,dc=mm,dc=test,dc=com", "-w", "mostest")...)
-	cmd.Dir = m.baseDir
-	cmd.Stdin, _ = os.Open(filepath.Join(m.baseDir, ldifFile))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		// Don't return error as this might fail if entries already exist
-		fmt.Fprintf(os.Stderr, "Warning: LDAP configuration returned: %v\n", err)
-	}
-
-	return nil
-}
-
-func (m *Manager) configureMySQL() error {
-	script := filepath.Join(m.baseDir, "scripts/replica-mysql-config.sh")
-	if _, err := os.Stat(script); os.IsNotExist(err) {
-		return fmt.Errorf("MySQL config script not found: %s", script)
-	}
-
-	cmd := exec.Command("/bin/sh", script)
-	cmd.Dir = m.baseDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("MySQL configuration failed: %w", err)
-	}
-
-	return nil
+	return m.Stop()
 }
