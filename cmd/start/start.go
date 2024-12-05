@@ -11,7 +11,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
-	"github.com/jespino/mmdev/pkg/docker"
 )
 
 func StartCmd() *cobra.Command {
@@ -80,15 +79,6 @@ func StartCmd() *cobra.Command {
 							}
 						}
 
-						// Stop docker services
-						dockerManager, err := docker.NewManager()
-						if err != nil {
-							fmt.Printf("Error creating docker manager: %v\n", err)
-						}
-						if err := dockerManager.Stop(); err != nil {
-							fmt.Printf("Error stopping docker services: %v\n", err)
-						}
-						
 						return nil
 					case 'h':
 						flex.SetDirection(tview.FlexRow)
@@ -103,18 +93,6 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
-			// Start docker services
-			dockerManager, err := docker.NewManager()
-			if err != nil {
-				return fmt.Errorf("failed to create docker manager: %w", err)
-			}
-			dockerManager.EnableService(docker.Minio)
-			dockerManager.EnableService(docker.OpenLDAP)
-			dockerManager.EnableService(docker.Elasticsearch)
-			
-			if err := dockerManager.Start(); err != nil {
-				return fmt.Errorf("failed to start docker services: %w", err)
-			}
 
 			// Start server process using mmdev command
 			serverCmd = exec.Command("mmdev", "server", "start", "--watch")
