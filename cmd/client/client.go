@@ -31,11 +31,6 @@ func LintCmd() *cobra.Command {
 				return fmt.Errorf("webapp directory not found at %s", webappDir)
 			}
 
-			// Change to webapp directory
-			if err := os.Chdir(webappDir); err != nil {
-				return fmt.Errorf("failed to change to webapp directory: %w", err)
-			}
-
 			manager := webapp.NewManager(webappDir)
 			if err := manager.Lint(); err != nil {
 				fmt.Printf("Linting found issues: %v\n", err)
