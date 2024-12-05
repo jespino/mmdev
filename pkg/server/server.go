@@ -25,23 +25,60 @@ func (m *Manager) Start() error {
 		return err
 	}
 
-	// Build the server
-	buildCmd := exec.Command("go", "run", 
-		"-ldflags", 
-		"-X github.com/mattermost/mattermost/server/public/model.BuildNumber=dev " +
-		"-X github.com/mattermost/mattermost/server/public/model.BuildDate=dev " +
-		"-X github.com/mattermost/mattermost/server/public/model.BuildHash=dev " +
-		"-X github.com/mattermost/mattermost/server/public/model.BuildHashEnterprise=none " +
+	// Ensure webapp client dist exists
+	distDir := filepath.Join(m.baseDir, "..", "webapp", "channels", "dist")
+	if _, err := os.Stat(distDir); os.IsNotExist(err) {
+		return fmt.Errorf("webapp dist directory not found at %s - please build the webapp first", distDir)
+	}
+
+	// Create symlink to client directory if it doesn't exist
+	clientLink := filepath.Join(m.baseDir, "client")
+	if _, err := os.Stat(clientLink); os.IsNotExist(err) {
+		if err := os.Symlink(distDir, clientLink); err != nil {
+			return fmt.Errorf("failed to create client symlink: %w", err)
+		}
+	}
+
+	// Ensure prepackaged plugins directory exists
+	pluginsDir := filepath.Join(m.baseDir, "prepackaged_plugins")
+	if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create prepackaged plugins directory: %w", err)
+	}
+
+	// Set build flags
+	ldflags := []string{
+		"-X github.com/mattermost/mattermost/server/public/model.BuildNumber=dev",
+		"-X github.com/mattermost/mattermost/server/public/model.BuildDate=dev",
+		"-X github.com/mattermost/mattermost/server/public/model.BuildHash=dev",
+		"-X github.com/mattermost/mattermost/server/public/model.BuildHashEnterprise=none",
 		"-X github.com/mattermost/mattermost/server/public/model.BuildEnterpriseReady=false",
+	}
+
+	// Run the server
+	cmd := exec.Command("go", append([]string{
+		"run",
+		"-ldflags", strings.Join(ldflags, " "),
 		"-tags", "debug",
 		"./cmd/mattermost",
+	})...)
+	
+	cmd.Dir = m.baseDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(),
+		"MM_SERVICESETTINGS_SITEURL=http://localhost:8065",
+		"MM_SERVICESETTINGS_LISTENADDRESS=:8065",
+		"MM_SQLSETTINGS_DATASOURCE=mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&timeout=30s",
+		"MM_SQLSETTINGS_DRIVERNAME=mysql",
+		"MM_LOGSETTINGS_ENABLECONSOLE=true",
+		"MM_LOGSETTINGS_CONSOLELEVEL=DEBUG",
+		"MM_LOGSETTINGS_ENABLEFILE=false",
+		"MM_FILESETTINGS_DIRECTORY=data/",
+		"MM_PLUGINSETTINGS_DIRECTORY=plugins",
+		"MM_PLUGINSETTINGS_CLIENTDIRECTORY=client/plugins",
 	)
-	buildCmd.Dir = m.baseDir
-	buildCmd.Stdout = os.Stdout
-	buildCmd.Stderr = os.Stderr
-	buildCmd.Env = os.Environ()
 
-	return buildCmd.Run()
+	return cmd.Run()
 }
 
 // Stop stops the Mattermost server

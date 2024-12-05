@@ -182,18 +182,17 @@ func runWithWatcher() error {
 }
 
 func startServer() *exec.Cmd {
-	env := os.Environ()
-	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
-
-	cmd := exec.Command("make", "run-server")
+	manager := server.NewManager(".")
+	cmd := exec.Command("go", "run", "main.go")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = env
+	cmd.Env = append(os.Environ(), "RUN_SERVER_IN_BACKGROUND=false")
 
-	if err := cmd.Start(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
-		return nil
-	}
+	go func() {
+		if err := manager.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+		}
+	}()
 
 	return cmd
 }
