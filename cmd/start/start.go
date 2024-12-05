@@ -33,11 +33,11 @@ func StartCmd() *cobra.Command {
 				switch event.Key() {
 				case tcell.KeyPgUp:
 					row, _ := serverView.GetScrollOffset()
-					serverView.ScrollTo(row-1, 0)
+					serverView.ScrollTo(row-5, 0)
 					return nil
 				case tcell.KeyPgDn:
 					row, _ := serverView.GetScrollOffset()
-					serverView.ScrollTo(row+1, 0)
+					serverView.ScrollTo(row+5, 0)
 					return nil
 				}
 				return event
@@ -54,11 +54,11 @@ func StartCmd() *cobra.Command {
 				switch event.Key() {
 				case tcell.KeyPgUp:
 					row, _ := clientView.GetScrollOffset()
-					clientView.ScrollTo(row-1, 0)
+					clientView.ScrollTo(row-5, 0)
 					return nil
 				case tcell.KeyPgDn:
 					row, _ := clientView.GetScrollOffset()
-					clientView.ScrollTo(row+1, 0)
+					clientView.ScrollTo(row+5, 0)
 					return nil
 				}
 				return event
