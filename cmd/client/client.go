@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/jespino/mmdev/pkg/webapp"
+	"github.com/spf13/cobra"
 )
 
 func ClientCmd() *cobra.Command {
@@ -54,11 +54,6 @@ func StartCmd() *cobra.Command {
 			webappDir := "./webapp"
 			if _, err := os.Stat(webappDir); os.IsNotExist(err) {
 				return fmt.Errorf("webapp directory not found at %s", webappDir)
-			}
-
-			// Change to webapp directory
-			if err := os.Chdir(webappDir); err != nil {
-				return fmt.Errorf("failed to change to webapp directory: %w", err)
 			}
 
 			manager := webapp.NewManager(webappDir)

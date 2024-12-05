@@ -31,7 +31,7 @@ func (m *Manager) Start() error {
 	}
 
 	// Start the development server
-	cmd := exec.Command("npm", "run", "dev")
+	cmd := exec.Command("npm", "run", "run")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -81,7 +81,7 @@ func (m *Manager) ensureDependencies() error {
 	nvmCmd.Stdout = os.Stdout
 	nvmCmd.Stderr = os.Stderr
 	nvmCmd.Env = os.Environ()
-	
+
 	if err := nvmCmd.Run(); err != nil {
 		return fmt.Errorf("failed to run nvm use: %w", err)
 	}
