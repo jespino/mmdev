@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	containerTypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -26,8 +26,8 @@ const (
 
 // ServiceConfig holds configuration for a Docker service
 type ServiceConfig struct {
-	Image         string
-	ExposedPorts  map[string]string // host:container
+	Image        string
+	ExposedPorts map[string]string // host:container
 	Env          []string
 	Volumes      map[string]string // host:container
 }
@@ -161,15 +161,15 @@ func (m *Manager) Start() error {
 		}
 
 		// Create container
-		containerConfig := &container.Config{
+		containerConfig := &containerTypes.Config{
 			Image:        config.Image,
-			Env:         config.Env,
+			Env:          config.Env,
 			ExposedPorts: exposedPorts,
 		}
 
-		hostConfig := &container.HostConfig{
+		hostConfig := &containerTypes.HostConfig{
 			PortBindings: portBindings,
-			Binds:       binds,
+			Binds:        binds,
 		}
 
 		networkingConfig := &network.NetworkingConfig{
@@ -209,7 +209,7 @@ func (m *Manager) Stop() error {
 	for _, container := range containers {
 		if container.Labels["com.docker.compose.project"] == "mmdev" {
 			fmt.Printf("Stopping container %s\n", container.Names[0])
-			if err := m.client.ContainerStop(m.ctx, container.ID, container.StopOptions{Timeout: new(int)}); err != nil {
+			if err := m.client.ContainerStop(m.ctx, container.ID, containerTypes.StopOptions{Timeout: new(int)}); err != nil {
 				return fmt.Errorf("failed to stop container %s: %w", container.Names[0], err)
 			}
 			if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
