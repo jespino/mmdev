@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -52,7 +53,7 @@ func StartCmd() *cobra.Command {
 				AddItem(serverView, 0, 1, false).
 				AddItem(clientView, 0, 1, false)
 
-			var clientCmd *exec.Cmd
+			var clientCmd, serverCmd *exec.Cmd
 
 			// Setup key bindings
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -65,17 +66,18 @@ func StartCmd() *cobra.Command {
 						// Stop the application
 						app.Stop()
 						
-						// Kill the client process if it exists
+						// Send SIGTERM to client process
 						if clientCmd != nil && clientCmd.Process != nil {
-							if err := clientCmd.Process.Kill(); err != nil {
-								fmt.Printf("Error killing client process: %v\n", err)
+							if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+								fmt.Printf("Error sending SIGTERM to client process: %v\n", err)
 							}
 						}
 						
-						// Stop server
-						cleanup := exec.Command("pkill", "-f", "mattermost")
-						if err := cleanup.Run(); err != nil {
-							fmt.Printf("Error during server cleanup: %v\n", err)
+						// Send SIGTERM to server process
+						if serverCmd != nil && serverCmd.Process != nil {
+							if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+								fmt.Printf("Error sending SIGTERM to server process: %v\n", err)
+							}
 						}
 
 						// Stop docker services
