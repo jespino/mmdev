@@ -59,6 +59,18 @@ func LintCmd() *cobra.Command {
 	return cmd
 }
 
+func cleanup() error {
+	makeCmd := exec.Command("make", "stop-server")
+	makeCmd.Stdout = os.Stdout
+	makeCmd.Stderr = os.Stderr
+	makeCmd.Env = os.Environ()
+
+	if err := makeCmd.Run(); err != nil {
+		return fmt.Errorf("failed to cleanup server: %w", err)
+	}
+	return nil
+}
+
 func runServer() error {
 	env := os.Environ()
 	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
@@ -68,7 +80,19 @@ func runServer() error {
 	makeCmd.Stderr = os.Stderr
 	makeCmd.Env = env
 
-	if err := makeCmd.Run(); err != nil {
+	err := makeCmd.Run()
+	
+	// Always attempt cleanup, regardless of whether the server errored
+	if cleanupErr := cleanup(); cleanupErr != nil {
+		// If both failed, include both errors in the message
+		if err != nil {
+			return fmt.Errorf("server failed: %v; cleanup failed: %v", err, cleanupErr)
+		}
+		return fmt.Errorf("cleanup failed: %v", cleanupErr)
+	}
+
+	// Return original server error if there was one
+	if err != nil {
 		return fmt.Errorf("failed to run server: %w", err)
 	}
 
@@ -153,6 +177,9 @@ func runWithWatcher() error {
 				fmt.Fprintf(os.Stderr, "Error killing process: %v\n", err)
 			}
 			cmd.Wait()
+			if err := cleanup(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error during cleanup: %v\n", err)
+			}
 		}
 		cmd = startServer()
 	}
