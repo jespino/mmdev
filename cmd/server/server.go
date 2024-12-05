@@ -1,5 +1,7 @@
 package server
 
+var watch bool
+
 import (
 	"fmt"
 	"os"
