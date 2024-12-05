@@ -199,10 +199,10 @@ Press any key to close help
 	}
 
 	var serverIndicator, clientIndicator string
-	if m.serverView.VerticalScrollPercent() < 1.0 {
+	if m.serverView.ScrollPercent() < 1.0 {
 		serverIndicator = subtleStyle.Render("↓")
 	}
-	if m.clientView.VerticalScrollPercent() < 1.0 {
+	if m.clientView.ScrollPercent() < 1.0 {
 		clientIndicator = subtleStyle.Render("↓")
 	}
 
