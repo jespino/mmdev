@@ -3,6 +3,7 @@ package start
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
