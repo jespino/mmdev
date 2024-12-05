@@ -185,11 +185,11 @@ func StartCmd() *cobra.Command {
 						return nil
 					case 'h':
 						currentDirection = tview.FlexRow
-						flex.SetDirection(currentDirection)
+						mainFlex.SetDirection(currentDirection)
 						return nil
 					case 'v':
 						currentDirection = tview.FlexColumn
-						flex.SetDirection(currentDirection)
+						mainFlex.SetDirection(currentDirection)
 						return nil
 					case '\t':
 						// Cycle focus between views
