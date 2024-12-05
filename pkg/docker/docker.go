@@ -398,6 +398,7 @@ func (m *Manager) Start() error {
 				return fmt.Errorf("service %s failed to become ready: %w", service, err)
 			}
 		}
+		fmt.Printf("Service %s ports are ready\n", service)
 
 		// Additional service-specific health checks
 		switch service {
@@ -405,14 +406,17 @@ func (m *Manager) Start() error {
 			if err := m.waitForPostgres(); err != nil {
 				return fmt.Errorf("postgres failed health check: %w", err)
 			}
+			fmt.Println("Postgres is fully ready")
 		case Elasticsearch:
 			if err := m.waitForElasticsearch(); err != nil {
 				return fmt.Errorf("elasticsearch failed health check: %w", err)
 			}
+			fmt.Println("Elasticsearch is fully ready")
 		case Minio:
 			if err := m.waitForMinio(); err != nil {
 				return fmt.Errorf("minio failed health check: %w", err)
 			}
+			fmt.Println("MinIO is fully ready")
 		}
 	}
 
