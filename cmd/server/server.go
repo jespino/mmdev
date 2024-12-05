@@ -64,11 +64,7 @@ func cleanup() error {
 	}
 
 	// Stop docker services
-	dockerManager, err := docker.NewManager()
-	if err != nil {
-		return fmt.Errorf("failed to create docker manager: %w", err)
-	}
-	if err := dockerManager.Stop(); err != nil {
+	if err := docker.StopDockerServices(); err != nil {
 		return fmt.Errorf("failed to stop docker services: %w", err)
 	}
 
@@ -77,31 +73,21 @@ func cleanup() error {
 
 func runServer() error {
 	// Start docker services
-	dockerManager, err := docker.NewManager()
-	if err != nil {
-		return fmt.Errorf("failed to create docker manager: %w", err)
-	}
-	dockerManager.EnableService(docker.Minio)
-	dockerManager.EnableService(docker.OpenLDAP)
-	dockerManager.EnableService(docker.Elasticsearch)
-	
-	if err := dockerManager.Start(); err != nil {
+	if err := docker.StartDockerServices(); err != nil {
 		return fmt.Errorf("failed to start docker services: %w", err)
 	}
+
+	// Ensure docker services are stopped on exit
+	defer func() {
+		if err := docker.StopDockerServices(); err != nil {
+			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
+		}
+	}()
 	
 	// Start server
 	manager := server.NewManager(".")
 	if err := manager.Start(); err != nil {
-		// Stop docker services on error
-		if stopErr := dockerManager.Stop(); stopErr != nil {
-			fmt.Printf("Warning: failed to stop docker services: %v\n", stopErr)
-		}
 		return fmt.Errorf("failed to run server: %w", err)
-	}
-
-	// Stop docker services
-	if err := dockerManager.Stop(); err != nil {
-		return fmt.Errorf("failed to stop docker services: %w", err)
 	}
 
 	return nil
