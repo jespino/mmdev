@@ -40,25 +40,6 @@ func (m *Manager) Start() error {
 	return cmd.Run()
 }
 
-// Stop stops the webapp development server
-func (m *Manager) Stop() error {
-	if err := m.validateBaseDir(); err != nil {
-		return err
-	}
-
-	// Find and kill the node process running webpack
-	cmd := exec.Command("pkill", "-f", "webpack")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		// Ignore error since it might just mean no process was found
-		return nil
-	}
-
-	return nil
-}
-
 // Lint runs ESLint on the webapp code
 func (m *Manager) Lint() error {
 	if err := m.validateBaseDir(); err != nil {
