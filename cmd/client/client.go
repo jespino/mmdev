@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/jespino/mmdev/pkg/webapp"
 	"github.com/spf13/cobra"
