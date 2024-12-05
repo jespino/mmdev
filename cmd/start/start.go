@@ -18,19 +18,41 @@ func StartCmd() *cobra.Command {
 			app := tview.NewApplication()
 			
 			// Create text views for server and client output
-			serverView := tview.NewTextView()
-			serverView.
+			serverView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Server").
-				SetBorder(true)
-			
-			clientView := tview.NewTextView()
-			clientView.
+				SetBorder(true).
+				ScrollToEnd()
+
+			clientView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
-				SetBorder(true)
+				SetBorder(true).
+				ScrollToEnd()
+
+			// Track if views are at bottom for auto-scroll
+			serverAtBottom := true
+			clientAtBottom := true
+
+			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				_, _, _, height := serverView.GetInnerRect()
+				row, _ := serverView.GetScrollOffset()
+				_, totalRows := serverView.GetScrollOffset()
+				
+				serverAtBottom = (totalRows - row) <= height
+				return event
+			})
+
+			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				_, _, _, height := clientView.GetInnerRect()
+				row, _ := clientView.GetScrollOffset()
+				_, totalRows := clientView.GetScrollOffset()
+				
+				clientAtBottom = (totalRows - row) <= height
+				return event
+			})
 
 			// Create flex layout
 			flex := tview.NewFlex()
@@ -80,6 +102,9 @@ func StartCmd() *cobra.Command {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
 						fmt.Fprintln(serverView, text)
+						if serverAtBottom {
+							serverView.ScrollToEnd()
+						}
 					})
 				}
 			}()
@@ -91,6 +116,9 @@ func StartCmd() *cobra.Command {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
 						fmt.Fprintln(clientView, text)
+						if clientAtBottom {
+							clientView.ScrollToEnd()
+						}
 					})
 				}
 			}()
