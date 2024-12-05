@@ -11,7 +11,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
-	"github.com/jespino/mmdev/pkg/docker"
+	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/pkg/server"
 )
 
