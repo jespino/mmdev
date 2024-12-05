@@ -3,10 +3,12 @@ package server
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"os/exec"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -77,20 +79,33 @@ func runServer() error {
 		return fmt.Errorf("failed to start docker services: %w", err)
 	}
 
-	// Ensure docker services are stopped on exit
-	defer func() {
+	// Create a channel to listen for interrupt signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Create a channel to signal server completion
+	done := make(chan error, 1)
+
+	// Start server in a goroutine
+	go func() {
+		manager := server.NewManager(".")
+		done <- manager.Start()
+	}()
+
+	// Wait for either server completion or interrupt
+	select {
+	case err := <-done:
 		if err := docker.StopDockerServices(); err != nil {
 			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 		}
-	}()
-	
-	// Start server
-	manager := server.NewManager(".")
-	if err := manager.Start(); err != nil {
-		return fmt.Errorf("failed to run server: %w", err)
+		return err
+	case <-sigChan:
+		fmt.Println("\nReceived interrupt signal. Shutting down...")
+		if err := cleanup(); err != nil {
+			fmt.Printf("Warning: cleanup failed: %v\n", err)
+		}
+		return nil
 	}
-
-	return nil
 }
 
 func runWithWatcher() error {
