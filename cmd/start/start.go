@@ -70,8 +70,8 @@ func StartCmd() *cobra.Command {
 					}
 				}
 
-				// Wait a moment for processes to start shutting down
-				time.Sleep(500 * time.Millisecond)
+				// Wait for processes to start shutting down
+				time.Sleep(5 * time.Second)
 				app.Stop()
 			}
 
