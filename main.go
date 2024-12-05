@@ -6,6 +6,7 @@ import (
 
 	"github.com/jespino/mmdev/cmd/client"
 	"github.com/jespino/mmdev/cmd/server"
+	"github.com/jespino/mmdev/cmd/start"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +18,7 @@ func main() {
 
 	rootCmd.AddCommand(server.ServerCmd())
 	rootCmd.AddCommand(client.ClientCmd())
+	rootCmd.AddCommand(start.StartCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

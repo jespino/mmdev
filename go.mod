@@ -4,6 +4,8 @@ go 1.21
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0
+	github.com/gdamore/tcell/v2 v2.7.4
+	github.com/rivo/tview v0.0.0-20240307173318-e804876934a1
 	github.com/spf13/cobra v1.8.1
 )
 
