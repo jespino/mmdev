@@ -28,7 +28,7 @@ func StartCmd() *cobra.Command {
 				SetScrollable(true).
 				SetTitle("Server").
 				SetBorder(true).
-				SetMaxLines(2000).
+				SetTextMaxLines(2000).
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(serverView)
 					return action, event
@@ -37,10 +37,12 @@ func StartCmd() *cobra.Command {
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				switch event.Key() {
 				case tcell.KeyPgUp:
-					serverView.ScrollUp()
+					row, _ := serverView.GetScrollOffset()
+					serverView.ScrollTo(row-1, 0)
 					return nil
 				case tcell.KeyPgDn:
-					serverView.ScrollDown()
+					row, _ := serverView.GetScrollOffset()
+					serverView.ScrollTo(row+1, 0)
 					return nil
 				}
 				return event
@@ -52,7 +54,7 @@ func StartCmd() *cobra.Command {
 				SetScrollable(true).
 				SetTitle("Client").
 				SetBorder(true).
-				SetMaxLines(2000).
+				SetTextMaxLines(2000).
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(clientView)
 					return action, event
@@ -61,10 +63,12 @@ func StartCmd() *cobra.Command {
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				switch event.Key() {
 				case tcell.KeyPgUp:
-					clientView.ScrollUp()
+					row, _ := clientView.GetScrollOffset()
+					clientView.ScrollTo(row-1, 0)
 					return nil
 				case tcell.KeyPgDn:
-					clientView.ScrollDown()
+					row, _ := clientView.GetScrollOffset()
+					clientView.ScrollTo(row+1, 0)
 					return nil
 				}
 				return event
