@@ -43,9 +43,9 @@ func LintCmd() *cobra.Command {
 			}
 
 			manager := server.NewManager(serverDir)
-			err := manager.Lint()
-			if err != nil {
+			if err := manager.Lint(); err != nil {
 				fmt.Printf("Linting found issues: %v\n", err)
+				os.Exit(1)
 			}
 			return nil
 		},
