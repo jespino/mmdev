@@ -66,11 +66,14 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to change to server directory: %w", err)
 			}
 
-			// Run make run-server
-			makeCmd := exec.Command("make", "run-server")
+			// Run make run-server with RUN_SERVER_IN_BACKGROUND=false
+			env := os.Environ()
+			env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
+			
+			makeCmd := exec.Command("make", "run-server") 
 			makeCmd.Stdout = os.Stdout
 			makeCmd.Stderr = os.Stderr
-			makeCmd.Env = os.Environ()
+			makeCmd.Env = env
 
 			if err := makeCmd.Run(); err != nil {
 				return fmt.Errorf("failed to run server: %w", err)
