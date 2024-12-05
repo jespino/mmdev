@@ -13,6 +13,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/jespino/mmdev/cmd/docker"
+	"github.com/jespino/mmdev/cmd/generate"
 	"github.com/jespino/mmdev/pkg/server"
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,7 @@ func ServerCmd() *cobra.Command {
 	cmd.AddCommand(
 		StartCmd(),
 		LintCmd(),
+		generate.GenerateCmd(),
 	)
 	return cmd
 }
