@@ -4,15 +4,24 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
-func StartServerCmd() *cobra.Command {
+func ServerCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "server",
+		Short: "Server related commands",
+	}
+
+	cmd.AddCommand(StartCmd())
+	return cmd
+}
+
+func StartCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "start-server",
-		Short: "Start the Mattermost server",
+		Use:   "start",
+		Short: "Start the server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverDir := "./server"
 			if _, err := os.Stat(serverDir); os.IsNotExist(err) {
