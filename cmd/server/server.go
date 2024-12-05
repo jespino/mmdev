@@ -36,8 +36,8 @@ func LintCmd() *cobra.Command {
 				return fmt.Errorf("failed to change to server directory: %w", err)
 			}
 
-			// Run make lint
-			makeCmd := exec.Command("make", "lint")
+			// Run make check-style
+			makeCmd := exec.Command("make", "check-style")
 			makeCmd.Stdout = os.Stdout
 			makeCmd.Stderr = os.Stderr
 			makeCmd.Env = os.Environ()
