@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/jespino/mmdev/pkg/webapp"
 	"github.com/spf13/cobra"
@@ -38,9 +39,9 @@ func LintCmd() *cobra.Command {
 
 			manager := webapp.NewManager(webappDir)
 			if err := manager.Lint(); err != nil {
-				return fmt.Errorf("failed to run linting: %w", err)
+				fmt.Printf("Linting found issues: %v\n", err)
+				os.Exit(1)
 			}
-
 			return nil
 		},
 	}
