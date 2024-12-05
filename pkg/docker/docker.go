@@ -292,26 +292,32 @@ func (m *Manager) Start() error {
 
 // Stop stops all Docker services
 func (m *Manager) Stop() error {
-	containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{})
+	containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	for _, container := range containers {
-		if container.Labels["com.docker.compose.project"] == "mmdev" {
-			fmt.Printf("Stopping container %s\n", container.Names[0])
-			if err := m.client.ContainerStop(m.ctx, container.ID, containerTypes.StopOptions{Timeout: new(int)}); err != nil {
-				return fmt.Errorf("failed to stop container %s: %w", container.Names[0], err)
-			}
-			if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
-				return fmt.Errorf("failed to remove container %s: %w", container.Names[0], err)
+		// Check for our container name prefix
+		for _, name := range container.Names {
+			if strings.HasPrefix(name, "/mmdev-") {
+				fmt.Printf("Stopping container %s\n", name)
+				if err := m.client.ContainerStop(m.ctx, container.ID, containerTypes.StopOptions{Timeout: new(int)}); err != nil {
+					// Only log stop errors since container might already be stopped
+					fmt.Printf("Warning: failed to stop container %s: %v\n", name, err)
+				}
+				if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
+					return fmt.Errorf("failed to remove container %s: %w", name, err)
+				}
+				break
 			}
 		}
 	}
 
 	if m.networkID != "" {
+		// Try to remove network, but don't fail if it's in use
 		if err := m.client.NetworkRemove(m.ctx, m.networkID); err != nil {
-			return fmt.Errorf("failed to remove network: %w", err)
+			fmt.Printf("Warning: failed to remove network: %v\n", err)
 		}
 	}
 
