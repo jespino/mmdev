@@ -20,7 +20,7 @@ func NewManager(baseDir string) *Manager {
 }
 
 // Start starts the webapp development server
-func (m *Manager) Start() error {
+func (m *Manager) Start(watch bool) error {
 	if err := m.validateBaseDir(); err != nil {
 		return err
 	}
@@ -30,8 +30,12 @@ func (m *Manager) Start() error {
 		return fmt.Errorf("failed to ensure dependencies: %w", err)
 	}
 
-	// Start the development server
-	cmd := exec.Command("npm", "run", "run")
+	// Start the development server or build
+	npmCmd := "build"
+	if watch {
+		npmCmd = "run"
+	}
+	cmd := exec.Command("npm", "run", npmCmd)
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

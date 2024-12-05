@@ -44,10 +44,12 @@ func LintCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().Bool("watch", false, "Watch for changes and rebuild")
+	return cmd
 }
 
 func StartCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the client",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -56,8 +58,9 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("webapp directory not found at %s", webappDir)
 			}
 
+			watch, _ := cmd.Flags().GetBool("watch")
 			manager := webapp.NewManager(webappDir)
-			if err := manager.Start(); err != nil {
+			if err := manager.Start(watch); err != nil {
 				return fmt.Errorf("failed to run client: %w", err)
 			}
 
