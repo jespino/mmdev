@@ -23,12 +23,11 @@ func StartCmd() *cobra.Command {
 
 			// Create text views for server and client output
 			serverView := tview.NewTextView()
-			serverView.
-				SetDynamicColors(true).
-				SetScrollable(true).
-				SetTitle("Server").
-				SetBorder(true).
-				SetTextMaxLines(2000).
+			serverView.SetDynamicColors(true)
+			serverView.SetScrollable(true)
+			serverView.SetTitle("Server")
+			serverView.SetBorder(true)
+			serverView.SetMaxLines(2000)
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(serverView)
 					return action, event
@@ -49,12 +48,11 @@ func StartCmd() *cobra.Command {
 			})
 
 			clientView := tview.NewTextView()
-			clientView.
-				SetDynamicColors(true).
-				SetScrollable(true).
-				SetTitle("Client").
-				SetBorder(true).
-				SetTextMaxLines(2000).
+			clientView.SetDynamicColors(true)
+			clientView.SetScrollable(true)
+			clientView.SetTitle("Client")
+			clientView.SetBorder(true)
+			clientView.SetMaxLines(2000)
 				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 					app.SetFocus(clientView)
 					return action, event
