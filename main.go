@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jespino/mmdev/cmd/client"
+	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
 	"github.com/spf13/cobra"
@@ -16,9 +17,12 @@ func main() {
 		Short: "MMDev - Development tool",
 	}
 
-	rootCmd.AddCommand(server.ServerCmd())
-	rootCmd.AddCommand(client.ClientCmd())
-	rootCmd.AddCommand(start.StartCmd())
+	rootCmd.AddCommand(
+		server.ServerCmd(),
+		client.ClientCmd(),
+		start.StartCmd(),
+		docker.DockerCmd(),
+	)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
