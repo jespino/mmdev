@@ -30,19 +30,12 @@ func StartCmd() *cobra.Command {
 				SetTitle("Client").
 				SetBorder(true)
 
-			// Track if views are at bottom for auto-scroll
-			serverAtBottom := true
-			clientAtBottom := true
-
+			// Set up input capture for views
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				_, _, _, height := serverView.GetInnerRect()
-				serverAtBottom = true
 				return event
 			})
 
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				_, _, _, height := clientView.GetInnerRect()
-				clientAtBottom = true
 				return event
 			})
 
@@ -77,7 +70,7 @@ func StartCmd() *cobra.Command {
 
 			// Start server process
 			serverCmd := exec.Command("make", "run-server")
-			serverCmd.Dir = "../server"
+			serverCmd.Dir = "server"
 			serverOut, err := serverCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create server stdout pipe: %w", err)
@@ -86,7 +79,7 @@ func StartCmd() *cobra.Command {
 
 			// Start client process
 			clientCmd := exec.Command("make", "run")
-			clientCmd.Dir = "../webapp"
+			clientCmd.Dir = "webapp"
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)
@@ -130,7 +123,7 @@ func StartCmd() *cobra.Command {
 
 			// Cleanup on exit
 			cleanup := exec.Command("make", "stop-server")
-			cleanup.Dir = "../server"
+			cleanup.Dir = "server"
 			if err := cleanup.Run(); err != nil {
 				fmt.Printf("Error during server cleanup: %v\n", err)
 			}
