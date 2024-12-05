@@ -81,6 +81,7 @@ func StartCmd() *cobra.Command {
 					app.SetRoot(flex, true)
 				})
 			currentDirection := tview.FlexRow
+			isHelpOpen := false
 			flex.SetDirection(currentDirection).
 				AddItem(serverView, 0, 1, false).
 				AddItem(clientView, 0, 1, false)
@@ -153,10 +154,17 @@ func StartCmd() *cobra.Command {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
-						go stopProcesses()
+						if isHelpOpen {
+							app.SetRoot(flex, true)
+							isHelpOpen = false
+							return nil
+						} else {
+							go stopProcesses()
+						}
 						return nil
 					case '?':
 						app.SetRoot(helpModal, false)
+						isHelpOpen = true
 						return nil
 					case 'h':
 						currentDirection = tview.FlexRow
@@ -175,12 +183,20 @@ func StartCmd() *cobra.Command {
 						}
 						return nil
 					}
-				} else if event.Key() == tcell.KeyEsc || event.Key() == tcell.KeyEnter {
-					if app.GetFocus() == helpModal {
+				} else if event.Key() == tcell.KeyEsc {
+					if isHelpOpen {
 						app.SetRoot(flex, true)
+						isHelpOpen = false
+						return nil
+					} else {
+						go stopProcesses()
+					}
+				} else if event.Key() == tcell.KeyEnter {
+					if isHelpOpen {
+						app.SetRoot(flex, true)
+						isHelpOpen = false
 						return nil
 					}
-					go stopProcesses()
 					return nil
 				}
 				return event
