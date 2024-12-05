@@ -65,6 +65,27 @@ func (m *Manager) Lint() error {
 	return cmd.Run()
 }
 
+// Fix runs ESLint fix on the webapp code
+func (m *Manager) Fix() error {
+	if err := m.validateBaseDir(); err != nil {
+		return err
+	}
+
+	// Install dependencies if needed
+	if err := m.ensureDependencies(); err != nil {
+		return fmt.Errorf("failed to ensure dependencies: %w", err)
+	}
+
+	// Run ESLint fix
+	cmd := exec.Command("npm", "run", "fix")
+	cmd.Dir = m.baseDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = os.Environ()
+
+	return cmd.Run()
+}
+
 func (m *Manager) validateBaseDir() error {
 	packageJSON := filepath.Join(m.baseDir, "package.json")
 	if _, err := os.Stat(packageJSON); os.IsNotExist(err) {

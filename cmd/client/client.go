@@ -17,7 +17,29 @@ func ClientCmd() *cobra.Command {
 	cmd.AddCommand(
 		StartCmd(),
 		LintCmd(),
+		FixCmd(),
 	)
+	return cmd
+}
+
+func FixCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fix",
+		Short: "Run auto-fix on the client code",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			webappDir := "./webapp"
+			if _, err := os.Stat(webappDir); os.IsNotExist(err) {
+				return fmt.Errorf("webapp directory not found at %s", webappDir)
+			}
+
+			manager := webapp.NewManager(webappDir)
+			if err := manager.Fix(); err != nil {
+				fmt.Printf("Fix found issues: %v\n", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 	return cmd
 }
 
