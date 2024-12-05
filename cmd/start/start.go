@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"time"
 	"os/exec"
 	"strings"
-	"syscall"
+	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -20,7 +20,7 @@ func StartCmd() *cobra.Command {
 		Short: "Start both client and server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app := tview.NewApplication()
-			
+
 			// Create text views for server and client output
 			serverView := tview.NewTextView()
 			serverView.
@@ -38,7 +38,6 @@ func StartCmd() *cobra.Command {
 				SetBorder(true)
 			clientView.SetWrap(true)
 
-
 			// Create flex layout
 			flex := tview.NewFlex()
 			flex.SetDirection(tview.FlexRow).
@@ -51,24 +50,38 @@ func StartCmd() *cobra.Command {
 			stopProcesses := func() {
 				fmt.Fprintf(serverView, "\n[yellow]Initiating shutdown process...[white]\n")
 				fmt.Fprintf(clientView, "\n[yellow]Initiating shutdown process...[white]\n")
-				
-				// Send SIGTERM to client process
-				if clientCmd != nil && clientCmd.Process != nil {
-					fmt.Fprintf(clientView, "[yellow]Sending SIGTERM to client process...[white]\n")
-					if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
-						fmt.Fprintf(clientView, "[red]Error sending SIGTERM to client process: %v[white]\n", err)
-						clientCmd.Process.Kill()
+
+				wg := sync.WaitGroup{}
+
+				wg.Add(2)
+
+				go func() {
+					defer wg.Done()
+					// Send SIGTERM to client process
+					if clientCmd != nil && clientCmd.Process != nil {
+						fmt.Fprintf(clientView, "[yellow]Sending SIGTERM to client process...[white]\n")
+						if err := clientCmd.Cancel(); err != nil {
+							fmt.Fprintf(clientView, "[red]Error sending SIGTERM to client process: %v[white]\n", err)
+							clientCmd.Process.Kill()
+						}
 					}
-				}
-				
-				// Send SIGTERM to server process
-				if serverCmd != nil && serverCmd.Process != nil {
-					fmt.Fprintf(serverView, "[yellow]Sending SIGTERM to server process...[white]\n")
-					if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
-						fmt.Fprintf(serverView, "[red]Error sending SIGTERM to server process: %v[white]\n", err)
-						serverCmd.Process.Kill()
+					clientCmd.Process.Wait()
+				}()
+
+				go func() {
+					defer wg.Done()
+					// Send SIGTERM to server process
+					if serverCmd != nil && serverCmd.Process != nil {
+						fmt.Fprintf(serverView, "[yellow]Sending SIGTERM to server process...[white]\n")
+						if err := serverCmd.Cancel(); err != nil {
+							fmt.Fprintf(serverView, "[red]Error sending SIGTERM to server process: %v[white]\n", err)
+							serverCmd.Cancel()
+						}
 					}
-				}
+					serverCmd.Process.Wait()
+				}()
+
+				wg.Wait()
 
 				// Wait for processes to start shutting down
 				time.Sleep(5 * time.Second)
@@ -80,28 +93,21 @@ func StartCmd() *cobra.Command {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
-						stopProcesses()
+						go stopProcesses()
 						return nil
 					case 'h':
 						flex.SetDirection(tview.FlexRow)
-						app.Draw()
 						return nil
 					case 'v':
 						flex.SetDirection(tview.FlexColumn)
-						app.Draw()
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc {
-					stopProcesses()
+					go stopProcesses()
 					return nil
 				}
 				return event
 			})
-
-
-			// Create channels to track process completion
-			serverDone := make(chan error, 1)
-			clientDone := make(chan error, 1)
 
 			// Start server process using mmdev command
 			serverCmd = exec.Command("mmdev", "server", "start", "--watch")
@@ -128,14 +134,6 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to start client: %w", err)
 			}
 
-			// Monitor process completion
-			go func() {
-				serverDone <- serverCmd.Wait()
-			}()
-			go func() {
-				clientDone <- clientCmd.Wait()
-			}()
-
 			// Function to handle output with auto-scroll using ANSIWriter
 			handleOutput := func(view *tview.TextView, reader io.Reader) {
 				writer := tview.ANSIWriter(view)
@@ -147,9 +145,9 @@ func StartCmd() *cobra.Command {
 						row, _ := view.GetScrollOffset()
 						content := view.GetText(false)
 						lines := len(strings.Split(content, "\n"))
-						
+
 						fmt.Fprintln(writer, text)
-						
+
 						// Auto-scroll only if we're at the bottom
 						if lines-row <= height {
 							view.ScrollToEnd()
@@ -161,7 +159,7 @@ func StartCmd() *cobra.Command {
 			// Handle server output
 			go handleOutput(serverView, serverOut)
 
-			// Handle client output 
+			// Handle client output
 			go handleOutput(clientView, clientOut)
 
 			// Run the application
@@ -169,33 +167,14 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("application error: %w", err)
 			}
 
-			// Wait for both processes to complete
-			select {
-			case err := <-serverDone:
-				if err != nil {
-					fmt.Fprintf(serverView, "[red]Server process ended with error: %v[white]\n", err)
-				} else {
-					fmt.Fprintf(serverView, "[green]Server process completed successfully[white]\n")
-				}
-				fmt.Fprintf(clientView, "[yellow]Server stopped, shutting down client...[white]\n")
-				clientCmd.Process.Signal(syscall.SIGTERM)
-				<-clientDone
-			case err := <-clientDone:
-				if err != nil {
-					fmt.Fprintf(clientView, "[red]Client process ended with error: %v[white]\n", err)
-				} else {
-					fmt.Fprintf(clientView, "[green]Client process completed successfully[white]\n")
-				}
-				fmt.Fprintf(serverView, "[yellow]Client stopped, shutting down server...[white]\n")
-				serverCmd.Process.Signal(syscall.SIGTERM)
-				<-serverDone
-			}
+			serverCmd.Wait()
+			clientCmd.Wait()
+
 			fmt.Fprintf(serverView, "[green]All processes stopped successfully[white]\n")
 			fmt.Fprintf(clientView, "[green]All processes stopped successfully[white]\n")
 			return nil
 		},
 	}
-
 
 	return cmd
 }
