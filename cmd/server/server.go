@@ -76,7 +76,7 @@ func runServer() error {
 	cmd, err := manager.Start()
 	if err != nil {
 		done <- err
-		return
+		return err
 	}
 	go func() {
 		done <- cmd.Wait()
@@ -194,17 +194,11 @@ func runWithWatcher() error {
 
 func startServer() *exec.Cmd {
 	manager := server.NewManager(".")
-	cmd := exec.Command("go", "run", "main.go")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), "RUN_SERVER_IN_BACKGROUND=false")
-
-	go func() {
-		if err := manager.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
-		}
-	}()
-
+	cmd, err := manager.Start()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+		return nil
+	}
 	return cmd
 }
 
