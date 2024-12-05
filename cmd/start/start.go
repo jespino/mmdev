@@ -178,9 +178,9 @@ func StartCmd() *cobra.Command {
 				} else if event.Key() == tcell.KeyEsc || event.Key() == tcell.KeyEnter {
 					if app.GetFocus() == helpModal {
 						app.SetRoot(flex, true)
-					} else {
-						go stopProcesses()
+						return nil
 					}
+					go stopProcesses()
 					return nil
 				}
 				return event
