@@ -137,17 +137,19 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to start client: %w", err)
 			}
 
-			// Function to handle output with auto-scroll
-			handleOutput := func(view *tview.TextView, output *bufio.Scanner) {
-				for output.Scan() {
-					text := output.Text()
+			// Function to handle output with auto-scroll using ANSIWriter
+			handleOutput := func(view *tview.TextView, reader io.Reader) {
+				writer := tview.ANSIWriter(view)
+				scanner := bufio.NewScanner(reader)
+				for scanner.Scan() {
+					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
 						_, _, _, height := view.GetInnerRect()
 						row, _ := view.GetScrollOffset()
 						content := view.GetText(false)
 						lines := len(strings.Split(content, "\n"))
 						
-						fmt.Fprint(view, text+"\n")
+						fmt.Fprintln(writer, text)
 						
 						// Auto-scroll only if we're at the bottom
 						if lines-row <= height {
@@ -158,10 +160,10 @@ func StartCmd() *cobra.Command {
 			}
 
 			// Handle server output
-			go handleOutput(serverView, bufio.NewScanner(serverOut))
+			go handleOutput(serverView, serverOut)
 
-			// Handle client output
-			go handleOutput(clientView, bufio.NewScanner(clientOut))
+			// Handle client output 
+			go handleOutput(clientView, clientOut)
 
 			// Run the application
 			if err := app.SetRoot(flex, true).Run(); err != nil {
