@@ -119,7 +119,7 @@ func StartCmd() *cobra.Command {
 			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
 				x, y := event.Position()
 				_, _, width, _ := flex.GetRect()
-				if flex.GetOrientation() == tview.FlexRow {
+				if flex.GetDirection() == tview.FlexRow {
 					_, _, _, serverHeight := serverView.GetRect()
 					if y < serverHeight {
 						app.SetFocus(serverView)
