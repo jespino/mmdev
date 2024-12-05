@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -111,8 +110,6 @@ func StartCmd() *cobra.Command {
 
 				wg.Wait()
 
-				// Wait for processes to start shutting down
-				time.Sleep(5 * time.Second)
 				app.Stop()
 			}
 
@@ -142,7 +139,7 @@ func StartCmd() *cobra.Command {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
 					case 'q':
-						stopProcesses()
+						go stopProcesses()
 						return nil
 					case 'h':
 						currentDirection = tview.FlexRow
@@ -162,7 +159,7 @@ func StartCmd() *cobra.Command {
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc {
-					stopProcesses()
+					go stopProcesses()
 					return nil
 				}
 				return event
