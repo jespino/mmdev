@@ -36,6 +36,13 @@ var (
 		Foreground(lipgloss.Color("196"))
 )
 
+var availableCommands = []string{
+	"clear",
+	"help",
+	"restart",
+	"status",
+}
+
 type model struct {
 	serverView    viewport.Model
 	clientView    viewport.Model
@@ -52,6 +59,7 @@ type model struct {
 	cmdHistory    []string
 	cmdHistoryPos int
 	statusMsg     string
+	suggestions   []string
 }
 
 func initialModel() model {
@@ -201,9 +209,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			return m, nil
-		case "tab", "esc":
+		case "tab":
+			if m.cmdInput.Focused() {
+				currentInput := m.cmdInput.Value()
+				if currentInput == "" {
+					return m, nil
+				}
+				
+				// If we have suggestions, cycle through them
+				if len(m.suggestions) > 0 {
+					currentSuggestion := m.suggestions[0]
+					m.suggestions = append(m.suggestions[1:], currentSuggestion)
+					m.cmdInput.SetValue(currentSuggestion)
+					return m, nil
+				}
+				
+				// Generate new suggestions
+				m.suggestions = []string{}
+				for _, cmd := range availableCommands {
+					if strings.HasPrefix(cmd, currentInput) {
+						m.suggestions = append(m.suggestions, cmd)
+					}
+				}
+				
+				if len(m.suggestions) > 0 {
+					m.cmdInput.SetValue(m.suggestions[0])
+				}
+				return m, nil
+			}
+			m.cmdInput.Focus()
+			return m, nil
+			
+		case "esc":
 			if m.cmdInput.Focused() {
 				m.cmdInput.Blur()
+				m.suggestions = nil
 			} else {
 				m.cmdInput.Focus()
 			}
@@ -336,7 +376,8 @@ func (m model) shutdown() tea.Msg {
 	return tea.Quit()
 }
 
-func (m model) executeCommand(cmd string) tea.Cmd {
+func (m *model) executeCommand(cmd string) tea.Cmd {
+	m.suggestions = nil
 	return func() tea.Msg {
 		// Split the command into parts
 		parts := strings.Fields(cmd)
