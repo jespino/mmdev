@@ -68,8 +68,17 @@ func (m *Manager) Start() error {
 		args = append(args, "--file", "docker-compose.override.yaml")
 	}
 
-	// Add services and up command
-	args = append(args, "up", "-d")
+	// Clean up any existing networks first
+	cleanCmd := exec.Command(m.composeCmd[0], append(m.composeCmd[1:], "--file", m.composeFile, "down", "--remove-orphans")...)
+	cleanCmd.Dir = m.baseDir
+	cleanCmd.Stdout = os.Stdout
+	cleanCmd.Stderr = os.Stderr
+	if err := cleanCmd.Run(); err != nil {
+		fmt.Printf("Warning: Network cleanup returned: %v\n", err)
+	}
+
+	// Add services and up command with unique network name
+	args = append(args, "up", "-d", "--force-recreate")
 	args = append(args, servicesList...)
 
 	cmd := exec.Command(m.composeCmd[0], args...)
