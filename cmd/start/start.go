@@ -132,7 +132,9 @@ func (m *model) handleOutput(reader io.Reader, buffer *strings.Builder, source s
 	for scanner.Scan() {
 		text := scanner.Text() + "\n"
 		buffer.WriteString(text)
-		program.Send(outputMsg{text: text, src: source})
+		if program != nil {
+			program.Send(outputMsg{text: buffer.String(), src: source})
+		}
 	}
 }
 
@@ -217,11 +219,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case outputMsg:
-		if msg.src == "server" {
-			m.serverView.SetContent(m.serverOutput.String())
+		if msg.src == "server" || msg.src == "both" {
+			m.serverView.SetContent(msg.text)
 			m.serverView.GotoBottom()
-		} else {
-			m.clientView.SetContent(m.clientOutput.String())
+		}
+		if msg.src == "client" || msg.src == "both" {
+			m.clientView.SetContent(msg.text)
 			m.clientView.GotoBottom()
 		}
 		return m, nil
