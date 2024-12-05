@@ -2,9 +2,11 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -132,13 +134,54 @@ func (m *Manager) Start() error {
 			return fmt.Errorf("no configuration found for service %s", service)
 		}
 
-		// Pull image
+		// Pull image with progress bar
 		reader, err := m.client.ImagePull(m.ctx, config.Image, types.ImagePullOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to pull image %s: %w", config.Image, err)
 		}
-		io.Copy(os.Stdout, reader)
-		reader.Close()
+		defer reader.Close()
+
+		decoder := json.NewDecoder(reader)
+		fmt.Printf("Pulling image %s\n", config.Image)
+
+		layerStatus := make(map[string]string)
+		for decoder.More() {
+			var pullStatus struct {
+				Status         string `json:"status"`
+				ID            string `json:"id"`
+				Progress      string `json:"progress"`
+				ProgressDetail struct {
+					Current int64 `json:"current"`
+					Total   int64 `json:"total"`
+				} `json:"progressDetail"`
+			}
+
+			if err := decoder.Decode(&pullStatus); err != nil {
+				return fmt.Errorf("failed to decode pull status: %w", err)
+			}
+
+			if pullStatus.ID != "" {
+				layerStatus[pullStatus.ID] = pullStatus.Status
+
+				// Clear previous lines
+				fmt.Printf("\033[%dA\033[2K", len(layerStatus))
+				for range layerStatus {
+					fmt.Print("\033[2K\033[A")
+				}
+
+				// Print current status
+				for id, status := range layerStatus {
+					progress := ""
+					if strings.Contains(status, "Download") && pullStatus.ID == id {
+						progress = pullStatus.Progress
+					}
+					fmt.Printf("%s: %s %s\n", id, status, progress)
+				}
+			} else {
+				fmt.Printf("%s\n", pullStatus.Status)
+			}
+		}
+		fmt.Println()
 
 		// Create port bindings
 		portBindings := nat.PortMap{}
