@@ -18,14 +18,14 @@ func StartCmd() *cobra.Command {
 			app := tview.NewApplication()
 			
 			// Create text views for server and client output
-			serverView := tview.NewTextView().
-				SetDynamicColors(true).
+			serverView := tview.NewTextView()
+			serverView.SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Server").
 				SetBorder(true)
 
-			clientView := tview.NewTextView().
-				SetDynamicColors(true).
+			clientView := tview.NewTextView()
+			clientView.SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
 				SetBorder(true)
@@ -35,16 +35,14 @@ func StartCmd() *cobra.Command {
 			clientAtBottom := true
 
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				row, _ := serverView.GetScrollOffset()
 				_, _, _, height := serverView.GetInnerRect()
-				serverAtBottom = (row >= height)
+				serverAtBottom = true
 				return event
 			})
 
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				row, _ := clientView.GetScrollOffset()
 				_, _, _, height := clientView.GetInnerRect()
-				clientAtBottom = (row >= height)
+				clientAtBottom = true
 				return event
 			})
 
@@ -109,9 +107,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintf(serverView, "%s\n", text)
-						if serverAtBottom {
-							serverView.ScrollToEnd()
+						fmt.Fprint(serverView, text + "\n")
 						}
 					})
 				}
@@ -123,9 +119,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintf(clientView, "%s\n", text)
-						if clientAtBottom {
-							clientView.ScrollToEnd()
+						fmt.Fprint(clientView, text + "\n")
 						}
 					})
 				}
