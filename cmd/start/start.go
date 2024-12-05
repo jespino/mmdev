@@ -116,15 +116,15 @@ func StartCmd() *cobra.Command {
 
 			// Setup global key bindings at application level
 			app.EnableMouse(true)
-			app.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-				x, y := event.Position()
+			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
+				_, y := event.Position()
 				_, _, _, serverHeight := serverView.GetRect()
 				if y < serverHeight {
 					app.SetFocus(serverView)
 				} else {
 					app.SetFocus(clientView)
 				}
-				return action, event
+				return event, action
 			})
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyRune {
