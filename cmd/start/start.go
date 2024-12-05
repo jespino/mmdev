@@ -287,9 +287,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
-			m.cmdInput.Focus()
-			return m, nil
-			
 		case "pgup":
 			if !m.cmdInput.Focused() {
 				if m.selectedPane == "server" {
