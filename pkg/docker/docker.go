@@ -150,8 +150,8 @@ func (m *Manager) Start() error {
 			for decoder.More() {
 				var pullStatus struct {
 					Status         string `json:"status"`
-					ID            string `json:"id"`
-					Progress      string `json:"progress"`
+					ID             string `json:"id"`
+					Progress       string `json:"progress"`
 					ProgressDetail struct {
 						Current int64 `json:"current"`
 						Total   int64 `json:"total"`
@@ -162,40 +162,41 @@ func (m *Manager) Start() error {
 					return fmt.Errorf("failed to decode pull status: %w", err)
 				}
 
-			if pullStatus.ID != "" {
-				layerStatus[pullStatus.ID] = pullStatus.Status
+				if pullStatus.ID != "" {
+					layerStatus[pullStatus.ID] = pullStatus.Status
 
-				// Move cursor to bottom of terminal
-				fmt.Print("\033[9999B")
-				
-				// Clear lines and move up
-				for range layerStatus {
-					fmt.Print("\033[2K\033[A")
-				}
+					// Move cursor to bottom of terminal
+					fmt.Print("\033[9999B")
 
-				// Print current status in a stable order
-				var layerIDs []string
-				for id := range layerStatus {
-					layerIDs = append(layerIDs, id)
-				}
-				sort.Strings(layerIDs)
-				
-				for _, id := range layerIDs {
-					progress := ""
-					if strings.Contains(layerStatus[id], "Download") {
-						if pullStatus.ID == id {
-							progress = pullStatus.Progress
-						} else if strings.Contains(layerStatus[id], "complete") {
-							progress = "[=========================>] 100%"
-						}
+					// Clear lines and move up
+					for range layerStatus {
+						fmt.Print("\033[2K\033[A")
 					}
-					fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
+
+					// Print current status in a stable order
+					var layerIDs []string
+					for id := range layerStatus {
+						layerIDs = append(layerIDs, id)
+					}
+					sort.Strings(layerIDs)
+
+					for _, id := range layerIDs {
+						progress := ""
+						if strings.Contains(layerStatus[id], "Download") {
+							if pullStatus.ID == id {
+								progress = pullStatus.Progress
+							} else if strings.Contains(layerStatus[id], "complete") {
+								progress = "[=========================>] 100%"
+							}
+						}
+						fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
+					}
+				} else {
+					// Move cursor to bottom and print status
+					fmt.Print("\033[9999B")
+					fmt.Printf("%s\n", pullStatus.Status)
+					fmt.Print("\033[A")
 				}
-			} else {
-				// Move cursor to bottom and print status
-				fmt.Print("\033[9999B")
-				fmt.Printf("%s\n", pullStatus.Status)
-				fmt.Print("\033[A")
 			}
 		}
 		fmt.Println()
@@ -221,7 +222,7 @@ func (m *Manager) Start() error {
 		}
 
 		containerName := fmt.Sprintf("mmdev-%s", service)
-		
+
 		// Check if container already exists
 		containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{All: true})
 		if err != nil {
