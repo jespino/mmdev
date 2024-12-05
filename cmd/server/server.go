@@ -3,18 +3,18 @@ package server
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"os/exec"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/cobra"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/pkg/server"
+	"github.com/spf13/cobra"
 )
 
 var watch bool
@@ -58,21 +58,6 @@ func LintCmd() *cobra.Command {
 	return cmd
 }
 
-func cleanup() error {
-	// Stop server
-	manager := server.NewManager(".")
-	if err := manager.Stop(); err != nil {
-		return fmt.Errorf("failed to cleanup server: %w", err)
-	}
-
-	// Stop docker services
-	if err := docker.StopDockerServices(); err != nil {
-		return fmt.Errorf("failed to stop docker services: %w", err)
-	}
-
-	return nil
-}
-
 func runServer() error {
 	// Start docker services
 	if err := docker.StartDockerServices(); err != nil {
@@ -101,8 +86,8 @@ func runServer() error {
 		return err
 	case <-sigChan:
 		fmt.Println("\nReceived interrupt signal. Shutting down...")
-		if err := cleanup(); err != nil {
-			fmt.Printf("Warning: cleanup failed: %v\n", err)
+		if err := docker.StopDockerServices(); err != nil {
+			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 		}
 		return nil
 	}
@@ -132,7 +117,7 @@ func runWithWatcher() error {
 	var cmd *exec.Cmd
 	var mu sync.Mutex
 	restart := make(chan struct{}, 1)
-	
+
 	// Start the server initially
 	cmd = startServer()
 
@@ -199,7 +184,7 @@ func runWithWatcher() error {
 func startServer() *exec.Cmd {
 	env := os.Environ()
 	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
-	
+
 	cmd := exec.Command("make", "run-server")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
