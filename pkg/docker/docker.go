@@ -133,17 +133,20 @@ func (m *Manager) Start() error {
 			return fmt.Errorf("no configuration found for service %s", service)
 		}
 
-		// Pull image with progress bar
-		reader, err := m.client.ImagePull(m.ctx, config.Image, types.ImagePullOptions{})
+		// Check if image exists locally
+		_, _, err = m.client.ImageInspectWithRaw(m.ctx, config.Image)
 		if err != nil {
-			return fmt.Errorf("failed to pull image %s: %w", config.Image, err)
-		}
-		defer reader.Close()
+			// Image doesn't exist, pull it
+			reader, err := m.client.ImagePull(m.ctx, config.Image, types.ImagePullOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to pull image %s: %w", config.Image, err)
+			}
+			defer reader.Close()
 
-		decoder := json.NewDecoder(reader)
-		fmt.Printf("Pulling image %s\n", config.Image)
+			decoder := json.NewDecoder(reader)
+			fmt.Printf("Pulling image %s\n", config.Image)
 
-		layerStatus := make(map[string]string)
+			layerStatus := make(map[string]string)
 		for decoder.More() {
 			var pullStatus struct {
 				Status         string `json:"status"`
@@ -217,37 +220,68 @@ func (m *Manager) Start() error {
 			binds = append(binds, fmt.Sprintf("%s:%s", hostPath, containerPath))
 		}
 
-		// Create container
-		containerConfig := &containerTypes.Config{
-			Image:        config.Image,
-			Env:          config.Env,
-			ExposedPorts: exposedPorts,
-		}
-
-		hostConfig := &containerTypes.HostConfig{
-			PortBindings: portBindings,
-			Binds:        binds,
-		}
-
-		networkingConfig := &network.NetworkingConfig{
-			EndpointsConfig: map[string]*network.EndpointSettings{
-				networkName: {
-					NetworkID: m.networkID,
-				},
-			},
-		}
-
 		containerName := fmt.Sprintf("mmdev-%s", service)
-		resp, err := m.client.ContainerCreate(m.ctx, containerConfig, hostConfig, networkingConfig, nil, containerName)
+		
+		// Check if container already exists
+		containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{All: true})
 		if err != nil {
-			return fmt.Errorf("failed to create container %s: %w", containerName, err)
+			return fmt.Errorf("failed to list containers: %w", err)
 		}
 
-		if err := m.client.ContainerStart(m.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			return fmt.Errorf("failed to start container %s: %w", containerName, err)
+		var existingContainer *types.Container
+		for _, container := range containers {
+			for _, name := range container.Names {
+				if name == "/"+containerName {
+					existingContainer = &container
+					break
+				}
+			}
 		}
 
-		fmt.Printf("Started %s container\n", service)
+		var containerID string
+		if existingContainer != nil {
+			containerID = existingContainer.ID
+			// If container exists but is not running, start it
+			if existingContainer.State != "running" {
+				if err := m.client.ContainerStart(m.ctx, containerID, types.ContainerStartOptions{}); err != nil {
+					return fmt.Errorf("failed to start existing container %s: %w", containerName, err)
+				}
+				fmt.Printf("Started existing %s container\n", service)
+			} else {
+				fmt.Printf("Container %s is already running\n", service)
+			}
+		} else {
+			// Create new container
+			containerConfig := &containerTypes.Config{
+				Image:        config.Image,
+				Env:          config.Env,
+				ExposedPorts: exposedPorts,
+			}
+
+			hostConfig := &containerTypes.HostConfig{
+				PortBindings: portBindings,
+				Binds:        binds,
+			}
+
+			networkingConfig := &network.NetworkingConfig{
+				EndpointsConfig: map[string]*network.EndpointSettings{
+					networkName: {
+						NetworkID: m.networkID,
+					},
+				},
+			}
+
+			resp, err := m.client.ContainerCreate(m.ctx, containerConfig, hostConfig, networkingConfig, nil, containerName)
+			if err != nil {
+				return fmt.Errorf("failed to create container %s: %w", containerName, err)
+			}
+			containerID = resp.ID
+
+			if err := m.client.ContainerStart(m.ctx, containerID, types.ContainerStartOptions{}); err != nil {
+				return fmt.Errorf("failed to start container %s: %w", containerName, err)
+			}
+			fmt.Printf("Created and started new %s container\n", service)
+		}
 	}
 
 	// Wait for containers to be ready
