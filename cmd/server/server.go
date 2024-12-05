@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 )
 
@@ -49,10 +54,132 @@ func LintCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch for changes and restart server")
+	return cmd
+}
+
+func runServer() error {
+	env := os.Environ()
+	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
+	
+	makeCmd := exec.Command("make", "run-server") 
+	makeCmd.Stdout = os.Stdout
+	makeCmd.Stderr = os.Stderr
+	makeCmd.Env = env
+
+	if err := makeCmd.Run(); err != nil {
+		return fmt.Errorf("failed to run server: %w", err)
+	}
+
+	return nil
+}
+
+func runWithWatcher() error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("failed to create watcher: %w", err)
+	}
+	defer watcher.Close()
+
+	// Add all directories with .go files
+	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() && !strings.Contains(path, "vendor") && !strings.Contains(path, "node_modules") {
+			return watcher.Add(path)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add directories to watcher: %w", err)
+	}
+
+	var cmd *exec.Cmd
+	var mu sync.Mutex
+	restart := make(chan struct{}, 1)
+	
+	// Start the server initially
+	cmd = startServer()
+
+	// Debounce function to prevent multiple restarts
+	lastRestart := time.Now()
+	shouldRestart := func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		if time.Since(lastRestart) < time.Second {
+			return false
+		}
+		lastRestart = time.Now()
+		return true
+	}
+
+	// Watch for changes
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+
+				// Only watch .go files that aren't test files
+				if !strings.HasSuffix(event.Name, ".go") || strings.HasSuffix(event.Name, "_test.go") {
+					continue
+				}
+
+				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove) != 0 && shouldRestart() {
+					select {
+					case restart <- struct{}{}:
+					default:
+					}
+				}
+
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				fmt.Fprintf(os.Stderr, "Watcher error: %v\n", err)
+			}
+		}
+	}()
+
+	// Handle restarts
+	for range restart {
+		fmt.Println("\nRestarting server...")
+		if cmd != nil && cmd.Process != nil {
+			if err := cmd.Process.Kill(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error killing process: %v\n", err)
+			}
+			cmd.Wait()
+		}
+		cmd = startServer()
+	}
+
+	return nil
+}
+
+func startServer() *exec.Cmd {
+	env := os.Environ()
+	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
+	
+	cmd := exec.Command("make", "run-server")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = env
+
+	if err := cmd.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+		return nil
+	}
+
+	return cmd
 }
 
 func StartCmd() *cobra.Command {
-	return &cobra.Command{
+	var watch bool
+	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the server",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -66,20 +193,11 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to change to server directory: %w", err)
 			}
 
-			// Run make run-server with RUN_SERVER_IN_BACKGROUND=false
-			env := os.Environ()
-			env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
-			
-			makeCmd := exec.Command("make", "run-server") 
-			makeCmd.Stdout = os.Stdout
-			makeCmd.Stderr = os.Stderr
-			makeCmd.Env = env
-
-			if err := makeCmd.Run(); err != nil {
-				return fmt.Errorf("failed to run server: %w", err)
+			if watch {
+				return runWithWatcher()
 			}
 
-			return nil
+			return runServer()
 		},
 	}
 }
