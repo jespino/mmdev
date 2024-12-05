@@ -191,15 +191,15 @@ func StartCmd() *cobra.Command {
 						currentDirection = tview.FlexColumn
 						mainFlex.SetDirection(currentDirection)
 						return nil
-					case '\t':
-						// Cycle focus between views
-						if app.GetFocus() == serverView {
-							app.SetFocus(clientView)
-						} else {
-							app.SetFocus(serverView)
-						}
-						return nil
 					}
+				} else if event.Key() == tcell.KeyTab {
+					// Cycle focus between views
+					if app.GetFocus() == serverView {
+						app.SetFocus(clientView)
+					} else {
+						app.SetFocus(serverView)
+					}
+					return nil
 				} else if event.Key() == tcell.KeyEsc {
 					if isHelpOpen {
 						app.SetRoot(flex, true)
