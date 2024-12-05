@@ -48,21 +48,30 @@ func StartCmd() *cobra.Command {
 
 			// Function to gracefully stop all processes
 			stopProcesses := func() {
-				app.Stop()
+				fmt.Fprintf(serverView, "\n[yellow]Initiating shutdown process...[white]\n")
+				fmt.Fprintf(clientView, "\n[yellow]Initiating shutdown process...[white]\n")
 				
 				// Send SIGTERM to client process
 				if clientCmd != nil && clientCmd.Process != nil {
+					fmt.Fprintf(clientView, "[yellow]Sending SIGTERM to client process...[white]\n")
 					if err := clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
-						fmt.Printf("Error sending SIGTERM to client process: %v\n", err)
+						fmt.Fprintf(clientView, "[red]Error sending SIGTERM to client process: %v[white]\n", err)
+						clientCmd.Process.Kill()
 					}
 				}
 				
 				// Send SIGTERM to server process
 				if serverCmd != nil && serverCmd.Process != nil {
+					fmt.Fprintf(serverView, "[yellow]Sending SIGTERM to server process...[white]\n")
 					if err := serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
-						fmt.Printf("Error sending SIGTERM to server process: %v\n", err)
+						fmt.Fprintf(serverView, "[red]Error sending SIGTERM to server process: %v[white]\n", err)
+						serverCmd.Process.Kill()
 					}
 				}
+
+				// Wait a moment for processes to start shutting down
+				time.Sleep(500 * time.Millisecond)
+				app.Stop()
 			}
 
 			// Setup global key bindings at application level
@@ -163,17 +172,25 @@ func StartCmd() *cobra.Command {
 			select {
 			case err := <-serverDone:
 				if err != nil {
-					fmt.Printf("Server process ended with error: %v\n", err)
+					fmt.Fprintf(serverView, "[red]Server process ended with error: %v[white]\n", err)
+				} else {
+					fmt.Fprintf(serverView, "[green]Server process completed successfully[white]\n")
 				}
+				fmt.Fprintf(clientView, "[yellow]Server stopped, shutting down client...[white]\n")
 				clientCmd.Process.Signal(syscall.SIGTERM)
 				<-clientDone
 			case err := <-clientDone:
 				if err != nil {
-					fmt.Printf("Client process ended with error: %v\n", err)
+					fmt.Fprintf(clientView, "[red]Client process ended with error: %v[white]\n", err)
+				} else {
+					fmt.Fprintf(clientView, "[green]Client process completed successfully[white]\n")
 				}
+				fmt.Fprintf(serverView, "[yellow]Client stopped, shutting down server...[white]\n")
 				serverCmd.Process.Signal(syscall.SIGTERM)
 				<-serverDone
 			}
+			fmt.Fprintf(serverView, "[green]All processes stopped successfully[white]\n")
+			fmt.Fprintf(clientView, "[green]All processes stopped successfully[white]\n")
 			return nil
 		},
 	}
