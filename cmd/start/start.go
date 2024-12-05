@@ -67,7 +67,7 @@ func StartCmd() *cobra.Command {
 
 			// Create command input field
 			cmdInput = tview.NewInputField().
-				SetLabel("> ").
+				SetLabel("Command: ").
 				SetFieldWidth(50).
 				SetDoneFunc(func(key tcell.Key) {
 					if key == tcell.KeyEnter {
@@ -208,6 +208,9 @@ func StartCmd() *cobra.Command {
 					case 'v':
 						currentDirection = tview.FlexColumn
 						mainFlex.SetDirection(currentDirection)
+						return nil
+					case ':':
+						app.SetFocus(cmdInput)
 						return nil
 					}
 				} else if event.Key() == tcell.KeyTab {
