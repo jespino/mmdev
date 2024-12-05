@@ -19,17 +19,26 @@ const (
 
 // Manager handles Docker operations
 type Manager struct {
-	baseDir     string
-	composeFile string
-	services    []Service
+	baseDir      string
+	composeFile  string
+	services     []Service
+	composeCmd   []string
 }
 
 // NewManager creates a new Docker manager
 func NewManager(baseDir string) *Manager {
+	// Check if docker-compose command exists
+	_, err := exec.LookPath("docker-compose")
+	composeCmd := []string{"docker", "compose"}
+	if err == nil {
+		composeCmd = []string{"docker-compose"}
+	}
+
 	return &Manager{
 		baseDir:     baseDir,
 		composeFile: "docker-compose.makefile.yml",
 		services:    make([]Service, 0),
+		composeCmd:  composeCmd,
 	}
 }
 
@@ -50,11 +59,8 @@ func (m *Manager) Start() error {
 		servicesList[i] = string(svc)
 	}
 
-	// Build docker-compose command
-	args := []string{
-		"compose",
-		"--file", m.composeFile,
-	}
+	// Build compose command
+	args := append(m.composeCmd[1:], "--file", m.composeFile)
 
 	// Add override file if it exists
 	overridePath := filepath.Join(m.baseDir, "docker-compose.override.yaml")
@@ -66,7 +72,7 @@ func (m *Manager) Start() error {
 	args = append(args, "up", "-d")
 	args = append(args, servicesList...)
 
-	cmd := exec.Command("docker", args...)
+	cmd := exec.Command(m.composeCmd[0], args...)
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -91,7 +97,8 @@ func (m *Manager) Stop() error {
 		return err
 	}
 
-	cmd := exec.Command("docker", "compose", "--file", m.composeFile, "stop")
+	args := append(m.composeCmd[1:], "--file", m.composeFile, "stop")
+	cmd := exec.Command(m.composeCmd[0], args...)
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -111,7 +118,8 @@ func (m *Manager) Clean() error {
 		return err
 	}
 
-	cmd := exec.Command("docker", "compose", "--file", m.composeFile, "down", "--volumes")
+	args := append(m.composeCmd[1:], "--file", m.composeFile, "down", "--volumes")
+	cmd := exec.Command(m.composeCmd[0], args...)
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -154,8 +162,9 @@ func (m *Manager) configureLDAP() error {
 		return fmt.Errorf("LDAP data file not found: %s", ldifFile)
 	}
 
-	cmd := exec.Command("docker", "compose", "exec", "-T", "openldap",
-		"ldapadd", "-x", "-D", "cn=admin,dc=mm,dc=test,dc=com", "-w", "mostest")
+	args := append(m.composeCmd[1:], "exec", "-T", "openldap")
+	cmd := exec.Command(m.composeCmd[0], append(args,
+		"ldapadd", "-x", "-D", "cn=admin,dc=mm,dc=test,dc=com", "-w", "mostest")...)
 	cmd.Dir = m.baseDir
 	cmd.Stdin, _ = os.Open(filepath.Join(m.baseDir, ldifFile))
 	cmd.Stdout = os.Stdout
