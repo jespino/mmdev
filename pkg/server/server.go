@@ -23,20 +23,20 @@ func NewManager(baseDir string) *Manager {
 // Start starts the Mattermost server and returns the command
 func (m *Manager) Start() (*exec.Cmd, error) {
 	if err := m.validateBaseDir(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Ensure webapp client dist exists
 	distDir := filepath.Join(m.baseDir, "..", "webapp", "channels", "dist")
 	if _, err := os.Stat(distDir); os.IsNotExist(err) {
-		return fmt.Errorf("webapp dist directory not found at %s - please build the webapp first", distDir)
+		return nil, fmt.Errorf("webapp dist directory not found at %s - please build the webapp first", distDir)
 	}
 
 	// Create symlink to client directory if it doesn't exist
 	clientLink := filepath.Join(m.baseDir, "client")
 	if _, err := os.Stat(clientLink); os.IsNotExist(err) {
 		if err := os.Symlink(distDir, clientLink); err != nil {
-			return fmt.Errorf("failed to create client symlink: %w", err)
+			return nil, fmt.Errorf("failed to create client symlink: %w", err)
 		}
 	}
 
@@ -46,7 +46,7 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 		filepath.Join(m.baseDir, "bin"),
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 
@@ -70,7 +70,7 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 	buildCmd.Stderr = os.Stderr
 
 	if err := buildCmd.Run(); err != nil {
-		return fmt.Errorf("failed to build server: %w", err)
+		return nil, fmt.Errorf("failed to build server: %w", err)
 	}
 
 	// Run the compiled binary

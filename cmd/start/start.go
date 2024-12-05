@@ -6,7 +6,6 @@ import (
 	"io"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
