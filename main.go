@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jespino/mmdev/cmd/server"
 	"github.com/spf13/cobra"
 )
 
@@ -13,13 +14,7 @@ func main() {
 		Short: "MMDev - Development tool",
 	}
 
-	var startServerCmd = &cobra.Command{
-		Use:   "start-server",
-		Short: "Start the server",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Starting server...")
-		},
-	}
+	rootCmd.AddCommand(server.StartServerCmd())
 
 	var startClientCmd = &cobra.Command{
 		Use:   "start-client",
@@ -29,7 +24,6 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(startServerCmd)
 	rootCmd.AddCommand(startClientCmd)
 
 	if err := rootCmd.Execute(); err != nil {
