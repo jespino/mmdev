@@ -60,13 +60,31 @@ func (m *Manager) GenerateAppLayers() error {
 
 // GenerateStoreLayers generates the store layer code
 func (m *Manager) GenerateStoreLayers() error {
-	cmd := exec.Command("go", "generate", "./channels/store")
+	// Install mockery
+	installCmd := exec.Command("go", "install", "github.com/vektra/mockery/v2/...@v2.42.2")
+	installCmd.Env = os.Environ()
+	if err := installCmd.Run(); err != nil {
+		return fmt.Errorf("failed to install mockery: %w", err)
+	}
+
+	// Generate store mocks
+	cmd := exec.Command("mockery", "--config", "channels/store/.mockery.yaml")
+	cmd.Dir = m.baseDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to generate store mocks: %w", err)
+	}
+
+	// Generate store layers
+	cmd = exec.Command("go", "generate", "./channels/store")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to generate store layers: %w", err)
 	}
+
 	return nil
 }
 
