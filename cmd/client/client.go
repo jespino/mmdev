@@ -60,7 +60,6 @@ func LintCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().Bool("watch", false, "Watch for changes and rebuild")
 	return cmd
 }
 
