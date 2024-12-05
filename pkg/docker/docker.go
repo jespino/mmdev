@@ -147,20 +147,20 @@ func (m *Manager) Start() error {
 			fmt.Printf("Pulling image %s\n", config.Image)
 
 			layerStatus := make(map[string]string)
-		for decoder.More() {
-			var pullStatus struct {
-				Status         string `json:"status"`
-				ID            string `json:"id"`
-				Progress      string `json:"progress"`
-				ProgressDetail struct {
-					Current int64 `json:"current"`
-					Total   int64 `json:"total"`
-				} `json:"progressDetail"`
-			}
+			for decoder.More() {
+				var pullStatus struct {
+					Status         string `json:"status"`
+					ID            string `json:"id"`
+					Progress      string `json:"progress"`
+					ProgressDetail struct {
+						Current int64 `json:"current"`
+						Total   int64 `json:"total"`
+					} `json:"progressDetail"`
+				}
 
-			if err := decoder.Decode(&pullStatus); err != nil {
-				return fmt.Errorf("failed to decode pull status: %w", err)
-			}
+				if err := decoder.Decode(&pullStatus); err != nil {
+					return fmt.Errorf("failed to decode pull status: %w", err)
+				}
 
 			if pullStatus.ID != "" {
 				layerStatus[pullStatus.ID] = pullStatus.Status
