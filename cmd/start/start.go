@@ -100,6 +100,7 @@ func StartCmd() *cobra.Command {
 					"v - Vertical split layout\n" +
 					"TAB - Switch focus between views\n" +
 					"PgUp/PgDn - Scroll current view\n" +
+					": - Focus command input\n" +
 					"? - Show/hide this help").
 				AddButtons([]string{"Close"}).
 				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
