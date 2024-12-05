@@ -49,6 +49,9 @@ type model struct {
 	serverRunning bool
 	clientRunning bool
 	lastCommand   string
+	cmdHistory    []string
+	cmdHistoryPos int
+	statusMsg     string
 }
 
 func initialModel() model {
@@ -69,6 +72,9 @@ func initialModel() model {
 		showHelp:      false,
 		serverRunning: false,
 		clientRunning: false,
+		cmdHistory:    make([]string, 0),
+		cmdHistoryPos: -1,
+		statusMsg:     "Ready to start processes",
 	}
 }
 
@@ -137,6 +143,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		switch msg.Type {
+		case tea.MouseWheelUp:
+			if msg.Y < m.serverView.Height {
+				m.serverView.LineUp(3)
+			} else {
+				m.clientView.LineUp(3)
+			}
+		case tea.MouseWheelDown:
+			if msg.Y < m.serverView.Height {
+				m.serverView.LineDown(3)
+			} else {
+				m.clientView.LineDown(3)
+			}
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -159,6 +180,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case ":":
 			m.cmdInput.Focus()
 			return m, textinput.Blink
+		case "up":
+			if m.cmdInput.Focused() && len(m.cmdHistory) > 0 {
+				if m.cmdHistoryPos < len(m.cmdHistory)-1 {
+					m.cmdHistoryPos++
+					m.cmdInput.SetValue(m.cmdHistory[len(m.cmdHistory)-1-m.cmdHistoryPos])
+				}
+			}
+			return m, nil
+		case "down":
+			if m.cmdInput.Focused() {
+				if m.cmdHistoryPos > 0 {
+					m.cmdHistoryPos--
+					m.cmdInput.SetValue(m.cmdHistory[len(m.cmdHistory)-1-m.cmdHistoryPos])
+				} else if m.cmdHistoryPos == 0 {
+					m.cmdHistoryPos--
+					m.cmdInput.SetValue("")
+				}
+			}
+			return m, nil
 		case "tab", "esc":
 			if m.cmdInput.Focused() {
 				m.cmdInput.Blur()
@@ -245,6 +285,10 @@ Press any key to close help
 		clientStatus = errorStyle.Render("○")
 	}
 
+	statusBar := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Render(fmt.Sprintf("%s | ? for help | : for command | q to quit", m.statusMsg))
+
 	return lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render("Server Output: ")+serverStatus+" "+serverIndicator,
 		m.serverView.View(),
@@ -252,6 +296,7 @@ Press any key to close help
 		m.clientView.View(),
 		infoStyle.Render("Command (Enter to execute):"),
 		m.cmdInput.View(),
+		statusBar,
 	)
 }
 
@@ -288,6 +333,8 @@ func (m model) executeCommand(cmd string) tea.Cmd {
 		}
 
 		m.lastCommand = cmd
+		m.cmdHistory = append(m.cmdHistory, cmd)
+		m.cmdHistoryPos = -1
 		switch parts[0] {
 		case "clear":
 			m.serverOutput.Reset()
