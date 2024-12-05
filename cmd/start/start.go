@@ -118,7 +118,7 @@ func StartCmd() *cobra.Command {
 			serverCmd.Stderr = serverCmd.Stdout
 
 			// Start client process using mmdev command
-			clientCmd = exec.Command("mmdev", "webapp", "start", "--watch")
+			clientCmd = exec.Command("mmdev", "client", "start", "--watch")
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)
