@@ -42,11 +42,6 @@ func LintCmd() *cobra.Command {
 				return fmt.Errorf("server directory not found at %s", serverDir)
 			}
 
-			// Change to server directory
-			if err := os.Chdir(serverDir); err != nil {
-				return fmt.Errorf("failed to change to server directory: %w", err)
-			}
-
 			manager := server.NewManager(serverDir)
 			if err := manager.Lint(); err != nil {
 				return fmt.Errorf("failed to run linting: %w", err)
