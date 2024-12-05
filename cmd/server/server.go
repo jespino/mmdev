@@ -54,10 +54,6 @@ func LintCmd() *cobra.Command {
 			return nil
 		},
 	}
-
-			return nil
-		},
-	}
 	return cmd
 }
 
