@@ -118,7 +118,7 @@ func StartCmd() *cobra.Command {
 			app.EnableMouse(true)
 			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
 				x, y := event.Position()
-				_, _, width, height := flex.GetRect()
+				_, _, width, _ := flex.GetRect()
 				if flex.GetOrientation() == tview.FlexRow {
 					_, _, _, serverHeight := serverView.GetRect()
 					if y < serverHeight {
@@ -204,7 +204,7 @@ func StartCmd() *cobra.Command {
 						fmt.Fprintln(writer, text)
 
 						// Auto-scroll only if we're at the bottom
-						if lines-row <= height {
+						if lines-row <= viewHeight {
 							view.ScrollToEnd()
 						}
 					})
