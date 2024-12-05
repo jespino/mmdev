@@ -55,8 +55,7 @@ func LintCmd() *cobra.Command {
 
 			manager := webapp.NewManager(webappDir)
 			if err := manager.Lint(); err != nil {
-				fmt.Printf("Linting found issues: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("linting found issues: %v", err)
 			}
 			return nil
 		},

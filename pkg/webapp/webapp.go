@@ -55,14 +55,17 @@ func (m *Manager) Lint() error {
 		return fmt.Errorf("failed to ensure dependencies: %w", err)
 	}
 
-	// Run ESLint
-	cmd := exec.Command("npm", "run", "check")
+	// Run ESLint once
+	cmd := exec.Command("npm", "run", "check", "--no-cache")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("eslint check failed: %w", err)
+	}
+	return nil
 }
 
 // Fix runs ESLint fix on the webapp code
