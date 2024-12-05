@@ -110,9 +110,9 @@ var serviceConfigs = map[Service]ServiceConfig{
 	Inbucket: {
 		Image: "inbucket/inbucket:3.0.3",
 		ExposedPorts: map[string]string{
-			"9000": "10000",
-			"2500": "2500",
-			"1100": "1100",
+			"10000": "9000", // Web UI
+			"2500": "2500",  // SMTP
+			"1100": "1100",  // POP3
 		},
 	},
 	Redis: {
