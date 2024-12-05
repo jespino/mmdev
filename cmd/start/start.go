@@ -35,16 +35,16 @@ func StartCmd() *cobra.Command {
 			clientAtBottom := true
 
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				row, _ := serverView.GetScrollOffset()
 				_, _, _, height := serverView.GetInnerRect()
-				_, y := serverView.GetScrollOffset()
-				serverAtBottom = (y <= height)
+				serverAtBottom = (row >= height)
 				return event
 			})
 
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				row, _ := clientView.GetScrollOffset()
 				_, _, _, height := clientView.GetInnerRect()
-				_, y := clientView.GetScrollOffset()
-				clientAtBottom = (y <= height)
+				clientAtBottom = (row >= height)
 				return event
 			})
 
@@ -79,7 +79,7 @@ func StartCmd() *cobra.Command {
 
 			// Start server process
 			serverCmd := exec.Command("make", "run-server")
-			serverCmd.Dir = "server"
+			serverCmd.Dir = "../server"
 			serverOut, err := serverCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create server stdout pipe: %w", err)
@@ -88,7 +88,7 @@ func StartCmd() *cobra.Command {
 
 			// Start client process
 			clientCmd := exec.Command("make", "run")
-			clientCmd.Dir = "webapp"
+			clientCmd.Dir = "../webapp"
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)
@@ -109,7 +109,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						serverView.Write([]byte(text + "\n"))
+						fmt.Fprintf(serverView, "%s\n", text)
 						if serverAtBottom {
 							serverView.ScrollToEnd()
 						}
@@ -123,7 +123,7 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						clientView.Write([]byte(text + "\n"))
+						fmt.Fprintf(clientView, "%s\n", text)
 						if clientAtBottom {
 							clientView.ScrollToEnd()
 						}
@@ -138,7 +138,7 @@ func StartCmd() *cobra.Command {
 
 			// Cleanup on exit
 			cleanup := exec.Command("make", "stop-server")
-			cleanup.Dir = "server"
+			cleanup.Dir = "../server"
 			if err := cleanup.Run(); err != nil {
 				fmt.Printf("Error during server cleanup: %v\n", err)
 			}
