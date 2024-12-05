@@ -119,7 +119,7 @@ func StartCmd() *cobra.Command {
 			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
 				x, y := event.Position()
 				_, _, width, height := flex.GetRect()
-				if flex.GetDirection() == tview.FlexRow {
+				if flex.GetOrientation() == tview.FlexRow {
 					_, _, _, serverHeight := serverView.GetRect()
 					if y < serverHeight {
 						app.SetFocus(serverView)
@@ -196,10 +196,10 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						_, _, _, height := view.GetInnerRect()
 						row, _ := view.GetScrollOffset()
 						content := view.GetText(false)
 						lines := len(strings.Split(content, "\n"))
+						_, _, _, viewHeight := view.GetInnerRect()
 
 						fmt.Fprintln(writer, text)
 
