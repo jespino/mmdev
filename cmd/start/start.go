@@ -25,14 +25,16 @@ func StartCmd() *cobra.Command {
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Server").
-				SetBorder(true)
+				SetBorder(true).
+				SetWrap(true)
 
 			clientView := tview.NewTextView()
 			clientView.
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
-				SetBorder(true)
+				SetBorder(true).
+				SetWrap(true)
 
 			// Set up input capture for views
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
