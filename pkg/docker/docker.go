@@ -71,9 +71,11 @@ func (m *Manager) Start() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	fmt.Printf("Starting Docker services: %v\n", servicesList)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to start docker services: %w", err)
 	}
+	fmt.Printf("Docker services started successfully\n")
 
 	// Handle post-start configuration
 	if err := m.postStartConfig(); err != nil {
@@ -94,9 +96,11 @@ func (m *Manager) Stop() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	fmt.Printf("Stopping Docker services...\n")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to stop docker services: %w", err)
 	}
+	fmt.Printf("Docker services stopped successfully\n")
 
 	return nil
 }
@@ -112,9 +116,11 @@ func (m *Manager) Clean() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	fmt.Printf("Cleaning up Docker services and volumes...\n")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to clean docker services: %w", err)
 	}
+	fmt.Printf("Docker services and volumes cleaned successfully\n")
 
 	return nil
 }
