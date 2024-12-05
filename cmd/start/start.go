@@ -109,8 +109,15 @@ func StartCmd() *cobra.Command {
 			}
 
 			// Cleanup on exit
-			serverCmd.Process.Kill()
-			clientCmd.Process.Kill()
+			cleanup := exec.Command("make", "stop-server")
+			cleanup.Dir = "./server"
+			if err := cleanup.Run(); err != nil {
+				fmt.Printf("Error during server cleanup: %v\n", err)
+			}
+			
+			if err := clientCmd.Process.Kill(); err != nil {
+				fmt.Printf("Error killing client process: %v\n", err)
+			}
 			
 			return nil
 		},
