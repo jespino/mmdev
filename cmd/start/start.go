@@ -64,9 +64,10 @@ func StartCmd() *cobra.Command {
 				return event
 			})
 
-			// Create flex layout
+			// Create flex layout and track direction
 			flex := tview.NewFlex()
-			flex.SetDirection(tview.FlexRow).
+			currentDirection := tview.FlexRow
+			flex.SetDirection(currentDirection).
 				AddItem(serverView, 0, 1, false).
 				AddItem(clientView, 0, 1, false)
 
@@ -119,7 +120,7 @@ func StartCmd() *cobra.Command {
 			app.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
 				x, y := event.Position()
 				_, _, width, _ := flex.GetRect()
-				if flex.GetDirection() == tview.FlexRow {
+				if currentDirection == tview.FlexRow {
 					_, _, _, serverHeight := serverView.GetRect()
 					if y < serverHeight {
 						app.SetFocus(serverView)
@@ -143,10 +144,12 @@ func StartCmd() *cobra.Command {
 						go stopProcesses()
 						return nil
 					case 'h':
-						flex.SetDirection(tview.FlexRow)
+						currentDirection = tview.FlexRow
+						flex.SetDirection(currentDirection)
 						return nil
 					case 'v':
-						flex.SetDirection(tview.FlexColumn)
+						currentDirection = tview.FlexColumn
+						flex.SetDirection(currentDirection)
 						return nil
 					case '\t':
 						// Cycle focus between views
