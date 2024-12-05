@@ -3,7 +3,6 @@ package start
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
@@ -140,12 +139,12 @@ func StartCmd() *cobra.Command {
 					app.QueueUpdateDraw(func() {
 						_, _, _, height := view.GetInnerRect()
 						row, _ := view.GetScrollOffset()
-						maxRow := view.GetRowCount()
+						lines := len(view.GetBufferLines())
 						
 						fmt.Fprint(view, text+"\n")
 						
 						// Auto-scroll only if we're at the bottom
-						if maxRow-row <= height {
+						if lines-row <= height {
 							view.ScrollToEnd()
 						}
 					})
