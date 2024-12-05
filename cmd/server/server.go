@@ -27,7 +27,7 @@ func ServerCmd() *cobra.Command {
 }
 
 func LintCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "lint",
 		Short: "Run linting on the server code",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -55,7 +55,9 @@ func LintCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch for changes and restart server")
+			return nil
+		},
+	}
 	return cmd
 }
 
@@ -178,7 +180,6 @@ func startServer() *exec.Cmd {
 }
 
 func StartCmd() *cobra.Command {
-	var watch bool
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the server",
@@ -200,4 +201,7 @@ func StartCmd() *cobra.Command {
 			return runServer()
 		},
 	}
+
+	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch for changes and restart server")
+	return cmd
 }
