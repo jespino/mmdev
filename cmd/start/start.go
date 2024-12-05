@@ -22,21 +22,51 @@ func StartCmd() *cobra.Command {
 			app := tview.NewApplication()
 
 			// Create text views for server and client output
-			serverView := tview.NewTextView()
-			serverView.
+			serverView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Server").
-				SetBorder(true)
+				SetBorder(true).
+				SetMaxLines(2000).
+				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+					app.SetFocus(serverView)
+					return action, event
+				})
 			serverView.SetWrap(true)
+			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				switch event.Key() {
+				case tcell.KeyPgUp:
+					serverView.ScrollUp()
+					return nil
+				case tcell.KeyPgDn:
+					serverView.ScrollDown()
+					return nil
+				}
+				return event
+			})
 
-			clientView := tview.NewTextView()
-			clientView.
+			clientView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
-				SetBorder(true)
+				SetBorder(true).
+				SetMaxLines(2000).
+				SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+					app.SetFocus(clientView)
+					return action, event
+				})
 			clientView.SetWrap(true)
+			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				switch event.Key() {
+				case tcell.KeyPgUp:
+					clientView.ScrollUp()
+					return nil
+				case tcell.KeyPgDn:
+					clientView.ScrollDown()
+					return nil
+				}
+				return event
+			})
 
 			// Create flex layout
 			flex := tview.NewFlex()
@@ -89,6 +119,7 @@ func StartCmd() *cobra.Command {
 			}
 
 			// Setup global key bindings at application level
+			app.EnableMouse(true)
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyRune {
 					switch event.Rune() {
@@ -100,6 +131,14 @@ func StartCmd() *cobra.Command {
 						return nil
 					case 'v':
 						flex.SetDirection(tview.FlexColumn)
+						return nil
+					case '\t':
+						// Cycle focus between views
+						if app.GetFocus() == serverView {
+							app.SetFocus(clientView)
+						} else {
+							app.SetFocus(serverView)
+						}
 						return nil
 					}
 				} else if event.Key() == tcell.KeyEsc {
