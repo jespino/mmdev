@@ -43,13 +43,8 @@ func LintCmd() *cobra.Command {
 				return fmt.Errorf("failed to change to server directory: %w", err)
 			}
 
-			// Run make check-style
-			makeCmd := exec.Command("make", "check-style")
-			makeCmd.Stdout = os.Stdout
-			makeCmd.Stderr = os.Stderr
-			makeCmd.Env = os.Environ()
-
-			if err := makeCmd.Run(); err != nil {
+			manager := server.NewManager(serverDir)
+			if err := manager.Lint(); err != nil {
 				return fmt.Errorf("failed to run linting: %w", err)
 			}
 

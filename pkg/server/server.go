@@ -63,6 +63,33 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
+// Lint runs golangci-lint on the server code
+func (m *Manager) Lint() error {
+	if err := m.validateBaseDir(); err != nil {
+		return err
+	}
+
+	// Install golangci-lint if not present
+	installCmd := exec.Command("go", "install", "github.com/golangci/golangci-lint/cmd/golangci-lint@v1.57.1")
+	installCmd.Env = os.Environ()
+	if err := installCmd.Run(); err != nil {
+		return fmt.Errorf("failed to install golangci-lint: %w", err)
+	}
+
+	// Run golangci-lint
+	lintCmd := exec.Command("golangci-lint", "run", "./...")
+	lintCmd.Dir = m.baseDir
+	lintCmd.Stdout = os.Stdout
+	lintCmd.Stderr = os.Stderr
+	lintCmd.Env = os.Environ()
+
+	if err := lintCmd.Run(); err != nil {
+		return fmt.Errorf("linting failed: %w", err)
+	}
+
+	return nil
+}
+
 func (m *Manager) validateBaseDir() error {
 	mainGo := filepath.Join(m.baseDir, "cmd", "mattermost", "main.go")
 	if _, err := os.Stat(mainGo); os.IsNotExist(err) {
