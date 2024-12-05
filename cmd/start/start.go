@@ -95,9 +95,10 @@ func StartCmd() *cobra.Command {
 			}
 			serverCmd.Stderr = serverCmd.Stdout
 
-			// Start client process
-			clientCmd = exec.Command("make", "run")
+			// Start client process using webapp manager
+			clientCmd = exec.Command("npm", "run", "dev")
 			clientCmd.Dir = "webapp"
+			clientCmd.Env = os.Environ()
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)

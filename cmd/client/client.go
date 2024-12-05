@@ -3,9 +3,9 @@ package client
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/spf13/cobra"
+	"github.com/jespino/mmdev/pkg/webapp"
 )
 
 func ClientCmd() *cobra.Command {
@@ -33,13 +33,8 @@ func StartCmd() *cobra.Command {
 				return fmt.Errorf("failed to change to webapp directory: %w", err)
 			}
 
-			// Run make run
-			makeCmd := exec.Command("make", "run")
-			makeCmd.Stdout = os.Stdout
-			makeCmd.Stderr = os.Stderr
-			makeCmd.Env = os.Environ()
-
-			if err := makeCmd.Run(); err != nil {
+			manager := webapp.NewManager(webappDir)
+			if err := manager.Start(); err != nil {
 				return fmt.Errorf("failed to run client: %w", err)
 			}
 
