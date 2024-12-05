@@ -23,14 +23,12 @@ func StartCmd() *cobra.Command {
 				SetScrollable(true).
 				SetTitle("Server").
 				SetBorder(true)
-			serverView.ScrollToBottom()
 
 			clientView := tview.NewTextView().
 				SetDynamicColors(true).
 				SetScrollable(true).
 				SetTitle("Client").
 				SetBorder(true)
-			clientView.ScrollToBottom()
 
 			// Track if views are at bottom for auto-scroll
 			serverAtBottom := true
@@ -38,19 +36,15 @@ func StartCmd() *cobra.Command {
 
 			serverView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				_, _, _, height := serverView.GetInnerRect()
-				row, _ := serverView.GetScrollOffset()
-				_, totalRows := serverView.GetScrollOffset()
-				
-				serverAtBottom = (totalRows - row) <= height
+				_, y := serverView.GetScrollOffset()
+				serverAtBottom = (y <= height)
 				return event
 			})
 
 			clientView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				_, _, _, height := clientView.GetInnerRect()
-				row, _ := clientView.GetScrollOffset()
-				_, totalRows := clientView.GetScrollOffset()
-				
-				clientAtBottom = (totalRows - row) <= height
+				_, y := clientView.GetScrollOffset()
+				clientAtBottom = (y <= height)
 				return event
 			})
 
@@ -85,7 +79,7 @@ func StartCmd() *cobra.Command {
 
 			// Start server process
 			serverCmd := exec.Command("make", "run-server")
-			serverCmd.Dir = "./server"
+			serverCmd.Dir = "server"
 			serverOut, err := serverCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create server stdout pipe: %w", err)
@@ -94,7 +88,7 @@ func StartCmd() *cobra.Command {
 
 			// Start client process
 			clientCmd := exec.Command("make", "run")
-			clientCmd.Dir = "./webapp"
+			clientCmd.Dir = "webapp"
 			clientOut, err := clientCmd.StdoutPipe()
 			if err != nil {
 				return fmt.Errorf("failed to create client stdout pipe: %w", err)
@@ -115,9 +109,9 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintln(serverView, text)
+						serverView.Write([]byte(text + "\n"))
 						if serverAtBottom {
-							serverView.ScrollToBottom()
+							serverView.ScrollToEnd()
 						}
 					})
 				}
@@ -129,9 +123,9 @@ func StartCmd() *cobra.Command {
 				for scanner.Scan() {
 					text := scanner.Text()
 					app.QueueUpdateDraw(func() {
-						fmt.Fprintln(clientView, text)
+						clientView.Write([]byte(text + "\n"))
 						if clientAtBottom {
-							clientView.ScrollToBottom()
+							clientView.ScrollToEnd()
 						}
 					})
 				}
@@ -144,7 +138,7 @@ func StartCmd() *cobra.Command {
 
 			// Cleanup on exit
 			cleanup := exec.Command("make", "stop-server")
-			cleanup.Dir = "./server"
+			cleanup.Dir = "server"
 			if err := cleanup.Run(); err != nil {
 				fmt.Printf("Error during server cleanup: %v\n", err)
 			}
