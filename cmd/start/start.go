@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var horizontal bool
-
 func StartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -36,15 +34,9 @@ func StartCmd() *cobra.Command {
 
 			// Create flex layout
 			flex := tview.NewFlex()
-			if horizontal {
-				flex.SetDirection(tview.FlexRow).
-					AddItem(serverView, 0, 1, false).
-					AddItem(clientView, 0, 1, false)
-			} else {
-				flex.SetDirection(tview.FlexColumn).
-					AddItem(serverView, 0, 1, false).
-					AddItem(clientView, 0, 1, false)
-			}
+			flex.SetDirection(tview.FlexRow).
+				AddItem(serverView, 0, 1, false).
+				AddItem(clientView, 0, 1, false)
 
 			// Setup key bindings
 			app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -123,8 +115,6 @@ func StartCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&horizontal, "horizontal", "h", false, "Split screen horizontally")
-	cmd.Flags().BoolP("vertical", "v", true, "Split screen vertically (default)")
 
 	return cmd
 }
