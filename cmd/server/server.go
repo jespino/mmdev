@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
+	"github.com/jespino/mmdev/pkg/server"
 )
 
 var watch bool
@@ -60,39 +60,17 @@ func LintCmd() *cobra.Command {
 }
 
 func cleanup() error {
-	makeCmd := exec.Command("make", "stop-server")
-	makeCmd.Stdout = os.Stdout
-	makeCmd.Stderr = os.Stderr
-	makeCmd.Env = os.Environ()
-
-	if err := makeCmd.Run(); err != nil {
+	manager := server.NewManager(".")
+	if err := manager.Stop(); err != nil {
 		return fmt.Errorf("failed to cleanup server: %w", err)
 	}
 	return nil
 }
 
 func runServer() error {
-	env := os.Environ()
-	env = append(env, "RUN_SERVER_IN_BACKGROUND=false")
+	manager := server.NewManager(".")
 	
-	makeCmd := exec.Command("make", "run-server") 
-	makeCmd.Stdout = os.Stdout
-	makeCmd.Stderr = os.Stderr
-	makeCmd.Env = env
-
-	err := makeCmd.Run()
-	
-	// Always attempt cleanup, regardless of whether the server errored
-	if cleanupErr := cleanup(); cleanupErr != nil {
-		// If both failed, include both errors in the message
-		if err != nil {
-			return fmt.Errorf("server failed: %v; cleanup failed: %v", err, cleanupErr)
-		}
-		return fmt.Errorf("cleanup failed: %v", cleanupErr)
-	}
-
-	// Return original server error if there was one
-	if err != nil {
+	if err := manager.Start(); err != nil {
 		return fmt.Errorf("failed to run server: %w", err)
 	}
 
