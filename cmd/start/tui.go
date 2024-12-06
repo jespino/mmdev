@@ -77,19 +77,21 @@ func initialModel() model {
 
 	// Start server process
 	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
-	serverOut, err := m.serverCmd.StdoutPipe()
+	serverOutR, serverOutW, err := os.Pipe()
 	if err != nil {
-		log.Printf("Error creating server stdout pipe: %v", err)
+		log.Printf("Error creating server pipe: %v", err)
 	}
-	m.serverCmd.Stderr = m.serverCmd.Stdout
+	m.serverCmd.Stdout = serverOutW
+	m.serverCmd.Stderr = serverOutW
 
 	// Start client process
 	m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
-	clientOut, err := m.clientCmd.StdoutPipe()
+	clientOutR, clientOutW, err := os.Pipe()
 	if err != nil {
-		log.Printf("Error creating client stdout pipe: %v", err)
+		log.Printf("Error creating client pipe: %v", err)
 	}
-	m.clientCmd.Stderr = m.clientCmd.Stdout
+	m.clientCmd.Stdout = clientOutW
+	m.clientCmd.Stderr = clientOutW
 
 	// Start processes
 	log.Printf("Starting server process with command: %v", m.serverCmd.Args)
@@ -107,8 +109,21 @@ func initialModel() model {
 	}
 
 	// Handle output streams
-	go handleOutput(serverOut, &m, "server")
-	go handleOutput(clientOut, &m, "client")
+	go handleOutput(serverOutR, &m, "server")
+	go func() {
+		if err := m.serverCmd.Wait(); err != nil {
+			log.Printf("Server process ended with error: %v", err)
+		}
+		serverOutW.Close()
+	}()
+
+	go handleOutput(clientOutR, &m, "client")
+	go func() {
+		if err := m.clientCmd.Wait(); err != nil {
+			log.Printf("Client process ended with error: %v", err)
+		}
+		clientOutW.Close()
+	}()
 
 	return m
 }
