@@ -7,13 +7,12 @@ import (
 	"github.com/jespino/mmdev/cmd/client"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/generate"
-	"github.com/jespino/mmdev/cmd/server" 
-	"github.com/jespino/mmdev/cmd/start"
+	"github.com/jespino/mmdev/cmd/server"
 	"github.com/spf13/cobra"
 )
 
 func main() {
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 	}
@@ -21,7 +20,6 @@ func main() {
 	rootCmd.AddCommand(
 		server.ServerCmd(),
 		client.ClientCmd(),
-		start.StartCmd(),
 		docker.DockerCmd(),
 		generate.GenerateCmd(),
 	)
