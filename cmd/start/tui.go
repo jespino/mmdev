@@ -366,7 +366,7 @@ func (m model) View() string {
 	if m.commandMode {
 		bottomBar = m.commandInput.View()
 	} else {
-		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart • tab: switch • :: command")
+		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • tab: switch • :: command")
 	}
 
 	titleServer := titleStyle.Render("Server")
