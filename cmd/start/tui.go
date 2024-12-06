@@ -50,11 +50,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			headerHeight := 1
-			footerHeight := 1
-			verticalMarginHeight := headerHeight + footerHeight
-
-			viewportHeight := (msg.Height - verticalMarginHeight) / 2
+			viewportHeight := msg.Height / 2
 
 			m.leftViewport = viewport.New(msg.Width, viewportHeight)
 			m.leftViewport.SetContent("Left viewport content\nUse arrow keys to navigate")
