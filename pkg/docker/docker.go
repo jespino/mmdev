@@ -29,6 +29,7 @@ const (
 	Postgres      Service = "postgres"
 	Inbucket      Service = "inbucket"
 	Redis         Service = "redis"
+	Playwright    Service = "playwright"
 )
 
 // ServiceConfig holds configuration for a Docker service
@@ -96,6 +97,9 @@ func (m *Manager) waitForMinio() error {
 }
 
 var serviceConfigs = map[Service]ServiceConfig{
+	Playwright: {
+		Image: "mcr.microsoft.com/playwright:v1.49.0-noble",
+	},
 	Postgres: {
 		Image: "postgres:12",
 		ExposedPorts: map[string]string{
