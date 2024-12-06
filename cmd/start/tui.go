@@ -86,14 +86,18 @@ func initialModel() model {
 	m.clientCmd.Stderr = m.clientCmd.Stdout
 
 	// Start processes
-	log.Printf("Starting server process...")
+	log.Printf("Starting server process with command: %v", m.serverCmd.Args)
 	if err := m.serverCmd.Start(); err != nil {
 		log.Printf("Error starting server: %v", err)
+	} else {
+		log.Printf("Server process started successfully with PID %d", m.serverCmd.Process.Pid)
 	}
 	
-	log.Printf("Starting client process...")
+	log.Printf("Starting client process with command: %v", m.clientCmd.Args)
 	if err := m.clientCmd.Start(); err != nil {
 		log.Printf("Error starting client: %v", err)
+	} else {
+		log.Printf("Client process started successfully with PID %d", m.clientCmd.Process.Pid)
 	}
 
 	// Handle output streams
@@ -104,10 +108,13 @@ func initialModel() model {
 }
 
 func handleOutput(reader io.Reader, m *model, viewport string) {
+	log.Printf("Starting output handler for %s viewport", viewport)
 	scanner := bufio.NewScanner(reader)
+	lineCount := 0
 	for scanner.Scan() {
 		text := scanner.Text() + "\n"
-		log.Printf("[%s] Output: %s", viewport, text)
+		lineCount++
+		log.Printf("[%s][line %d] Output: %s", viewport, lineCount, text)
 		if viewport == "server" {
 			m.serverLogs.WriteString(text)
 			m.Update("update-server-viewport")
@@ -174,25 +181,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "q":
 				m.quitting = true
-				// Gracefully stop processes
+				log.Printf("Quit requested, gracefully stopping processes...")
 				var wg sync.WaitGroup
 				wg.Add(2)
 
 				go func() {
 					defer wg.Done()
 					if m.clientCmd != nil && m.clientCmd.Process != nil {
-						m.clientCmd.Process.Signal(syscall.SIGTERM)
+						log.Printf("Sending SIGTERM to client process (PID %d)", m.clientCmd.Process.Pid)
+						if err := m.clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+							log.Printf("Error sending SIGTERM to client: %v", err)
+						}
 					}
 				}()
 
 				go func() {
 					defer wg.Done()
 					if m.serverCmd != nil && m.serverCmd.Process != nil {
-						m.serverCmd.Process.Signal(syscall.SIGTERM)
+						log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
+						if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+							log.Printf("Error sending SIGTERM to server: %v", err)
+						}
 					}
 				}()
 
+				log.Printf("Waiting for processes to terminate...")
 				wg.Wait()
+				log.Printf("All processes terminated, exiting...")
 				return m, tea.Quit
 			case "ctrl+c":
 				return m, tea.Quit
@@ -214,10 +229,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		if !m.ready {
 			viewportWidth := msg.Width / 2
+			log.Printf("Initializing viewports with width=%d height=%d", viewportWidth, msg.Height-2)
 
 			m.serverViewport = viewport.New(viewportWidth, msg.Height-2)
 			m.clientViewport = viewport.New(viewportWidth, msg.Height-2)
 			m.ready = true
+			log.Printf("Viewports initialized successfully")
+		} else {
+			log.Printf("Window size changed to width=%d height=%d", msg.Width, msg.Height)
 		}
 	}
 
