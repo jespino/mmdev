@@ -66,6 +66,7 @@ func (r *PlaywrightRunner) RunTests() error {
 			},
 		},
 		NetworkMode: "host",
+		Privileged:  true,
 	}
 
 	// Create container
