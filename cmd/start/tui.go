@@ -214,6 +214,7 @@ func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	log.Printf("Update called with message type: %T", msg)
 	if m.quitting {
+		log.Printf("Quitting application after successful shutdown")
 		return m, tea.Quit
 	}
 	var (
@@ -304,9 +305,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				go func() {
 					m.shutdownWg.Wait()
 					viewportChan <- NewViewportLine{Viewport: "server", Line: "Shutdown complete\n"}
+					viewportChan <- NewViewportLine{Viewport: "server", Line: "Exiting...\n"}
+					// Only quit after shutdown is complete
+					m.quitting = true
 				}()
 
-				return m, tea.Quit
+				return m, nil
 			case "ctrl+c":
 				return m, tea.Quit
 			case ":":
