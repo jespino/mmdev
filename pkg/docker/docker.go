@@ -111,8 +111,8 @@ var serviceConfigs = map[Service]ServiceConfig{
 		Image: "inbucket/inbucket:3.0.3",
 		ExposedPorts: map[string]string{
 			"10000": "9000", // Web UI
-			"2500": "2500",  // SMTP
-			"1100": "1100",  // POP3
+			"2500":  "2500", // SMTP
+			"1100":  "1100", // POP3
 		},
 	},
 	Redis: {
@@ -329,24 +329,22 @@ func (m *Manager) Start() error {
 
 		var existingContainer *types.Container
 		for _, container := range containers {
-			for _, name := range container.Names {
-				if name == "/"+containerName {
-					existingContainer = &container
-					break
-				}
+			if len(container.Names) == 1 && container.Names[0] == fmt.Sprintf("/mmdev-%s", service) {
+				existingContainer = &container
+				break
 			}
 		}
 
 		var containerID string
 		if existingContainer != nil {
 			containerID = existingContainer.ID
-			
+
 			// Get detailed container info to check actual state
 			inspect, err := m.client.ContainerInspect(m.ctx, containerID)
 			if err != nil {
 				return fmt.Errorf("failed to inspect container %s: %w", containerName, err)
 			}
-			
+
 			if inspect.State.Running {
 				fmt.Printf("Container %s is already running\n", service)
 			} else {
@@ -360,7 +358,7 @@ func (m *Manager) Start() error {
 				}
 			}
 		}
-		
+
 		if existingContainer == nil {
 			// Create new container
 			containerConfig := &containerTypes.Config{
@@ -405,7 +403,7 @@ func (m *Manager) Start() error {
 		}
 
 		containerName := fmt.Sprintf("mmdev-%s", service)
-		
+
 		// Skip waiting for Inbucket
 		if service != Inbucket {
 			for hostPort := range config.ExposedPorts {
