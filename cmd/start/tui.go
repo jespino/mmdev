@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -29,6 +28,11 @@ var (
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241"))
 )
+
+type NewViewportLine struct {
+	Viewport string
+	Line     string
+}
 
 type model struct {
 	serverViewport viewport.Model
@@ -66,7 +70,7 @@ func initialModel() model {
 		commandMode:  false,
 		commandInput: commandInput,
 	}
-	
+
 	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
 
 	// Start server process
@@ -92,7 +96,7 @@ func initialModel() model {
 	} else {
 		log.Printf("Server process started successfully with PID %d", m.serverCmd.Process.Pid)
 	}
-	
+
 	log.Printf("Starting client process with command: %v", m.clientCmd.Args)
 	if err := m.clientCmd.Start(); err != nil {
 		log.Printf("Error starting client: %v", err)
@@ -117,11 +121,10 @@ func handleOutput(reader io.Reader, m *model, viewport string) {
 		log.Printf("[%s][line %d] Output: %s", viewport, lineCount, text)
 		if viewport == "server" {
 			m.serverLogs.WriteString(text)
-			m.Update("update-server-viewport")
 		} else {
 			m.clientLogs.WriteString(text)
-			m.Update("update-client-viewport")
 		}
+		m.Update(NewViewportLine{Viewport: viewport, Line: text})
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("[%s] Scanner error: %v", viewport, err)
@@ -151,14 +154,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmdCmd    tea.Cmd
 	)
 
-	if msg == "update-server-viewport" {
-		m.serverViewport.SetContent(m.serverLogs.String())
-	}
-	if msg == "update-client-viewport" {
-		m.clientViewport.SetContent(m.serverLogs.String())
-	}
-
 	switch msg := msg.(type) {
+	case NewViewportLine:
+		if msg.Viewport == "server" {
+			log.Printf("Update server logs: %s", m.serverViewport.View()+msg.Line)
+			m.serverViewport.SetContent(m.serverViewport.View() + msg.Line)
+			m.serverViewport.GotoBottom()
+		} else {
+			log.Printf("Update client logs: %s", m.clientViewport.View()+msg.Line)
+			m.clientViewport.SetContent(m.clientViewport.View() + msg.Line)
+			m.clientViewport.GotoBottom()
+		}
 	case tea.KeyMsg:
 		if m.commandMode {
 			switch msg.String() {
@@ -239,9 +245,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Printf("Window size changed to width=%d height=%d", msg.Width, msg.Height)
 		}
 	}
-
-	m.serverViewport.GotoBottom()
-	m.clientViewport.GotoBottom()
 
 	if m.selectedPane == "server" {
 		m.serverViewport, serverCmd = m.serverViewport.Update(msg)
