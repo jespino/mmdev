@@ -94,13 +94,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedPane = "server"
 				}
 				return m, nil
-			case "a":
-				if m.selectedPane == "server" {
-					m.serverViewport.SetContent(m.serverViewport.View() + "\nNew server content")
-				} else {
-					m.clientViewport.SetContent(m.clientViewport.View() + "\nNew client content")
-				}
-			}
 		}
 
 	case tea.WindowSizeMsg:
