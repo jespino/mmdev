@@ -210,32 +210,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "q":
 				m.quitting = true
 				log.Printf("Quit requested, gracefully stopping processes...")
-				var wg sync.WaitGroup
-				wg.Add(2)
 
-				go func() {
-					defer wg.Done()
-					if m.clientCmd != nil && m.clientCmd.Process != nil {
-						log.Printf("Sending SIGTERM to client process (PID %d)", m.clientCmd.Process.Pid)
-						if err := m.clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
-							log.Printf("Error sending SIGTERM to client: %v", err)
-						}
+				// Send SIGTERM to both processes
+				if m.clientCmd != nil && m.clientCmd.Process != nil {
+					log.Printf("Sending SIGTERM to client process (PID %d)", m.clientCmd.Process.Pid)
+					if err := m.clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+						log.Printf("Error sending SIGTERM to client: %v", err)
 					}
+				}
+
+				if m.serverCmd != nil && m.serverCmd.Process != nil {
+					log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
+					if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+						log.Printf("Error sending SIGTERM to server: %v", err)
+					}
+				}
+
+				// Wait for processes to finish in a goroutine
+				go func() {
+					if m.clientCmd != nil {
+						if err := m.clientCmd.Wait(); err != nil {
+							log.Printf("Client process wait error: %v", err)
+						}
+						log.Printf("Client process terminated")
+					}
+
+					if m.serverCmd != nil {
+						if err := m.serverCmd.Wait(); err != nil {
+							log.Printf("Server process wait error: %v", err)
+						}
+						log.Printf("Server process terminated")
+					}
+
+					// Send quit message through the viewport channel
+					viewportChan <- NewViewportLine{Viewport: "server", Line: "Server stopped\n"}
+					viewportChan <- NewViewportLine{Viewport: "client", Line: "Client stopped\n"}
 				}()
 
-				go func() {
-					defer wg.Done()
-					if m.serverCmd != nil && m.serverCmd.Process != nil {
-						log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
-						if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
-							log.Printf("Error sending SIGTERM to server: %v", err)
-						}
-					}
-				}()
-
-				log.Printf("Waiting for processes to terminate...")
-				wg.Wait()
-				log.Printf("All processes terminated, exiting...")
+				// Return immediately to keep the UI responsive
 				return m, tea.Quit
 			case "ctrl+c":
 				return m, tea.Quit
