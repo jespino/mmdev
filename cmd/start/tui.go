@@ -1,6 +1,14 @@
 package start
 
 import (
+	"bufio"
+	"fmt"
+	"io"
+	"os/exec"
+	"strings"
+	"sync"
+	"syscall"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,15 +34,52 @@ type model struct {
 	ready          bool
 	selectedPane   string
 	commandMode    bool
+	
+	serverCmd     *exec.Cmd
+	clientCmd     *exec.Cmd
+	serverWriter  io.Writer
+	clientWriter  io.Writer
+	quitting      bool
 }
 
 func initialModel() model {
 	commandInput := textinput.New()
 	commandInput.Prompt = ": "
-	return model{
+	
+	m := model{
 		selectedPane: "server",
 		commandMode:  false,
 		commandInput: commandInput,
+	}
+
+	// Start server process
+	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
+	serverOut, _ := m.serverCmd.StdoutPipe()
+	m.serverCmd.Stderr = m.serverCmd.Stdout
+	
+	// Start client process  
+	m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
+	clientOut, _ := m.clientCmd.StdoutPipe()
+	m.clientCmd.Stderr = m.clientCmd.Stdout
+
+	// Start processes
+	m.serverCmd.Start()
+	m.clientCmd.Start()
+
+	// Handle output streams
+	go handleOutput(serverOut, &m.serverViewport)
+	go handleOutput(clientOut, &m.clientViewport)
+
+	return m
+}
+
+func handleOutput(reader io.Reader, viewport *viewport.Model) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		text := scanner.Text() + "\n"
+		if viewport.Height > 0 {
+			viewport.SetContent(viewport.View() + text)
+		}
 	}
 }
 
@@ -51,6 +96,9 @@ func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.quitting {
+		return m, tea.Quit
+	}
 	var (
 		serverCmd tea.Cmd
 		clientCmd tea.Cmd
@@ -79,6 +127,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			switch msg.String() {
 			case "q":
+				m.quitting = true
+				// Gracefully stop processes
+				var wg sync.WaitGroup
+				wg.Add(2)
+				
+				go func() {
+					defer wg.Done()
+					if m.clientCmd != nil && m.clientCmd.Process != nil {
+						m.clientCmd.Process.Signal(syscall.SIGTERM)
+					}
+				}()
+				
+				go func() {
+					defer wg.Done() 
+					if m.serverCmd != nil && m.serverCmd.Process != nil {
+						m.serverCmd.Process.Signal(syscall.SIGTERM)
+					}
+				}()
+				
+				wg.Wait()
 				return m, tea.Quit
 			case "ctrl+c":
 				return m, tea.Quit
