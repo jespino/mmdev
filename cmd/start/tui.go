@@ -51,17 +51,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			headerHeight := 3
-			footerHeight := 3
+			headerHeight := 1
+			footerHeight := 1
 			verticalMarginHeight := headerHeight + footerHeight
 
-			horizontalMargin := 2
-			viewportWidth := (msg.Width - horizontalMargin*3) / 2
+			viewportHeight := (msg.Height - verticalMarginHeight) / 2
 
-			m.leftViewport = viewport.New(viewportWidth, msg.Height-verticalMarginHeight)
+			m.leftViewport = viewport.New(msg.Width, viewportHeight)
 			m.leftViewport.SetContent("Left viewport content\nUse arrow keys to navigate")
 			
-			m.rightViewport = viewport.New(viewportWidth, msg.Height-verticalMarginHeight)
+			m.rightViewport = viewport.New(msg.Width, viewportHeight)
 			m.rightViewport.SetContent("Right viewport content\nUse arrow keys to navigate")
 
 			m.ready = true
@@ -81,17 +80,11 @@ func (m model) View() string {
 
 	help := helpStyle.Render("↑/↓: scroll • q: quit • h/l: add content")
 	
-	return fmt.Sprintf(`
-%s              %s
-%s│%s│%s
-%s
-`,
-		titleStyle.Render("Left View"),
-		titleStyle.Render("Right View"),
+	return fmt.Sprintf("%s\n%s\n%s\n%s",
+		titleStyle.Render("Top View"),
 		m.leftViewport.View(),
-		strings.Repeat("│", m.leftViewport.Height),
+		titleStyle.Render("Bottom View"),
 		m.rightViewport.View(),
-		help,
 	)
 }
 
