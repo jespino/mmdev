@@ -1,6 +1,7 @@
 package start
 
 import (
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,17 +22,19 @@ var (
 type model struct {
 	serverViewport viewport.Model
 	clientViewport viewport.Model
+	commandInput   textinput.Model
 	ready          bool
 	selectedPane   string
 	commandMode    bool
-	commandInput   string
 }
 
 func initialModel() model {
+	commandInput := textinput.New()
+	commandInput.Prompt = ": "
 	return model{
 		selectedPane: "server",
-		commandMode: false,
-		commandInput: "",
+		commandMode:  false,
+		commandInput: commandInput,
 	}
 }
 
@@ -39,69 +42,64 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
+	// Handle command execution here
+	if cmd == "q" || cmd == "quit" {
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		serverCmd tea.Cmd
 		clientCmd tea.Cmd
+		cmdCmd    tea.Cmd
 	)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			if m.commandMode {
-				m.commandInput += "q"
-				return m, nil
-			}
-			return m, tea.Quit
-		case "ctrl+c":
-			if m.commandMode {
+		if m.commandMode {
+			switch msg.String() {
+			case "ctrl+c":
 				m.commandMode = false
-				m.commandInput = ""
+				m.commandInput.SetValue("")
+				return m, nil
+			case "enter":
+				m.commandMode = false
+				value := m.commandInput.Value()
+				m.commandInput.SetValue("")
+				return m.runCommand(value)
+			case "esc":
+				m.commandMode = false
+				m.commandInput.SetValue("")
 				return m, nil
 			}
-			return m, tea.Quit
-		case ":":
-			if !m.commandMode {
+			m.commandInput, cmdCmd = m.commandInput.Update(msg)
+		} else {
+			switch msg.String() {
+			case "q":
+				return m, tea.Quit
+			case "ctrl+c":
+				return m, tea.Quit
+			case ":":
 				m.commandMode = true
-				m.commandInput = ""
+				m.commandInput.SetValue("")
+				m.commandInput.Focus()
 				return m, nil
-			}
-			m.commandInput += ":"
-			return m, nil
-		case "enter":
-			if m.commandMode {
-				// Handle command execution here
-				if m.commandInput == "q" || m.commandInput == "quit" {
-					return m, tea.Quit
+			case "tab":
+				if m.selectedPane == "server" {
+					m.selectedPane = "client"
+				} else {
+					m.selectedPane = "server"
 				}
-				m.commandMode = false
-				m.commandInput = ""
 				return m, nil
-			}
-		case "backspace":
-			if m.commandMode && len(m.commandInput) > 0 {
-				m.commandInput = m.commandInput[:len(m.commandInput)-1]
-				return m, nil
-			}
-		case "esc":
-			if m.commandMode {
-				m.commandMode = false
-				m.commandInput = ""
-				return m, nil
-			}
-		case "tab":
-			if m.selectedPane == "server" {
-				m.selectedPane = "client"
-			} else {
-				m.selectedPane = "server"
-			}
-			return m, nil
-		case "a":
-			if m.selectedPane == "server" {
-				m.serverViewport.SetContent(m.serverViewport.View() + "\nNew server content")
-			} else {
-				m.clientViewport.SetContent(m.clientViewport.View() + "\nNew client content")
+			case "a":
+				if m.selectedPane == "server" {
+					m.serverViewport.SetContent(m.serverViewport.View() + "\nNew server content")
+				} else {
+					m.clientViewport.SetContent(m.clientViewport.View() + "\nNew client content")
+				}
 			}
 		}
 
@@ -124,7 +122,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.clientViewport, clientCmd = m.clientViewport.Update(msg)
 	}
 
-	return m, tea.Batch(serverCmd, clientCmd)
+	return m, tea.Batch(serverCmd, clientCmd, cmdCmd)
 }
 
 func (m model) View() string {
@@ -134,7 +132,7 @@ func (m model) View() string {
 
 	var bottomBar string
 	if m.commandMode {
-		bottomBar = ":" + m.commandInput
+		bottomBar = m.commandInput.View()
 	} else {
 		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • a: add content • tab: switch • :: command")
 	}
