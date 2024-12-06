@@ -6,6 +6,7 @@ import (
 
 	"github.com/jespino/mmdev/cmd/client"
 	"github.com/jespino/mmdev/cmd/docker"
+	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/generate"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
@@ -24,6 +25,7 @@ func main() {
 		docker.DockerCmd(),
 		generate.GenerateCmd(),
 		start.StartCmd(),
+		e2e.E2ECmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
