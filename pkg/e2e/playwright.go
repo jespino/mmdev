@@ -46,7 +46,7 @@ func (r *PlaywrightRunner) RunTests() error {
 
 	// Pull the Playwright Docker image
 	fmt.Println("Pulling Playwright Docker image...")
-	_, err := r.client.ImagePull(ctx, "mcr.microsoft.com/playwright:v1.42.1", types.ImagePullOptions{})
+	_, err = r.client.ImagePull(ctx, "mcr.microsoft.com/playwright:v1.42.1", types.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to pull Playwright image: %w", err)
 	}
