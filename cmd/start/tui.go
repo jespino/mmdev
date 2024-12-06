@@ -162,6 +162,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedPane = "server"
 				}
 				return m, nil
+			}
 		}
 
 	case tea.WindowSizeMsg:
