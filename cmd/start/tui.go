@@ -23,11 +23,15 @@ type model struct {
 	clientViewport viewport.Model
 	ready          bool
 	selectedPane   string
+	commandMode    bool
+	commandInput   string
 }
 
 func initialModel() model {
 	return model{
 		selectedPane: "server",
+		commandMode: false,
+		commandInput: "",
 	}
 }
 
@@ -44,8 +48,48 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
+		case "q":
+			if m.commandMode {
+				m.commandInput += "q"
+				return m, nil
+			}
 			return m, tea.Quit
+		case "ctrl+c":
+			if m.commandMode {
+				m.commandMode = false
+				m.commandInput = ""
+				return m, nil
+			}
+			return m, tea.Quit
+		case ":":
+			if !m.commandMode {
+				m.commandMode = true
+				m.commandInput = ""
+				return m, nil
+			}
+			m.commandInput += ":"
+			return m, nil
+		case "enter":
+			if m.commandMode {
+				// Handle command execution here
+				if m.commandInput == "q" || m.commandInput == "quit" {
+					return m, tea.Quit
+				}
+				m.commandMode = false
+				m.commandInput = ""
+				return m, nil
+			}
+		case "backspace":
+			if m.commandMode && len(m.commandInput) > 0 {
+				m.commandInput = m.commandInput[:len(m.commandInput)-1]
+				return m, nil
+			}
+		case "esc":
+			if m.commandMode {
+				m.commandMode = false
+				m.commandInput = ""
+				return m, nil
+			}
 		case "tab":
 			if m.selectedPane == "server" {
 				m.selectedPane = "client"
@@ -88,7 +132,12 @@ func (m model) View() string {
 		return "Initializing..."
 	}
 
-	help := helpStyle.Render("↑/↓: scroll • q: quit • a: add content • tab: switch")
+	var bottomBar string
+	if m.commandMode {
+		bottomBar = ":" + m.commandInput
+	} else {
+		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • a: add content • tab: switch • :: command")
+	}
 
 	titleServer := titleStyle.Render("Server")
 	titleClient := titleStyle.Render("Client")
@@ -109,7 +158,7 @@ func (m model) View() string {
 				m.clientViewport.View(),
 			),
 		),
-		help,
+		bottomBar,
 	)
 }
 
