@@ -32,8 +32,14 @@ func NewPlaywrightRunner(baseDir string) (*PlaywrightRunner, error) {
 func (r *PlaywrightRunner) RunTests() error {
 	ctx := context.Background()
 
+	// Get absolute path for tests directory
+	absBaseDir, err := filepath.Abs(r.baseDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
 	// Ensure the tests directory exists
-	testsDir := filepath.Join(r.baseDir, "e2e-tests", "playwright")
+	testsDir := filepath.Join(absBaseDir, "e2e-tests", "playwright")
 	if _, err := os.Stat(testsDir); os.IsNotExist(err) {
 		return fmt.Errorf("playwright tests directory not found at %s", testsDir)
 	}
