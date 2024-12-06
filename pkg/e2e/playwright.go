@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -53,6 +54,8 @@ func (r *PlaywrightRunner) RunTests() error {
 		Image:      "mcr.microsoft.com/playwright:v1.49.0-noble",
 		Cmd:        []string{"sh", "-c", "npm install && npm run test"},
 		Tty:        true,
+		AttachStdout: true,
+		AttachStderr: true,
 		WorkingDir: "/mattermost/e2e-tests/playwright",
 	}
 
@@ -79,6 +82,25 @@ func (r *PlaywrightRunner) RunTests() error {
 	if err := r.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return fmt.Errorf("failed to start container: %w", err)
 	}
+
+	// Attach to container output
+	out, err := r.client.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
+		Stream: true,
+		Stdout: true,
+		Stderr: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to attach to container: %w", err)
+	}
+	defer out.Close()
+
+	// Copy container output to stdout in real time
+	go func() {
+		_, err := io.Copy(os.Stdout, out.Reader)
+		if err != nil {
+			fmt.Printf("Error copying output: %v\n", err)
+		}
+	}()
 
 	// Wait for container to finish and get exit code
 	statusCh, errCh := r.client.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
