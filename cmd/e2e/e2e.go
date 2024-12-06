@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/jespino/mmdev/pkg/docker"
 	"github.com/jespino/mmdev/pkg/e2e"
 	"github.com/spf13/cobra"
 )
