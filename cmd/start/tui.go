@@ -2,11 +2,15 @@ package start
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -55,17 +59,30 @@ func initialModel() model {
 
 	// Start server process
 	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
-	serverOut, _ := m.serverCmd.StdoutPipe()
+	serverOut, err := m.serverCmd.StdoutPipe()
+	if err != nil {
+		log.Printf("Error creating server stdout pipe: %v", err)
+	}
 	m.serverCmd.Stderr = m.serverCmd.Stdout
 
 	// Start client process
 	m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
-	clientOut, _ := m.clientCmd.StdoutPipe()
+	clientOut, err := m.clientCmd.StdoutPipe()
+	if err != nil {
+		log.Printf("Error creating client stdout pipe: %v", err)
+	}
 	m.clientCmd.Stderr = m.clientCmd.Stdout
 
 	// Start processes
-	m.serverCmd.Start()
-	m.clientCmd.Start()
+	log.Printf("Starting server process...")
+	if err := m.serverCmd.Start(); err != nil {
+		log.Printf("Error starting server: %v", err)
+	}
+	
+	log.Printf("Starting client process...")
+	if err := m.clientCmd.Start(); err != nil {
+		log.Printf("Error starting client: %v", err)
+	}
 
 	// Handle output streams
 	go handleOutput(serverOut, &m, "server")
@@ -78,6 +95,7 @@ func handleOutput(reader io.Reader, m *model, viewport string) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		text := scanner.Text() + "\n"
+		log.Printf("[%s] Output: %s", viewport, text)
 		if viewport == "server" {
 			m.serverLogs.WriteString(text)
 			m.Update("update-server-viewport")
@@ -85,6 +103,9 @@ func handleOutput(reader io.Reader, m *model, viewport string) {
 			m.clientLogs.WriteString(text)
 			m.Update("update-client-viewport")
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("[%s] Scanner error: %v", viewport, err)
 	}
 }
 
@@ -101,6 +122,7 @@ func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	log.Printf("Update called with message type: %T", msg)
 	if m.quitting {
 		return m, tea.Quit
 	}
