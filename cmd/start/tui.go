@@ -2,7 +2,6 @@ package start
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -80,11 +79,12 @@ func (m model) View() string {
 
 	help := helpStyle.Render("↑/↓: scroll • q: quit • h/l: add content")
 	
-	return fmt.Sprintf("%s\n%s\n%s\n%s",
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s",
 		titleStyle.Render("Top View"),
 		m.leftViewport.View(),
 		titleStyle.Render("Bottom View"),
 		m.rightViewport.View(),
+		help,
 	)
 }
 
