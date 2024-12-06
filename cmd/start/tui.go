@@ -48,6 +48,16 @@ type model struct {
 }
 
 func initialModel() model {
+	// Set up logging
+	logFile, err := os.OpenFile("mmdev-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("Error opening log file: %v\n", err)
+		os.Exit(1)
+	}
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	log.SetOutput(logFile)
+	log.Printf("=== Starting new mmdev session ===")
+
 	commandInput := textinput.New()
 	commandInput.Prompt = ": "
 
@@ -56,6 +66,8 @@ func initialModel() model {
 		commandMode:  false,
 		commandInput: commandInput,
 	}
+	
+	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
 
 	// Start server process
 	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
