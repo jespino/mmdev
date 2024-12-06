@@ -75,7 +75,7 @@ func initialModel() model {
 	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
 
 	// Start server process
-	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
+	m.serverCmd = exec.Command("mmdev", "server", "start")
 	serverOutR, serverOutW, err := os.Pipe()
 	if err != nil {
 		log.Printf("Error creating server pipe: %v", err)
