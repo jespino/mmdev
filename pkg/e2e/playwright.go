@@ -46,14 +46,14 @@ func (r *PlaywrightRunner) RunTests() error {
 
 	// Pull the Playwright Docker image
 	fmt.Println("Pulling Playwright Docker image...")
-	_, err = r.client.ImagePull(ctx, "mcr.microsoft.com/playwright:latest", types.ImagePullOptions{})
+	_, err = r.client.ImagePull(ctx, "mcr.microsoft.com/playwright:v1.49.0-noble", types.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to pull Playwright image: %w", err)
 	}
 
 	// Create container config
 	config := &container.Config{
-		Image:      "mcr.microsoft.com/playwright:latest",
+		Image:      "mcr.microsoft.com/playwright:v1.49.0-noble",
 		Cmd:        []string{"npx", "playwright", "test"},
 		Tty:        true,
 		WorkingDir: "/tests",
