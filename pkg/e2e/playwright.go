@@ -47,9 +47,10 @@ func (r *PlaywrightRunner) RunTests() error {
 
 	// Create container config
 	config := &container.Config{
-		Image: "mcr.microsoft.com/playwright:v1.42.1",
-		Cmd:   []string{"npx", "playwright", "test"},
-		Tty:   true,
+		Image:      "mcr.microsoft.com/playwright:v1.42.1",
+		Cmd:        []string{"npx", "playwright", "test"},
+		Tty:        true,
+		WorkingDir: "/tests",
 	}
 
 	// Create host config with volume mount
@@ -61,7 +62,6 @@ func (r *PlaywrightRunner) RunTests() error {
 				Target: "/tests",
 			},
 		},
-		WorkingDir: "/tests",
 	}
 
 	// Create container
