@@ -340,22 +340,24 @@ func (m *Manager) Start() error {
 		var containerID string
 		if existingContainer != nil {
 			containerID = existingContainer.ID
-			switch existingContainer.State {
-			case "running":
+			
+			// Get detailed container info to check actual state
+			inspect, err := m.client.ContainerInspect(m.ctx, containerID)
+			if err != nil {
+				return fmt.Errorf("failed to inspect container %s: %w", containerName, err)
+			}
+			
+			if inspect.State.Running {
 				fmt.Printf("Container %s is already running\n", service)
-			case "exited", "created", "stopped":
+			} else {
 				fmt.Printf("Starting existing %s container\n", service)
 				if err := m.client.ContainerStart(m.ctx, containerID, types.ContainerStartOptions{}); err != nil {
-					return fmt.Errorf("failed to start existing container %s: %w", containerName, err)
+					// If we can't start it, remove and recreate
+					if err := m.client.ContainerRemove(m.ctx, containerID, types.ContainerRemoveOptions{Force: true}); err != nil {
+						return fmt.Errorf("failed to remove container %s: %w", containerName, err)
+					}
+					existingContainer = nil
 				}
-			default:
-				// For any other state, remove and recreate
-				fmt.Printf("Container %s is in %s state, recreating...\n", service, existingContainer.State)
-				if err := m.client.ContainerRemove(m.ctx, containerID, types.ContainerRemoveOptions{Force: true}); err != nil {
-					return fmt.Errorf("failed to remove container %s: %w", containerName, err)
-				}
-				// Fall through to container creation
-				existingContainer = nil
 			}
 		}
 		
