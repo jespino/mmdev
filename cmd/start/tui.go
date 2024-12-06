@@ -2,10 +2,8 @@ package start
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 	"sync"
 	"syscall"
 
