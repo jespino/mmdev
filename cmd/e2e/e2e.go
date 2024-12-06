@@ -24,6 +24,16 @@ func PlaywrightCmd() *cobra.Command {
 		Use:   "playwright",
 		Short: "Run Playwright E2E tests",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure Docker image is available
+			dockerManager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
+			if err := dockerManager.EnsurePlaywrightImage(); err != nil {
+				return fmt.Errorf("failed to ensure playwright image: %w", err)
+			}
+
+			// Create and run the tests
 			runner, err := e2e.NewPlaywrightRunner(".")
 			if err != nil {
 				return fmt.Errorf("failed to create playwright runner: %w", err)
