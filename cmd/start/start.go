@@ -66,24 +66,21 @@ var availableCommands = []Command{
 	},
 }
 
+import (
+	"github.com/yourusername/yourproject/cmd/start/widgets"
+)
+
 type model struct {
-	serverView    viewport.Model
-	clientView    viewport.Model
-	cmdInput      textinput.Model
-	selectedPane  string // "server" or "client"
-	serverCmd     *exec.Cmd
-	clientCmd     *exec.Cmd
-	showHelp      bool
-	serverOutput  strings.Builder
-	clientOutput  strings.Builder
-	err           error
-	serverRunning bool
-	clientRunning bool
-	lastCommand   string
-	cmdHistory    []string
-	cmdHistoryPos int
-	statusMsg     string
-	suggestions   []string
+	serverPane   widgets.ServerPane
+	clientPane   widgets.ClientPane
+	commandLine  widgets.CommandLine
+	helpWindow   widgets.HelpWindow
+	selectedPane string // "server" or "client"
+	serverCmd    *exec.Cmd
+	clientCmd    *exec.Cmd
+	serverOutput strings.Builder
+	clientOutput strings.Builder
+	err          error
 }
 
 func initialModel() model {
