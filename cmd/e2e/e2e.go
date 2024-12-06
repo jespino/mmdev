@@ -1,6 +1,8 @@
 package e2e
 
 import (
+	"fmt"
+	"github.com/jespino/mmdev/pkg/e2e"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +24,11 @@ func PlaywrightCmd() *cobra.Command {
 		Use:   "playwright",
 		Short: "Run Playwright E2E tests",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			panic("Playwright tests not yet implemented")
+			runner, err := e2e.NewPlaywrightRunner(".")
+			if err != nil {
+				return fmt.Errorf("failed to create playwright runner: %w", err)
+			}
+			return runner.RunTests()
 		},
 	}
 	return cmd
