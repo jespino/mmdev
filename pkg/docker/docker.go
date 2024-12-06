@@ -168,6 +168,80 @@ type Manager struct {
 	networkID string
 }
 
+// EnsureImage ensures a Docker image is available locally, pulling it if needed
+func (m *Manager) EnsureImage(image string) error {
+	// Check if image exists locally
+	_, _, err := m.client.ImageInspectWithRaw(m.ctx, image)
+	if err == nil {
+		return nil // Image exists
+	}
+
+	// Image doesn't exist, pull it
+	reader, err := m.client.ImagePull(m.ctx, image, types.ImagePullOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to pull image %s: %w", image, err)
+	}
+	defer reader.Close()
+
+	decoder := json.NewDecoder(reader)
+	fmt.Printf("Pulling image %s\n", image)
+
+	layerStatus := make(map[string]string)
+	for decoder.More() {
+		var pullStatus struct {
+			Status         string `json:"status"`
+			ID             string `json:"id"`
+			Progress      string `json:"progress"`
+			ProgressDetail struct {
+				Current int64 `json:"current"`
+				Total   int64 `json:"total"`
+			} `json:"progressDetail"`
+		}
+
+		if err := decoder.Decode(&pullStatus); err != nil {
+			return fmt.Errorf("failed to decode pull status: %w", err)
+		}
+
+		if pullStatus.ID != "" {
+			layerStatus[pullStatus.ID] = pullStatus.Status
+
+			// Move cursor to bottom of terminal
+			fmt.Print("\033[9999B")
+
+			// Clear lines and move up
+			for range layerStatus {
+				fmt.Print("\033[2K\033[A")
+			}
+
+			// Print current status in a stable order
+			var layerIDs []string
+			for id := range layerStatus {
+				layerIDs = append(layerIDs, id)
+			}
+			sort.Strings(layerIDs)
+
+			for _, id := range layerIDs {
+				progress := ""
+				if strings.Contains(layerStatus[id], "Download") {
+					if pullStatus.ID == id {
+						progress = pullStatus.Progress
+					} else if strings.Contains(layerStatus[id], "complete") {
+						progress = "[=========================>] 100%"
+					}
+				}
+				fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
+			}
+		} else {
+			// Move cursor to bottom and print status
+			fmt.Print("\033[9999B")
+			fmt.Printf("%s\n", pullStatus.Status)
+			fmt.Print("\033[A")
+		}
+	}
+	fmt.Println()
+	return nil
+}
+
 // NewManager creates a new Docker manager
 func NewManager() (*Manager, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
@@ -231,73 +305,9 @@ func (m *Manager) Start() error {
 			return fmt.Errorf("no configuration found for service %s", service)
 		}
 
-		// Check if image exists locally
-		_, _, err = m.client.ImageInspectWithRaw(m.ctx, config.Image)
-		if err != nil {
-			// Image doesn't exist, pull it
-			reader, err := m.client.ImagePull(m.ctx, config.Image, types.ImagePullOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to pull image %s: %w", config.Image, err)
-			}
-			defer reader.Close()
-
-			decoder := json.NewDecoder(reader)
-			fmt.Printf("Pulling image %s\n", config.Image)
-
-			layerStatus := make(map[string]string)
-			for decoder.More() {
-				var pullStatus struct {
-					Status         string `json:"status"`
-					ID             string `json:"id"`
-					Progress       string `json:"progress"`
-					ProgressDetail struct {
-						Current int64 `json:"current"`
-						Total   int64 `json:"total"`
-					} `json:"progressDetail"`
-				}
-
-				if err := decoder.Decode(&pullStatus); err != nil {
-					return fmt.Errorf("failed to decode pull status: %w", err)
-				}
-
-				if pullStatus.ID != "" {
-					layerStatus[pullStatus.ID] = pullStatus.Status
-
-					// Move cursor to bottom of terminal
-					fmt.Print("\033[9999B")
-
-					// Clear lines and move up
-					for range layerStatus {
-						fmt.Print("\033[2K\033[A")
-					}
-
-					// Print current status in a stable order
-					var layerIDs []string
-					for id := range layerStatus {
-						layerIDs = append(layerIDs, id)
-					}
-					sort.Strings(layerIDs)
-
-					for _, id := range layerIDs {
-						progress := ""
-						if strings.Contains(layerStatus[id], "Download") {
-							if pullStatus.ID == id {
-								progress = pullStatus.Progress
-							} else if strings.Contains(layerStatus[id], "complete") {
-								progress = "[=========================>] 100%"
-							}
-						}
-						fmt.Printf("%s: %s %s\n", id, layerStatus[id], progress)
-					}
-				} else {
-					// Move cursor to bottom and print status
-					fmt.Print("\033[9999B")
-					fmt.Printf("%s\n", pullStatus.Status)
-					fmt.Print("\033[A")
-				}
-			}
+		if err := m.EnsureImage(config.Image); err != nil {
+			return fmt.Errorf("failed to ensure image %s: %w", config.Image, err)
 		}
-		fmt.Println()
 
 		// Create port bindings
 		portBindings := nat.PortMap{}
@@ -463,6 +473,15 @@ func (m *Manager) Stop() error {
 }
 
 // Clean removes all Docker containers and volumes
+// EnsurePlaywrightImage ensures the Playwright Docker image is available
+func (m *Manager) EnsurePlaywrightImage() error {
+	config, ok := serviceConfigs[Playwright]
+	if !ok {
+		return fmt.Errorf("no configuration found for Playwright service")
+	}
+	return m.EnsureImage(config.Image)
+}
+
 func (m *Manager) Clean() error {
 	containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{All: true})
 	if err != nil {
