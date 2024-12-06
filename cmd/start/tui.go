@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -32,18 +33,20 @@ type model struct {
 	ready          bool
 	selectedPane   string
 	commandMode    bool
-	
-	serverCmd     *exec.Cmd
-	clientCmd     *exec.Cmd
-	serverWriter  io.Writer
-	clientWriter  io.Writer
-	quitting      bool
+
+	serverCmd    *exec.Cmd
+	clientCmd    *exec.Cmd
+	serverWriter io.Writer
+	clientWriter io.Writer
+	quitting     bool
+	serverLogs   strings.Builder
+	clientLogs   strings.Builder
 }
 
 func initialModel() model {
 	commandInput := textinput.New()
 	commandInput.Prompt = ": "
-	
+
 	m := model{
 		selectedPane: "server",
 		commandMode:  false,
@@ -54,8 +57,8 @@ func initialModel() model {
 	m.serverCmd = exec.Command("mmdev", "server", "start", "--watch")
 	serverOut, _ := m.serverCmd.StdoutPipe()
 	m.serverCmd.Stderr = m.serverCmd.Stdout
-	
-	// Start client process  
+
+	// Start client process
 	m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
 	clientOut, _ := m.clientCmd.StdoutPipe()
 	m.clientCmd.Stderr = m.clientCmd.Stdout
@@ -65,18 +68,22 @@ func initialModel() model {
 	m.clientCmd.Start()
 
 	// Handle output streams
-	go handleOutput(serverOut, &m.serverViewport)
-	go handleOutput(clientOut, &m.clientViewport)
+	go handleOutput(serverOut, &m, "server")
+	go handleOutput(clientOut, &m, "client")
 
 	return m
 }
 
-func handleOutput(reader io.Reader, viewport *viewport.Model) {
+func handleOutput(reader io.Reader, m *model, viewport string) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		text := scanner.Text() + "\n"
-		if viewport.Height > 0 {
-			viewport.SetContent(viewport.View() + text)
+		if viewport == "server" {
+			m.serverLogs.WriteString(text)
+			m.Update("update-server-viewport")
+		} else {
+			m.clientLogs.WriteString(text)
+			m.Update("update-client-viewport")
 		}
 	}
 }
@@ -102,6 +109,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		clientCmd tea.Cmd
 		cmdCmd    tea.Cmd
 	)
+
+	if msg == "update-server-viewport" {
+		m.serverViewport.SetContent(m.serverLogs.String())
+	}
+	if msg == "update-client-viewport" {
+		m.clientViewport.SetContent(m.serverLogs.String())
+	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -129,21 +143,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Gracefully stop processes
 				var wg sync.WaitGroup
 				wg.Add(2)
-				
+
 				go func() {
 					defer wg.Done()
 					if m.clientCmd != nil && m.clientCmd.Process != nil {
 						m.clientCmd.Process.Signal(syscall.SIGTERM)
 					}
 				}()
-				
+
 				go func() {
-					defer wg.Done() 
+					defer wg.Done()
 					if m.serverCmd != nil && m.serverCmd.Process != nil {
 						m.serverCmd.Process.Signal(syscall.SIGTERM)
 					}
 				}()
-				
+
 				wg.Wait()
 				return m, tea.Quit
 			case "ctrl+c":
