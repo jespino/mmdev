@@ -61,9 +61,11 @@ func runServer() error {
 		return fmt.Errorf("failed to start docker services: %w", err)
 	}
 
-	// Create a channel to listen for interrupt signals
+	// Create channels to listen for signals
 	sigChan := make(chan os.Signal, 1)
+	restartChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(restartChan, syscall.SIGUSR1)
 
 	// Create a channel to signal server completion
 	done := make(chan error, 1)
@@ -79,29 +81,49 @@ func runServer() error {
 		done <- cmd.Wait()
 	}()
 
-	// Wait for either server completion or interrupt
-	select {
-	case err := <-done:
-		fmt.Println("Server process ended, cleaning up...")
-		if err := docker.StopDockerServices(); err != nil {
-			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
-		}
-		return err
-	case <-sigChan:
-		fmt.Println("\nReceived interrupt signal. Shutting down...")
-		if cmd != nil && cmd.Process != nil {
-			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-				fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
-				cmd.Process.Kill()
+	// Wait for server completion, interrupt or restart signal
+	for {
+		select {
+		case err := <-done:
+			fmt.Println("Server process ended, cleaning up...")
+			if err := docker.StopDockerServices(); err != nil {
+				fmt.Printf("Warning: failed to stop docker services: %v\n", err)
 			}
-			// Wait for the process to finish
-			<-done
+			return err
+		case <-sigChan:
+			fmt.Println("\nReceived interrupt signal. Shutting down...")
+			if cmd != nil && cmd.Process != nil {
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+					cmd.Process.Kill()
+				}
+				// Wait for the process to finish
+				<-done
+			}
+			fmt.Println("Stopping docker services...")
+			if err := docker.StopDockerServices(); err != nil {
+				fmt.Printf("Warning: failed to stop docker services: %v\n", err)
+			}
+			return nil
+		case <-restartChan:
+			fmt.Println("\nReceived restart signal. Restarting server...")
+			if cmd != nil && cmd.Process != nil {
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					fmt.Printf("Warning: failed to send SIGTERM to server: %v\n", err)
+					cmd.Process.Kill()
+				}
+				// Wait for the process to finish
+				<-done
+			}
+			// Start new server instance
+			cmd, err = manager.Start()
+			if err != nil {
+				return fmt.Errorf("failed to restart server: %w", err)
+			}
+			go func() {
+				done <- cmd.Wait()
+			}()
 		}
-		fmt.Println("Stopping docker services...")
-		if err := docker.StopDockerServices(); err != nil {
-			fmt.Printf("Warning: failed to stop docker services: %v\n", err)
-		}
-		return nil
 	}
 }
 
