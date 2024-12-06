@@ -18,22 +18,22 @@ import (
 
 var (
 	titleStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("170"))
+			Bold(true).
+			Foreground(lipgloss.Color("170"))
 
 	infoStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240"))
+			Foreground(lipgloss.Color("240"))
 
 	// Subtle style for scroll indicators
 	subtleStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240"))
+			Foreground(lipgloss.Color("240"))
 
 	// Status indicators
 	statusStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("86"))
+			Foreground(lipgloss.Color("86"))
 
 	errorStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("196"))
+			Foreground(lipgloss.Color("196"))
 )
 
 type Command struct {
@@ -93,10 +93,10 @@ func initialModel() model {
 
 	sv := viewport.New(0, 0)
 	cv := viewport.New(0, 0)
-	
+
 	sv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
 	cv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
-	
+
 	return model{
 		serverView:    sv,
 		clientView:    cv,
@@ -154,11 +154,13 @@ func (m *model) startProcesses() tea.Msg {
 	return nil
 }
 
-type errMsg struct{ error }
-type outputMsg struct {
-	text string
-	src  string
-}
+type (
+	errMsg    struct{ error }
+	outputMsg struct {
+		text string
+		src  string
+	}
+)
 
 func (m *model) handleOutput(reader io.Reader, buffer *strings.Builder, source string) {
 	scanner := bufio.NewScanner(reader)
@@ -179,14 +181,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.MouseMsg:
-		switch msg.Type {
-		case tea.MouseWheelUp:
+		switch msg.Button {
+		case tea.MouseButtonWheelUp:
 			if msg.Y < m.serverView.Height {
 				m.serverView.LineUp(3)
 			} else {
 				m.clientView.LineUp(3)
 			}
-		case tea.MouseWheelDown:
+		case tea.MouseButtonWheelDown:
 			if msg.Y < m.serverView.Height {
 				m.serverView.LineDown(3)
 			} else {
@@ -196,7 +198,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			return m, m.shutdown
+			if m.showHelp {
+				m.showHelp = !m.showHelp
+			} else {
+				return m, m.shutdown
+			}
 		case "?", "h":
 			m.showHelp = !m.showHelp
 			return m, nil
@@ -246,62 +252,61 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			// Command input tab completion
 			currentInput := m.cmdInput.Value()
-				if currentInput == "" {
-					return m, nil
-				}
+			if currentInput == "" {
+				return m, nil
+			}
 
-				// If we have suggestions, cycle through them
-				if len(m.suggestions) > 0 {
-					currentSuggestion := m.suggestions[0]
-					m.suggestions = append(m.suggestions[1:], currentSuggestion)
-					m.cmdInput.SetValue(currentSuggestion)
-					return m, nil
-				}
+			// If we have suggestions, cycle through them
+			if len(m.suggestions) > 0 {
+				currentSuggestion := m.suggestions[0]
+				m.suggestions = append(m.suggestions[1:], currentSuggestion)
+				m.cmdInput.SetValue(currentSuggestion)
+				return m, nil
+			}
 
-				// Generate new suggestions
-				parts := strings.Fields(currentInput)
-				m.suggestions = []string{}
+			// Generate new suggestions
+			parts := strings.Fields(currentInput)
+			m.suggestions = []string{}
 
-				if len(parts) == 1 {
-					// Suggest main commands
-					for _, cmd := range availableCommands {
-						if strings.HasPrefix(cmd.Name, parts[0]) {
-							m.suggestions = append(m.suggestions, cmd.Name)
-						}
+			if len(parts) == 1 {
+				// Suggest main commands
+				for _, cmd := range availableCommands {
+					if strings.HasPrefix(cmd.Name, parts[0]) {
+						m.suggestions = append(m.suggestions, cmd.Name)
 					}
-				} else if len(parts) == 2 {
-					// Suggest subcommands
-					for _, cmd := range availableCommands {
-						if cmd.Name == parts[0] && len(cmd.Subcommands) > 0 {
-							for _, sub := range cmd.Subcommands {
-								if strings.HasPrefix(sub, parts[1]) {
-									m.suggestions = append(m.suggestions, fmt.Sprintf("%s %s", parts[0], sub))
-								}
+				}
+			} else if len(parts) == 2 {
+				// Suggest subcommands
+				for _, cmd := range availableCommands {
+					if cmd.Name == parts[0] && len(cmd.Subcommands) > 0 {
+						for _, sub := range cmd.Subcommands {
+							if strings.HasPrefix(sub, parts[1]) {
+								m.suggestions = append(m.suggestions, fmt.Sprintf("%s %s", parts[0], sub))
 							}
 						}
 					}
 				}
-
-				if len(m.suggestions) > 0 {
-					m.cmdInput.SetValue(m.suggestions[0])
-				}
-				return m, nil
 			}
+
+			if len(m.suggestions) > 0 {
+				m.cmdInput.SetValue(m.suggestions[0])
+			}
+			return m, nil
 		case "pgup":
 			if !m.cmdInput.Focused() {
 				if m.selectedPane == "server" {
-					m.serverView.PageUp()
+					m.serverView.ViewUp()
 				} else {
-					m.clientView.PageUp()
+					m.clientView.ViewUp()
 				}
 			}
 			return m, nil
 		case "pgdown":
 			if !m.cmdInput.Focused() {
 				if m.selectedPane == "server" {
-					m.serverView.PageDown()
+					m.serverView.ViewDown()
 				} else {
-					m.clientView.PageDown()
+					m.clientView.ViewDown()
 				}
 			}
 			return m, nil
@@ -387,7 +392,7 @@ Press any key to close help
 	if !m.serverRunning {
 		serverStatus = errorStyle.Render("○")
 	}
-	
+
 	clientStatus := statusStyle.Render("●")
 	if !m.clientRunning {
 		clientStatus = errorStyle.Render("○")
@@ -401,7 +406,7 @@ Press any key to close help
 	if m.selectedPane == "server" {
 		serverTitle = "> " + serverTitle
 	}
-	
+
 	clientTitle := "Client Output: "
 	if m.selectedPane == "client" {
 		clientTitle = "> " + clientTitle
@@ -523,13 +528,13 @@ func (m *model) executeCommand(cmd string) tea.Cmd {
 				return outputMsg{text: "Invalid restart command. Use: restart [server|client|all]\n", src: "both"}
 			}
 		case "status":
-			status := fmt.Sprintf("Server: %v\nClient: %v\n", 
+			status := fmt.Sprintf("Server: %v\nClient: %v\n",
 				m.serverRunning, m.clientRunning)
 			return outputMsg{text: status, src: "both"}
 		default:
 			return outputMsg{
 				text: fmt.Sprintf("Unknown command: %s\n", cmd),
-				src: "server",
+				src:  "server",
 			}
 		}
 	}
@@ -548,7 +553,7 @@ func StartCmd() *cobra.Command {
 				tea.WithMouseCellMotion(),
 			)
 			program = p
-			
+
 			if _, err := p.Run(); err != nil {
 				return fmt.Errorf("error running program: %w", err)
 			}
