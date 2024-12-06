@@ -428,7 +428,7 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-// Stop stops all Docker services
+// Stop stops all Docker services without removing containers
 func (m *Manager) Stop() error {
 	containers, err := m.client.ContainerList(m.ctx, types.ContainerListOptions{All: true})
 	if err != nil {
@@ -444,25 +444,15 @@ func (m *Manager) Stop() error {
 					// Only log stop errors since container might already be stopped
 					fmt.Printf("Warning: failed to stop container %s: %v\n", name, err)
 				}
-				if err := m.client.ContainerRemove(m.ctx, container.ID, types.ContainerRemoveOptions{}); err != nil {
-					return fmt.Errorf("failed to remove container %s: %w", name, err)
-				}
 				break
 			}
-		}
-	}
-
-	if m.networkID != "" {
-		// Try to remove network, but don't fail if it's in use
-		if err := m.client.NetworkRemove(m.ctx, m.networkID); err != nil {
-			fmt.Printf("Warning: failed to remove network: %v\n", err)
 		}
 	}
 
 	return nil
 }
 
-// Clean removes all Docker containers and volumes
+// Clean stops all Docker services (preserving containers for reuse)
 func (m *Manager) Clean() error {
 	return m.Stop()
 }
