@@ -156,18 +156,21 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) restartServer() {
-	// Kill existing server process
+	// Kill existing server process in a goroutine
 	if m.serverCmd != nil && m.serverCmd.Process != nil {
-		log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
-		if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
-			log.Printf("Error sending SIGTERM to server: %v", err)
-		}
-		if err := m.serverCmd.Wait(); err != nil {
-			log.Printf("Server process wait error: %v", err)
-		}
+		oldCmd := m.serverCmd
+		go func() {
+			log.Printf("Sending SIGTERM to server process (PID %d)", oldCmd.Process.Pid)
+			if err := oldCmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Printf("Error sending SIGTERM to server: %v", err)
+			}
+			if err := oldCmd.Wait(); err != nil {
+				log.Printf("Server process wait error: %v", err)
+			}
+		}()
 	}
 
-	// Start new server process
+	// Start new server process immediately
 	m.serverCmd = exec.Command("mmdev", "server", "start")
 	serverOutR, serverOutW, err := os.Pipe()
 	if err != nil {
