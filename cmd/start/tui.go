@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -50,6 +51,7 @@ type model struct {
 	quitting     bool
 	serverLogs   strings.Builder
 	clientLogs   strings.Builder
+	shutdownWg   sync.WaitGroup
 }
 
 func initialModel() model {
@@ -256,6 +258,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				log.Printf("Quit requested, gracefully stopping processes...")
 
+				// Add to wait group for server process
+				if m.serverCmd != nil && m.serverCmd.Process != nil {
+					m.shutdownWg.Add(1)
+				}
+
 				// Send SIGTERM to both processes
 				if m.clientCmd != nil && m.clientCmd.Process != nil {
 					log.Printf("Sending SIGTERM to client process (PID %d)", m.clientCmd.Process.Pid)
@@ -285,6 +292,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							log.Printf("Server process wait error: %v", err)
 						}
 						log.Printf("Server process terminated")
+						m.shutdownWg.Done()
 					}
 
 					// Send quit message through the viewport channel
@@ -292,7 +300,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					viewportChan <- NewViewportLine{Viewport: "client", Line: "Client stopped\n"}
 				}()
 
-				// Return immediately to keep the UI responsive
+				// Wait for server to finish before quitting
+				go func() {
+					m.shutdownWg.Wait()
+					viewportChan <- NewViewportLine{Viewport: "server", Line: "Shutdown complete\n"}
+				}()
+
 				return m, tea.Quit
 			case "ctrl+c":
 				return m, tea.Quit
