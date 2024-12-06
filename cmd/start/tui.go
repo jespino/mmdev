@@ -155,6 +155,49 @@ func (m model) Init() tea.Cmd {
 	return listenForUpdates
 }
 
+func (m *model) restartServer() {
+	// Kill existing server process
+	if m.serverCmd != nil && m.serverCmd.Process != nil {
+		log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
+		if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+			log.Printf("Error sending SIGTERM to server: %v", err)
+		}
+		if err := m.serverCmd.Wait(); err != nil {
+			log.Printf("Server process wait error: %v", err)
+		}
+	}
+
+	// Start new server process
+	m.serverCmd = exec.Command("mmdev", "server", "start")
+	serverOutR, serverOutW, err := os.Pipe()
+	if err != nil {
+		log.Printf("Error creating server pipe: %v", err)
+		return
+	}
+	m.serverCmd.Stdout = serverOutW
+	m.serverCmd.Stderr = serverOutW
+
+	log.Printf("Starting server process with command: %v", m.serverCmd.Args)
+	if err := m.serverCmd.Start(); err != nil {
+		log.Printf("Error starting server: %v", err)
+		return
+	}
+	log.Printf("Server process started successfully with PID %d", m.serverCmd.Process.Pid)
+
+	// Clear server viewport
+	m.serverLogs.Reset()
+	m.serverViewport.SetContent("")
+
+	// Handle output streams
+	go handleOutput(serverOutR, m, "server")
+	go func() {
+		if err := m.serverCmd.Wait(); err != nil {
+			log.Printf("Server process ended with error: %v", err)
+		}
+		serverOutW.Close()
+	}()
+}
+
 func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	// Handle command execution here
 	if cmd == "q" || cmd == "quit" {
@@ -262,6 +305,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedPane = "server"
 				}
 				return m, nil
+			case "r":
+				if m.selectedPane == "server" {
+					m.restartServer()
+				}
+				return m, nil
 			}
 		}
 
@@ -297,7 +345,7 @@ func (m model) View() string {
 	if m.commandMode {
 		bottomBar = m.commandInput.View()
 	} else {
-		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • a: add content • tab: switch • :: command")
+		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart • tab: switch • :: command")
 	}
 
 	titleServer := titleStyle.Render("Server")
