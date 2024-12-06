@@ -159,49 +159,15 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) restartServer() {
-	// Kill existing server process in a goroutine
 	if m.serverCmd != nil && m.serverCmd.Process != nil {
-		oldCmd := m.serverCmd
-		go func() {
-			log.Printf("Sending SIGTERM to server process (PID %d)", oldCmd.Process.Pid)
-			if err := oldCmd.Process.Signal(syscall.SIGTERM); err != nil {
-				log.Printf("Error sending SIGTERM to server: %v", err)
-			}
-			if err := oldCmd.Wait(); err != nil {
-				log.Printf("Server process wait error: %v", err)
-			}
-		}()
-	}
-
-	// Start new server process immediately
-	m.serverCmd = exec.Command("mmdev", "server", "start")
-	serverOutR, serverOutW, err := os.Pipe()
-	if err != nil {
-		log.Printf("Error creating server pipe: %v", err)
-		return
-	}
-	m.serverCmd.Stdout = serverOutW
-	m.serverCmd.Stderr = serverOutW
-
-	log.Printf("Starting server process with command: %v", m.serverCmd.Args)
-	if err := m.serverCmd.Start(); err != nil {
-		log.Printf("Error starting server: %v", err)
-		return
-	}
-	log.Printf("Server process started successfully with PID %d", m.serverCmd.Process.Pid)
-
-	// Clear server viewport
-	m.serverLogs.Reset()
-	m.serverViewport.SetContent("")
-
-	// Handle output streams
-	go handleOutput(serverOutR, m, "server")
-	go func() {
-		if err := m.serverCmd.Wait(); err != nil {
-			log.Printf("Server process ended with error: %v", err)
+		log.Printf("Sending SIGUSR1 to server process (PID %d)", m.serverCmd.Process.Pid)
+		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
+			log.Printf("Error sending SIGUSR1 to server: %v", err)
 		}
-		serverOutW.Close()
-	}()
+		// Clear server viewport
+		m.serverLogs.Reset()
+		m.serverViewport.SetContent("")
+	}
 }
 
 func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
