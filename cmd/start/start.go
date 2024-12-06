@@ -9,31 +9,9 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-)
-
-var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("170"))
-
-	infoStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
-
-	// Subtle style for scroll indicators
-	subtleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
-
-	// Status indicators
-	statusStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86"))
-
-	errorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("196"))
+	"github.com/yourusername/yourproject/cmd/start/widgets"
 )
 
 type Command struct {
@@ -84,27 +62,12 @@ type model struct {
 }
 
 func initialModel() model {
-	cmdInput := textinput.New()
-	cmdInput.Placeholder = "Enter command..."
-	cmdInput.Focus()
-
-	sv := viewport.New(0, 0)
-	cv := viewport.New(0, 0)
-
-	sv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
-	cv.Style = lipgloss.NewStyle().Margin(0, 0, 1, 0)
-
 	return model{
-		serverView:    sv,
-		clientView:    cv,
-		cmdInput:      cmdInput,
-		showHelp:      false,
-		selectedPane:  "server",
-		serverRunning: false,
-		clientRunning: false,
-		cmdHistory:    make([]string, 0),
-		cmdHistoryPos: -1,
-		statusMsg:     "Ready to start processes",
+		serverPane:   widgets.NewServerPane(),
+		clientPane:   widgets.NewClientPane(),
+		commandLine:  widgets.NewCommandLine(),
+		helpWindow:   widgets.NewHelpWindow(),
+		selectedPane: "server",
 	}
 }
 
@@ -358,74 +321,21 @@ func (m model) View() string {
 		return fmt.Sprintf("Error: %v\n", m.err)
 	}
 
-	if m.showHelp {
-		return `
-Keyboard shortcuts:
-  q, ctrl+c    Quit
-  ?, h         Toggle help
-  :            Focus command input
-  tab, esc     Toggle input focus
-  ↑/↓          Scroll output
-  ctrl+l       Clear output
-  
-Commands:
-  clear        Clear all output
-  help         Show this help
-  restart      Restart both processes
-  status       Show process status
-Press any key to close help
-`
+	if helpView := m.helpWindow.View(); helpView != "" {
+		return helpView
 	}
 
-	var serverIndicator, clientIndicator string
-	if m.serverView.ScrollPercent() < 1.0 {
-		serverIndicator = subtleStyle.Render("↓")
-	}
-	if m.clientView.ScrollPercent() < 1.0 {
-		clientIndicator = subtleStyle.Render("↓")
-	}
+	m.serverPane.SetSelected(m.selectedPane == "server")
+	m.clientPane.SetSelected(m.selectedPane == "client")
 
-	serverStatus := statusStyle.Render("●")
-	if !m.serverRunning {
-		serverStatus = errorStyle.Render("○")
-	}
-
-	clientStatus := statusStyle.Render("●")
-	if !m.clientRunning {
-		clientStatus = errorStyle.Render("○")
-	}
-
-	statusBar := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		Render(fmt.Sprintf("%s | ? for help | : for command | q to quit", m.statusMsg))
-
-	serverTitle := "Server Output: "
-	if m.selectedPane == "server" {
-		serverTitle = "> " + serverTitle
-	}
-
-	clientTitle := "Client Output: "
-	if m.selectedPane == "client" {
-		clientTitle = "> " + clientTitle
-	}
-
-	serverPane := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render(serverTitle)+serverStatus+" "+serverIndicator,
-		m.serverView.View(),
+	panes := lipgloss.JoinHorizontal(lipgloss.Top,
+		m.serverPane.View(),
+		m.clientPane.View(),
 	)
-
-	clientPane := lipgloss.JoinVertical(lipgloss.Left,
-		titleStyle.Render(clientTitle)+clientStatus+" "+clientIndicator,
-		m.clientView.View(),
-	)
-
-	panes := lipgloss.JoinHorizontal(lipgloss.Top, serverPane, clientPane)
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		panes,
-		infoStyle.Render("Command (Enter to execute):"),
-		m.cmdInput.View(),
-		statusBar,
+		m.commandLine.View(),
 	)
 }
 
