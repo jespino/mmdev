@@ -340,16 +340,26 @@ func (m *Manager) Start() error {
 		var containerID string
 		if existingContainer != nil {
 			containerID = existingContainer.ID
-			// If container exists but is not running, start it
-			if existingContainer.State != "running" {
+			switch existingContainer.State {
+			case "running":
+				fmt.Printf("Container %s is already running\n", service)
+			case "exited", "created", "stopped":
+				fmt.Printf("Starting existing %s container\n", service)
 				if err := m.client.ContainerStart(m.ctx, containerID, types.ContainerStartOptions{}); err != nil {
 					return fmt.Errorf("failed to start existing container %s: %w", containerName, err)
 				}
-				fmt.Printf("Started existing %s container\n", service)
-			} else {
-				fmt.Printf("Container %s is already running\n", service)
+			default:
+				// For any other state, remove and recreate
+				fmt.Printf("Container %s is in %s state, recreating...\n", service, existingContainer.State)
+				if err := m.client.ContainerRemove(m.ctx, containerID, types.ContainerRemoveOptions{Force: true}); err != nil {
+					return fmt.Errorf("failed to remove container %s: %w", containerName, err)
+				}
+				// Fall through to container creation
+				existingContainer = nil
 			}
-		} else {
+		}
+		
+		if existingContainer == nil {
 			// Create new container
 			containerConfig := &containerTypes.Config{
 				Image:        config.Image,
