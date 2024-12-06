@@ -51,12 +51,12 @@ func (r *PlaywrightRunner) RunTests() error {
 
 	// Create container config
 	config := &container.Config{
-		Image:      "mcr.microsoft.com/playwright:v1.49.0-noble",
-		Cmd:        []string{"sh", "-c", "npm install && npm run test"},
-		Tty:        true,
+		Image:        "mcr.microsoft.com/playwright:v1.49.0-noble",
+		Cmd:          []string{"sh", "-c", "npm install && npm run test"},
+		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
-		WorkingDir: "/mattermost/e2e-tests/playwright",
+		WorkingDir:   "/mattermost/e2e-tests/playwright",
 	}
 
 	// Create host config with volume mount
@@ -69,7 +69,6 @@ func (r *PlaywrightRunner) RunTests() error {
 			},
 		},
 		NetworkMode: "host",
-		Privileged:  true,
 	}
 
 	// Create container
