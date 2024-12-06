@@ -37,11 +37,8 @@ func (r *PlaywrightRunner) RunTests() error {
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
-
-	// Ensure the tests directory exists
-	testsDir := filepath.Join(absBaseDir, "e2e-tests", "playwright")
-	if _, err := os.Stat(testsDir); os.IsNotExist(err) {
-		return fmt.Errorf("playwright tests directory not found at %s", testsDir)
+	if _, err := os.Stat(absBaseDir); os.IsNotExist(err) {
+		return fmt.Errorf("mattermost directory not found at %s", absBaseDir)
 	}
 
 	// Pull the Playwright Docker image
@@ -54,9 +51,9 @@ func (r *PlaywrightRunner) RunTests() error {
 	// Create container config
 	config := &container.Config{
 		Image:      "mcr.microsoft.com/playwright:v1.49.0-noble",
-		Cmd:        []string{"npx", "playwright", "test"},
+		Cmd:        []string{"sh", "-c", "npm install && npm run test"},
 		Tty:        true,
-		WorkingDir: "/tests",
+		WorkingDir: "/mattermost/e2e-tests/playwright",
 	}
 
 	// Create host config with volume mount
@@ -64,8 +61,8 @@ func (r *PlaywrightRunner) RunTests() error {
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,
-				Source: testsDir,
-				Target: "/tests",
+				Source: absBaseDir,
+				Target: "/mattermost",
 			},
 		},
 	}
