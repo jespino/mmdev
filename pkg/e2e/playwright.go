@@ -65,6 +65,7 @@ func (r *PlaywrightRunner) RunTests() error {
 				Target: "/mattermost",
 			},
 		},
+		NetworkMode: "host",
 	}
 
 	// Create container
