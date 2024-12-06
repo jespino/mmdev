@@ -1,8 +1,6 @@
 package start
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -10,21 +8,27 @@ import (
 
 var (
 	titleStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("170"))
+			Bold(true).
+			Foreground(lipgloss.Color("241"))
+	titleSelectedStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("170"))
 
 	helpStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241"))
+			Foreground(lipgloss.Color("241"))
 )
 
 type model struct {
-	leftViewport  viewport.Model
-	rightViewport viewport.Model
-	ready         bool
+	serverViewport viewport.Model
+	clientViewport viewport.Model
+	ready          bool
+	selectedPane   string
 }
 
 func initialModel() model {
-	return model{}
+	return model{
+		selectedPane: "server",
+	}
 }
 
 func (m model) Init() tea.Cmd {
@@ -33,8 +37,8 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
-		leftCmd  tea.Cmd
-		rightCmd tea.Cmd
+		serverCmd tea.Cmd
+		clientCmd tea.Cmd
 	)
 
 	switch msg := msg.(type) {
@@ -42,30 +46,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "left", "h":
-			m.leftViewport.SetContent(m.leftViewport.View() + "\nNew left content")
-		case "right", "l":
-			m.rightViewport.SetContent(m.rightViewport.View() + "\nNew right content")
+		case "tab":
+			if m.selectedPane == "server" {
+				m.selectedPane = "client"
+			} else {
+				m.selectedPane = "server"
+			}
+			return m, nil
+		case "a":
+			if m.selectedPane == "server" {
+				m.serverViewport.SetContent(m.serverViewport.View() + "\nNew server content")
+			} else {
+				m.clientViewport.SetContent(m.clientViewport.View() + "\nNew client content")
+			}
 		}
 
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			viewportHeight := msg.Height / 2
+			viewportWidth := msg.Width / 2
 
-			m.leftViewport = viewport.New(msg.Width, viewportHeight)
-			m.leftViewport.SetContent("Left viewport content\nUse arrow keys to navigate")
-			
-			m.rightViewport = viewport.New(msg.Width, viewportHeight)
-			m.rightViewport.SetContent("Right viewport content\nUse arrow keys to navigate")
-
+			m.serverViewport = viewport.New(viewportWidth, msg.Height-2)
+			m.clientViewport = viewport.New(viewportWidth, msg.Height-2)
 			m.ready = true
 		}
 	}
 
-	m.leftViewport, leftCmd = m.leftViewport.Update(msg)
-	m.rightViewport, rightCmd = m.rightViewport.Update(msg)
+	m.serverViewport.GotoBottom()
+	m.clientViewport.GotoBottom()
 
-	return m, tea.Batch(leftCmd, rightCmd)
+	if m.selectedPane == "server" {
+		m.serverViewport, serverCmd = m.serverViewport.Update(msg)
+	} else {
+		m.clientViewport, clientCmd = m.clientViewport.Update(msg)
+	}
+
+	return m, tea.Batch(serverCmd, clientCmd)
 }
 
 func (m model) View() string {
@@ -73,13 +88,27 @@ func (m model) View() string {
 		return "Initializing..."
 	}
 
-	help := helpStyle.Render("↑/↓: scroll • q: quit • h/l: add content")
-	
-	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s",
-		titleStyle.Render("Top View"),
-		m.leftViewport.View(),
-		titleStyle.Render("Bottom View"),
-		m.rightViewport.View(),
+	help := helpStyle.Render("↑/↓: scroll • q: quit • a: add content • tab: switch")
+
+	titleServer := titleStyle.Render("Server")
+	titleClient := titleStyle.Render("Client")
+	if m.selectedPane == "server" {
+		titleServer = titleSelectedStyle.Render("Server")
+	} else {
+		titleClient = titleSelectedStyle.Render("Client")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleServer,
+				m.serverViewport.View(),
+			),
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleClient,
+				m.clientViewport.View(),
+			),
+		),
 		help,
 	)
 }
@@ -88,6 +117,7 @@ func StartTUI() error {
 	p := tea.NewProgram(
 		initialModel(),
 		tea.WithAltScreen(),
+		tea.WithMouseAllMotion(),
 	)
 
 	_, err := p.Run()
