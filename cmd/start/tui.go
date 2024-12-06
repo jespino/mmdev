@@ -29,6 +29,8 @@ var (
 			Foreground(lipgloss.Color("241"))
 )
 
+var viewportChan = make(chan NewViewportLine)
+
 type NewViewportLine struct {
 	Viewport string
 	Line     string
@@ -124,15 +126,19 @@ func handleOutput(reader io.Reader, m *model, viewport string) {
 		} else {
 			m.clientLogs.WriteString(text)
 		}
-		m.Update(NewViewportLine{Viewport: viewport, Line: text})
+		viewportChan <- NewViewportLine{Viewport: viewport, Line: text}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("[%s] Scanner error: %v", viewport, err)
 	}
 }
 
+func listenForUpdates() tea.Msg {
+	return <-viewportChan
+}
+
 func (m model) Init() tea.Cmd {
-	return nil
+	return listenForUpdates
 }
 
 func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
@@ -165,6 +171,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.clientViewport.SetContent(m.clientViewport.View() + msg.Line)
 			m.clientViewport.GotoBottom()
 		}
+		return m, listenForUpdates
 	case tea.KeyMsg:
 		if m.commandMode {
 			switch msg.String() {
