@@ -34,6 +34,7 @@ var viewportChan = make(chan NewViewportLine)
 type NewViewportLine struct {
 	Viewport string
 	Line     string
+	Quit     bool
 }
 
 type model struct {
@@ -213,10 +214,6 @@ func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	log.Printf("Update called with message type: %T", msg)
-	if m.quitting {
-		log.Printf("Quitting application after successful shutdown")
-		return m, tea.Quit
-	}
 	var (
 		serverCmd tea.Cmd
 		clientCmd tea.Cmd
@@ -233,6 +230,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Printf("Update client logs: %s", m.clientViewport.View()+msg.Line)
 			m.clientViewport.SetContent(m.clientViewport.View() + msg.Line)
 			m.clientViewport.GotoBottom()
+		}
+		if msg.Quit {
+			log.Printf("Received quit message, shutting down application")
+			return m, tea.Quit
 		}
 		return m, listenForUpdates
 	case tea.KeyMsg:
@@ -306,8 +307,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.shutdownWg.Wait()
 					viewportChan <- NewViewportLine{Viewport: "server", Line: "Shutdown complete\n"}
 					viewportChan <- NewViewportLine{Viewport: "server", Line: "Exiting...\n"}
-					// Only quit after shutdown is complete
-					m.quitting = true
+					// Send final quit message through the viewport channel
+					viewportChan <- NewViewportLine{Quit: true}
 				}()
 
 				return m, nil
