@@ -44,9 +44,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "left", "h":
-			m.leftViewport.SetContent(m.leftViewport.Content() + "\nNew left content")
+			m.leftViewport.SetContent(m.leftViewport.View() + "\nNew left content")
 		case "right", "l":
-			m.rightViewport.SetContent(m.rightViewport.Content() + "\nNew right content")
+			m.rightViewport.SetContent(m.rightViewport.View() + "\nNew right content")
 		}
 
 	case tea.WindowSizeMsg:
