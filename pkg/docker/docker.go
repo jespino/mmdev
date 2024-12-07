@@ -115,7 +115,7 @@ var serviceConfigs = map[Service]ServiceConfig{
 		Image: "inbucket/inbucket:3.0.3",
 		ExposedPorts: map[string]string{
 			"10000": "9000", // Web UI
-			"2500":  "2500", // SMTP
+			"10025": "2500", // SMTP
 			"1100":  "1100", // POP3
 		},
 	},
