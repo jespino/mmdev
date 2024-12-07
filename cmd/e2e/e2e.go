@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"github.com/jespino/mmdev/pkg/docker"
 	"github.com/jespino/mmdev/pkg/e2e"
 	"github.com/spf13/cobra"
@@ -64,21 +66,26 @@ func PlaywrightUICmd() *cobra.Command {
 		Use:   "ui",
 		Short: "Open Playwright UI",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Ensure Docker image is available
-			dockerManager, err := docker.NewManager()
-			if err != nil {
-				return fmt.Errorf("failed to create docker manager: %w", err)
-			}
-			if err := dockerManager.EnsurePlaywrightImage(); err != nil {
-				return fmt.Errorf("failed to ensure playwright image: %w", err)
+			// Change to playwright directory
+			if err := os.Chdir("e2e-tests/playwright"); err != nil {
+				return fmt.Errorf("failed to change to playwright directory: %w", err)
 			}
 
-			// Create and run the UI
-			runner, err := e2e.NewPlaywrightRunner(".", "ui")
-			if err != nil {
-				return fmt.Errorf("failed to create playwright runner: %w", err)
+			// Run npm install if needed
+			if _, err := os.Stat("node_modules"); os.IsNotExist(err) {
+				cmd := exec.Command("npm", "install")
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					return fmt.Errorf("failed to install dependencies: %w", err)
+				}
 			}
-			return runner.RunTests()
+
+			// Run playwright UI
+			cmd := exec.Command("npm", "run", "playwright-ui")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
 		},
 	}
 	return cmd
