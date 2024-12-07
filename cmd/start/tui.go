@@ -53,6 +53,7 @@ type model struct {
 	commandMode    bool
 	serverAtBottom bool
 	clientAtBottom bool
+	splitVertical  bool
 
 	serverCmd         *exec.Cmd
 	clientCmd         *exec.Cmd
@@ -86,6 +87,7 @@ func initialModel() model {
 		commandInput:   commandInput,
 		serverAtBottom: true,
 		clientAtBottom: true,
+		splitVertical:  true,
 	}
 
 	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
@@ -317,6 +319,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.restartServer()
 				}
 				return m, nil
+			case "s":
+				m.splitVertical = !m.splitVertical
+				return m, nil
 			}
 		}
 
@@ -354,7 +359,7 @@ func (m *model) View() string {
 	if m.commandMode {
 		bottomBar = m.commandInput.View()
 	} else {
-		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • tab: switch • :: command")
+		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
 	}
 
 	serverScrollPct := fmt.Sprintf("%d%%", int(m.serverViewport.ScrollPercent()*100))
@@ -368,8 +373,9 @@ func (m *model) View() string {
 		titleClient = titleSelectedStyle.Render(fmt.Sprintf("Client [%s]", clientScrollPct))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left,
-		lipgloss.JoinHorizontal(lipgloss.Top,
+	var content string
+	if m.splitVertical {
+		content = lipgloss.JoinHorizontal(lipgloss.Top,
 			lipgloss.JoinVertical(lipgloss.Left,
 				titleServer,
 				m.serverViewport.View(),
@@ -378,7 +384,22 @@ func (m *model) View() string {
 				titleClient,
 				m.clientViewport.View(),
 			),
-		),
+		)
+	} else {
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleServer,
+				m.serverViewport.View(),
+			),
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleClient,
+				m.clientViewport.View(),
+			),
+		)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		content,
 		bottomBar,
 	)
 }
