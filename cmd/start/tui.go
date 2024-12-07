@@ -50,9 +50,11 @@ type model struct {
 	serverWriter io.Writer
 	clientWriter io.Writer
 	quitting     bool
-	serverLogs   strings.Builder
-	clientLogs   strings.Builder
-	shutdownWg   sync.WaitGroup
+	serverLogs        strings.Builder
+	clientLogs        strings.Builder
+	serverViewContent strings.Builder
+	clientViewContent strings.Builder
+	shutdownWg        sync.WaitGroup
 }
 
 func initialModel() model {
@@ -164,8 +166,9 @@ func (m *model) restartServer() {
 		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
 			log.Printf("Error sending SIGUSR1 to server: %v", err)
 		}
-		// Clear server viewport
+		// Clear server viewport and content
 		m.serverLogs.Reset()
+		m.serverViewContent.Reset()
 		m.serverViewport.SetContent("")
 	}
 }
@@ -189,12 +192,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case NewViewportLine:
 		if msg.Viewport == "server" {
-			log.Printf("Update server logs: %s", m.serverViewport.View()+msg.Line)
-			m.serverViewport.SetContent(m.serverViewport.View() + msg.Line)
+			m.serverViewContent.WriteString(msg.Line)
+			log.Printf("Update server logs: %s", msg.Line)
+			m.serverViewport.SetContent(m.serverViewContent.String())
 			m.serverViewport.GotoBottom()
 		} else {
-			log.Printf("Update client logs: %s", m.clientViewport.View()+msg.Line)
-			m.clientViewport.SetContent(m.clientViewport.View() + msg.Line)
+			m.clientViewContent.WriteString(msg.Line)
+			log.Printf("Update client logs: %s", msg.Line)
+			m.clientViewport.SetContent(m.clientViewContent.String())
 			m.clientViewport.GotoBottom()
 		}
 		if msg.Quit {
