@@ -14,9 +14,10 @@ import (
 )
 
 type PlaywrightRunner struct {
-	client  *client.Client
-	baseDir string
-	action  string
+	client      *client.Client
+	baseDir     string
+	action      string
+	containerID string
 }
 
 func NewPlaywrightRunner(baseDir string, action string) (*PlaywrightRunner, error) {
@@ -33,6 +34,11 @@ func NewPlaywrightRunner(baseDir string, action string) (*PlaywrightRunner, erro
 
 func (r *PlaywrightRunner) RunTests() error {
 	ctx := context.Background()
+	
+	// Setup signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
 
 	// Get absolute path for tests directory
 	absBaseDir, err := filepath.Abs(r.baseDir)
@@ -135,7 +141,7 @@ func (r *PlaywrightRunner) RunTests() error {
 		}
 
 		// Remove container
-		err = r.client.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+		err = r.client.ContainerRemove(ctx, r.containerID, types.ContainerRemoveOptions{})
 		if err != nil {
 			fmt.Printf("Warning: failed to remove container: %v\n", err)
 		}
