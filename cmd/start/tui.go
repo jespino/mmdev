@@ -25,6 +25,20 @@ var (
 			Padding(0, 1).
 			MarginBottom(1)
 
+	suggestionStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#666666"))
+
+	commands = []string{
+		"quit",
+		"q",
+		"restart",
+		"r",
+		"split",
+		"s",
+		"help",
+		"h",
+	}
+
 	titleSelectedStyle = lipgloss.NewStyle().
 				Bold(true).
 				Foreground(lipgloss.Color("#FFFFFF")).
@@ -55,6 +69,7 @@ type model struct {
 	serverAtBottom bool
 	clientAtBottom bool
 	splitVertical  bool
+	suggestion     string
 
 	serverCmd         *exec.Cmd
 	clientCmd         *exec.Cmd
@@ -287,19 +302,39 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+c":
 				m.commandMode = false
 				m.commandInput.SetValue("")
+				m.suggestion = ""
 				return m, nil
 			case "enter":
 				m.commandMode = false
 				value := m.commandInput.Value()
 				m.commandInput.SetValue("")
+				m.suggestion = ""
 				return m.runCommand(value)
+			case "tab":
+				if m.suggestion != "" {
+					m.commandInput.SetValue(m.suggestion)
+					m.suggestion = ""
+				}
+				return m, nil
 			case "esc":
 				m.commandMode = false
 				m.commandInput.SetValue("")
 				return m, nil
 			default:
+				m.commandInput, cmdCmd = m.commandInput.Update(msg)
+				// Find suggestion
+				input := m.commandInput.Value()
+				m.suggestion = ""
+				if input != "" {
+					for _, cmd := range commands {
+						if strings.HasPrefix(cmd, input) && cmd != input {
+							m.suggestion = cmd
+							break
+						}
+					}
+				}
+				return m, cmdCmd
 			}
-			m.commandInput, cmdCmd = m.commandInput.Update(msg)
 		} else {
 			switch msg.String() {
 			case "q":
@@ -419,7 +454,11 @@ func (m *model) View() string {
 
 	var commandArea string
 	if m.commandMode {
-		commandArea = m.commandInput.View()
+		if m.suggestion != "" {
+			commandArea = m.commandInput.View() + suggestionStyle.Render(m.suggestion[len(m.commandInput.Value()):])
+		} else {
+			commandArea = m.commandInput.View()
+		}
 	} else {
 		commandArea = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
 	}
