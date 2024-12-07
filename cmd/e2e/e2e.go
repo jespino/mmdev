@@ -120,9 +120,95 @@ func PlaywrightReportCmd() *cobra.Command {
 func CypressCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cypress",
+		Short: "Cypress E2E testing commands",
+	}
+
+	cmd.AddCommand(
+		CypressRunCmd(),
+		CypressUICmd(),
+		CypressReportCmd(),
+	)
+	return cmd
+}
+
+func CypressRunCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "run",
 		Short: "Run Cypress E2E tests",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			panic("Cypress tests not yet implemented")
+			// Change to cypress directory
+			if err := os.Chdir("e2e-tests/cypress"); err != nil {
+				return fmt.Errorf("failed to change to cypress directory: %w", err)
+			}
+
+			// Run npm install if needed
+			if _, err := os.Stat("node_modules"); os.IsNotExist(err) {
+				installCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm install")
+				installCmd.Stdout = os.Stdout
+				installCmd.Stderr = os.Stderr
+				if err := installCmd.Run(); err != nil {
+					return fmt.Errorf("failed to install dependencies: %w", err)
+				}
+			}
+
+			// Run cypress tests
+			runCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm run cypress:run")
+			runCmd.Stdout = os.Stdout
+			runCmd.Stderr = os.Stderr
+			return runCmd.Run()
+		},
+	}
+	return cmd
+}
+
+func CypressUICmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ui",
+		Short: "Open Cypress UI",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Change to cypress directory
+			if err := os.Chdir("e2e-tests/cypress"); err != nil {
+				return fmt.Errorf("failed to change to cypress directory: %w", err)
+			}
+
+			// Run npm install if needed
+			if _, err := os.Stat("node_modules"); os.IsNotExist(err) {
+				installCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm install")
+				installCmd.Stdout = os.Stdout
+				installCmd.Stderr = os.Stderr
+				if err := installCmd.Run(); err != nil {
+					return fmt.Errorf("failed to install dependencies: %w", err)
+				}
+			}
+
+			// Run cypress UI
+			runCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm run cypress:open")
+			runCmd.Stdout = os.Stdout
+			runCmd.Stderr = os.Stderr
+			return runCmd.Run()
+		},
+	}
+	return cmd
+}
+
+func CypressReportCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "report",
+		Short: "Show Cypress test report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Change to cypress directory
+			if err := os.Chdir("e2e-tests/cypress"); err != nil {
+				return fmt.Errorf("failed to change to cypress directory: %w", err)
+			}
+
+			// Check if report exists
+			if _, err := os.Stat("results/mochawesome-report/mochawesome.html"); os.IsNotExist(err) {
+				return fmt.Errorf("no test report found - please run the tests first")
+			}
+
+			// Open the report in default browser
+			openCmd := exec.Command("xdg-open", "results/mochawesome-report/mochawesome.html")
+			return openCmd.Run()
 		},
 	}
 	return cmd
