@@ -365,7 +365,7 @@ func (m *model) View() string {
 
 func StartTUI() error {
 	p := tea.NewProgram(
-		initialModel(),
+		&initialModel(),
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),
 	)
