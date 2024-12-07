@@ -44,6 +44,13 @@ type NewViewportLine struct {
 	Quit     bool
 }
 
+var commands = []string{
+	"quit",
+	"restart",
+	"clear",
+	"help",
+}
+
 type model struct {
 	serverViewport viewport.Model
 	clientViewport viewport.Model
@@ -54,6 +61,7 @@ type model struct {
 	serverAtBottom bool
 	clientAtBottom bool
 	splitVertical  bool
+	suggestions    []string
 
 	serverCmd         *exec.Cmd
 	clientCmd         *exec.Cmd
@@ -232,16 +240,30 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+c":
 				m.commandMode = false
 				m.commandInput.SetValue("")
+				m.suggestions = nil
 				return m, nil
 			case "enter":
 				m.commandMode = false
 				value := m.commandInput.Value()
 				m.commandInput.SetValue("")
+				m.suggestions = nil
 				return m.runCommand(value)
 			case "esc":
 				m.commandMode = false
 				m.commandInput.SetValue("")
+				m.suggestions = nil
 				return m, nil
+			default:
+				// Update suggestions based on current input
+				currentInput := m.commandInput.Value() + msg.String()
+				m.suggestions = nil
+				if currentInput != "" {
+					for _, cmd := range commands {
+						if strings.HasPrefix(cmd, currentInput) {
+							m.suggestions = append(m.suggestions, cmd)
+						}
+					}
+				}
 			}
 			m.commandInput, cmdCmd = m.commandInput.Update(msg)
 		} else {
@@ -358,9 +380,18 @@ func (m *model) View() string {
 		return "Initializing..."
 	}
 
-	var bottomBar string
+	var commandArea string
 	if m.commandMode {
-		bottomBar = m.commandInput.View()
+		// Show suggestions above command input if any exist
+		if len(m.suggestions) > 0 {
+			suggestions := strings.Join(m.suggestions, " ")
+			commandArea = lipgloss.JoinVertical(lipgloss.Left,
+				helpStyle.Render(suggestions),
+				m.commandInput.View(),
+			)
+		} else {
+			commandArea = m.commandInput.View()
+		}
 	} else {
 		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
 	}
@@ -411,7 +442,7 @@ func (m *model) View() string {
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		content,
-		bottomBar,
+		commandArea,
 	)
 }
 
