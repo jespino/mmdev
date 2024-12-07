@@ -23,6 +23,18 @@ func E2ECmd() *cobra.Command {
 func PlaywrightCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "playwright",
+		Short: "Playwright E2E testing commands",
+	}
+
+	cmd.AddCommand(
+		PlaywrightRunCmd(),
+	)
+	return cmd
+}
+
+func PlaywrightRunCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "run",
 		Short: "Run Playwright E2E tests",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Ensure Docker image is available
