@@ -80,15 +80,6 @@ type model struct {
 }
 
 func initialModel() model {
-	// Set up logging
-	logFile, err := os.OpenFile("mmdev-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("Error opening log file: %v\n", err)
-		os.Exit(1)
-	}
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-	log.SetOutput(logFile)
-	log.Printf("=== Starting new mmdev session ===")
 
 	commandInput := textinput.New()
 	commandInput.Prompt = ": "
@@ -102,7 +93,6 @@ func initialModel() model {
 		splitVertical:  false,
 	}
 
-	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
 
 	// Start server process
 	m.serverCmd = exec.Command("mmdev", "server", "start")
@@ -123,18 +113,12 @@ func initialModel() model {
 	m.clientCmd.Stderr = clientOutW
 
 	// Start processes
-	log.Printf("Starting server process with command: %v", m.serverCmd.Args)
 	if err := m.serverCmd.Start(); err != nil {
-		log.Printf("Error starting server: %v", err)
-	} else {
-		log.Printf("Server process started successfully with PID %d", m.serverCmd.Process.Pid)
+		fmt.Printf("Error starting server: %v\n", err)
 	}
 
-	log.Printf("Starting client process with command: %v", m.clientCmd.Args)
 	if err := m.clientCmd.Start(); err != nil {
-		log.Printf("Error starting client: %v", err)
-	} else {
-		log.Printf("Client process started successfully with PID %d", m.clientCmd.Process.Pid)
+		fmt.Printf("Error starting client: %v\n", err)
 	}
 
 	// Handle output streams
@@ -158,13 +142,9 @@ func initialModel() model {
 }
 
 func handleOutput(reader io.Reader, m *model, viewport string) {
-	log.Printf("Starting output handler for %s viewport", viewport)
 	scanner := bufio.NewScanner(reader)
-	lineCount := 0
 	for scanner.Scan() {
 		text := scanner.Text() + "\n"
-		lineCount++
-		log.Printf("[%s][line %d] Output: %s", viewport, lineCount, text)
 		if viewport == "server" {
 			m.serverLogs.WriteString(text)
 		} else {
@@ -189,7 +169,7 @@ func (m *model) restartServer() {
 	if m.serverCmd != nil && m.serverCmd.Process != nil {
 		log.Printf("Sending SIGUSR1 to server process (PID %d)", m.serverCmd.Process.Pid)
 		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
-			log.Printf("Error sending SIGUSR1 to server: %v", err)
+			fmt.Printf("Error sending SIGUSR1 to server: %v\n", err)
 		}
 		// Clear server viewport and content
 		m.serverLogs.Reset()
@@ -203,7 +183,6 @@ func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	switch cmd {
 	case "q", "quit":
 		m.quitting = true
-		log.Printf("Quit requested via command, gracefully stopping processes...")
 
 		// Add to wait group for server process
 		if m.serverCmd != nil && m.serverCmd.Process != nil {
@@ -308,7 +287,6 @@ func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	log.Printf("Update called with message type: %T", msg)
 	var (
 		serverCmd tea.Cmd
 		clientCmd tea.Cmd
@@ -319,21 +297,18 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case NewViewportLine:
 		if msg.Viewport == "server" {
 			m.serverViewContent.WriteString(msg.Line)
-			log.Printf("Update server logs: %s", msg.Line)
 			m.serverViewport.SetContent(m.serverViewContent.String())
 			if m.serverAtBottom {
 				m.serverViewport.GotoBottom()
 			}
 		} else {
 			m.clientViewContent.WriteString(msg.Line)
-			log.Printf("Update client logs: %s", msg.Line)
 			m.clientViewport.SetContent(m.clientViewContent.String())
 			if m.clientAtBottom {
 				m.clientViewport.GotoBottom()
 			}
 		}
 		if msg.Quit {
-			log.Printf("Received quit message, shutting down application")
 			return m, tea.Quit
 		}
 		return m, listenForUpdates
