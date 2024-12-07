@@ -10,6 +10,8 @@ MMDev is a command-line tool designed to streamline the development workflow for
 - Combined server and client development mode with split view
 - Code linting for both server and client
 - File watching and auto-restart capabilities
+- E2E testing support with Playwright and Cypress
+- Automatic Mattermost repository detection and navigation
 
 ## Prerequisites
 
@@ -17,6 +19,7 @@ MMDev is a command-line tool designed to streamline the development workflow for
 - Docker
 - Node.js and npm (for client development)
 - PostgreSQL client tools (for health checks)
+- NVM (Node Version Manager) configured in ~/.nvm
 
 ## Installation
 
@@ -33,9 +36,10 @@ mmdev start
 ```
 
 This command starts both the server and client in a split view with live output from both processes. Use:
-- 'q' or ESC to quit
-- 'h' for horizontal split
-- 'v' for vertical split
+- 'tab' to switch between server/client panes
+- 'r' to restart server (when server pane is selected)
+- 'q' to quit
+- ':' to enter command mode
 
 ### Server Commands
 
@@ -54,6 +58,7 @@ mmdev server generate all     # Generate all code (layers and mocks)
 mmdev client start    # Start the client
 mmdev client start -w # Start with file watching
 mmdev client lint     # Run client code linting
+mmdev client fix      # Run auto-fix on client code
 ```
 
 ### Docker Commands
@@ -62,6 +67,14 @@ mmdev client lint     # Run client code linting
 mmdev docker start # Start required Docker services
 mmdev docker stop  # Stop Docker services
 mmdev docker clean # Remove containers and volumes
+```
+
+### E2E Testing Commands
+
+```bash
+mmdev e2e playwright run     # Run Playwright E2E tests
+mmdev e2e playwright ui      # Open Playwright UI
+mmdev e2e playwright report  # Show Playwright test report
 ```
 
 ## Docker Services
