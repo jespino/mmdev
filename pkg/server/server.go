@@ -59,6 +59,8 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 		"-X github.com/mattermost/mattermost/server/public/model.BuildEnterpriseReady=false",
 	}
 
+	fmt.Println("Compiling...")
+	
 	// Build the server binary
 	buildCmd := exec.Command("go", "build",
 		"-ldflags", strings.Join(ldflags, " "),
