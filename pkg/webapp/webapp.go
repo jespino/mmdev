@@ -98,11 +98,6 @@ func (m *Manager) validateBaseDir() error {
 }
 
 func (m *Manager) ensureDependencies() error {
-	// Check if node_modules exists
-	if _, err := os.Stat(filepath.Join(m.baseDir, "node_modules")); err == nil {
-		return nil
-	}
-
 	// Install dependencies
 	cmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm install")
 	cmd.Dir = m.baseDir
