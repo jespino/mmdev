@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -34,7 +36,7 @@ func NewPlaywrightRunner(baseDir string, action string) (*PlaywrightRunner, erro
 
 func (r *PlaywrightRunner) RunTests() error {
 	ctx := context.Background()
-	
+
 	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
