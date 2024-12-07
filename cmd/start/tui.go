@@ -20,10 +20,17 @@ import (
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("241"))
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color("#383838")).
+			Padding(0, 1).
+			MarginBottom(1)
+
 	titleSelectedStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("170"))
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#FF69B4")).
+				Padding(0, 1).
+				MarginBottom(1)
 
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241"))
