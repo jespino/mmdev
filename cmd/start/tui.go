@@ -54,11 +54,11 @@ type model struct {
 	serverAtBottom bool
 	clientAtBottom bool
 
-	serverCmd    *exec.Cmd
-	clientCmd    *exec.Cmd
-	serverWriter io.Writer
-	clientWriter io.Writer
-	quitting     bool
+	serverCmd         *exec.Cmd
+	clientCmd         *exec.Cmd
+	serverWriter      io.Writer
+	clientWriter      io.Writer
+	quitting          bool
 	serverLogs        strings.Builder
 	clientLogs        strings.Builder
 	serverViewContent strings.Builder
@@ -323,10 +323,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		if !m.ready {
 			viewportWidth := msg.Width / 2
-			log.Printf("Initializing viewports with width=%d height=%d", viewportWidth, msg.Height-2)
+			log.Printf("Initializing viewports with width=%d height=%d", viewportWidth, msg.Height-4)
 
-			m.serverViewport = viewport.New(viewportWidth, msg.Height-2)
-			m.clientViewport = viewport.New(viewportWidth, msg.Height-2)
+			m.serverViewport = viewport.New(viewportWidth, msg.Height-4)
+			m.clientViewport = viewport.New(viewportWidth, msg.Height-4)
 			m.ready = true
 			log.Printf("Viewports initialized successfully")
 		} else {
