@@ -270,15 +270,46 @@ func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "client-restart":
 		if m.clientCmd != nil && m.clientCmd.Process != nil {
-			log.Printf("Sending SIGUSR1 to client process (PID %d)", m.clientCmd.Process.Pid)
-			if err := m.clientCmd.Process.Signal(syscall.SIGUSR1); err != nil {
-				log.Printf("Error sending SIGUSR1 to client: %v", err)
+			log.Printf("Terminating client process (PID %d)", m.clientCmd.Process.Pid)
+			if err := m.clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Printf("Error sending SIGTERM to client: %v", err)
 			}
-			// Clear client viewport and content
-			m.clientLogs.Reset()
-			m.clientViewContent.Reset()
-			m.clientViewport.SetContent("")
+			if err := m.clientCmd.Wait(); err != nil {
+				log.Printf("Error waiting for client to terminate: %v", err)
+			}
 		}
+
+		// Clear client viewport and content
+		m.clientLogs.Reset()
+		m.clientViewContent.Reset()
+		m.clientViewport.SetContent("")
+
+		// Start new client process
+		m.clientCmd = exec.Command("mmdev", "webapp", "start", "--watch")
+		clientOutR, clientOutW, err := os.Pipe()
+		if err != nil {
+			log.Printf("Error creating client pipe: %v", err)
+			return m, nil
+		}
+		m.clientCmd.Stdout = clientOutW
+		m.clientCmd.Stderr = clientOutW
+
+		log.Printf("Starting new client process with command: %v", m.clientCmd.Args)
+		if err := m.clientCmd.Start(); err != nil {
+			log.Printf("Error starting client: %v", err)
+			return m, nil
+		}
+		log.Printf("New client process started successfully with PID %d", m.clientCmd.Process.Pid)
+
+		// Handle output streams
+		go handleOutput(clientOutR, m, "client")
+		go func() {
+			if err := m.clientCmd.Wait(); err != nil {
+				log.Printf("Client process ended with error: %v", err)
+			}
+			clientOutW.Close()
+		}()
+
 		return m, nil
 	}
 	return m, nil
