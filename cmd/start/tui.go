@@ -171,12 +171,18 @@ func (m *model) restartServer() {
 	m.serverViewContent.Reset()
 	m.serverViewport.SetContent("")
 
+	// Check if process exists and is running
 	if m.serverCmd != nil && m.serverCmd.Process != nil {
-		// Server is running, send SIGUSR1
-		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
-			fmt.Printf("Error sending SIGUSR1 to server: %v\n", err)
+		// Try to send signal 0 to check if process is running
+		if err := m.serverCmd.Process.Signal(syscall.Signal(0)); err == nil {
+			// Process exists and we have permission to signal it
+			if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
+				fmt.Printf("Error sending SIGUSR1 to server: %v\n", err)
+			}
+			return
 		}
-		return
+		// Process is not running or we don't have permission
+		m.serverCmd = nil
 	}
 
 	// Server is not running, start it
