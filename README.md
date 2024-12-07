@@ -38,6 +38,7 @@ mmdev start
 This command starts both the server and webapp in a split view with live output from both processes. Use:
 - 'tab' to switch between server/webapp panes
 - 'r' to restart server (when server pane is selected)
+- 's' to toggle between vertical/horizontal split
 - 'q' to quit
 - ':' to enter command mode
 
