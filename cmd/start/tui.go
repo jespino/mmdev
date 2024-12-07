@@ -99,7 +99,7 @@ func initialModel() model {
 		commandInput:   commandInput,
 		serverAtBottom: true,
 		clientAtBottom: true,
-		splitVertical:  true,
+		splitVertical:  false,
 	}
 
 	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
