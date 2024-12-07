@@ -30,13 +30,6 @@ var (
 
 	commands = []string{
 		"quit",
-		"q",
-		"restart",
-		"r",
-		"split",
-		"s",
-		"help",
-		"h",
 		"client-restart",
 		"server-restart",
 	}
@@ -59,7 +52,6 @@ type NewViewportLine struct {
 	Line     string
 	Quit     bool
 }
-
 
 type model struct {
 	serverViewport viewport.Model
