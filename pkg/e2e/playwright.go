@@ -94,6 +94,26 @@ func (r *PlaywrightRunner) RunTests() error {
 	if err != nil {
 		return fmt.Errorf("failed to create container: %w", err)
 	}
+	r.containerID = resp.ID
+
+	// Start cleanup goroutine
+	cleanup := make(chan struct{})
+	go func() {
+		select {
+		case <-sigChan:
+			fmt.Println("\nReceived interrupt signal. Cleaning up...")
+			if err := r.client.ContainerStop(ctx, r.containerID, container.StopOptions{Timeout: new(int)}); err != nil {
+				fmt.Printf("Warning: failed to stop container: %v\n", err)
+			}
+			if err := r.client.ContainerRemove(ctx, r.containerID, types.ContainerRemoveOptions{Force: true}); err != nil {
+				fmt.Printf("Warning: failed to remove container: %v\n", err)
+			}
+			os.Exit(1)
+		case <-cleanup:
+			return
+		}
+	}()
+	defer close(cleanup)
 
 	// Start container
 	if err := r.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
