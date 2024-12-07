@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jespino/mmdev/cmd/client"
+	"github.com/jespino/mmdev/cmd/webapp"
 	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
@@ -41,7 +41,7 @@ func main() {
 
 	rootCmd.AddCommand(
 		server.ServerCmd(),
-		client.ClientCmd(),
+		webapp.WebappCmd(),
 		docker.DockerCmd(),
 		generate.GenerateCmd(),
 		start.StartCmd(),

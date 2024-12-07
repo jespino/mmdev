@@ -100,7 +100,7 @@ func initialModel() model {
 	m.serverCmd.Stderr = serverOutW
 
 	// Start client process
-	m.clientCmd = exec.Command("mmdev", "client", "start", "--watch")
+	m.clientCmd = exec.Command("mmdev", "webapp", "start", "--watch")
 	clientOutR, clientOutW, err := os.Pipe()
 	if err != nil {
 		log.Printf("Error creating client pipe: %v", err)
