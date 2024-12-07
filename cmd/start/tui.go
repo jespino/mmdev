@@ -37,6 +37,8 @@ var (
 		"s",
 		"help",
 		"h",
+		"client-restart",
+		"server-restart",
 	}
 
 	titleSelectedStyle = lipgloss.NewStyle().
@@ -206,7 +208,8 @@ func (m *model) restartServer() {
 
 func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	// Handle command execution here
-	if cmd == "q" || cmd == "quit" {
+	switch cmd {
+	case "q", "quit":
 		m.quitting = true
 		log.Printf("Quit requested via command, gracefully stopping processes...")
 
@@ -261,6 +264,21 @@ func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 			viewportChan <- NewViewportLine{Quit: true}
 		}()
 
+		return m, nil
+	case "server-restart":
+		m.restartServer()
+		return m, nil
+	case "client-restart":
+		if m.clientCmd != nil && m.clientCmd.Process != nil {
+			log.Printf("Sending SIGUSR1 to client process (PID %d)", m.clientCmd.Process.Pid)
+			if err := m.clientCmd.Process.Signal(syscall.SIGUSR1); err != nil {
+				log.Printf("Error sending SIGUSR1 to client: %v", err)
+			}
+			// Clear client viewport and content
+			m.clientLogs.Reset()
+			m.clientViewContent.Reset()
+			m.clientViewport.SetContent("")
+		}
 		return m, nil
 	}
 	return m, nil
