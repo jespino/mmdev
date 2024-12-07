@@ -5,9 +5,9 @@ MMDev is a command-line tool designed to streamline the development workflow for
 ## Features
 
 - Start/stop Mattermost server with development configuration
-- Manage client development with hot-reloading
+- Manage webapp development with hot-reloading
 - Automated Docker service management for dependencies
-- Combined server and client development mode with split view
+- Combined server and webapp development mode with split view
 - Code linting for both server and client
 - File watching and auto-restart capabilities
 - E2E testing support with Playwright and Cypress
@@ -29,14 +29,14 @@ go install github.com/jespino/mmdev@latest
 
 ## Usage
 
-### Start Everything (Server + Client)
+### Start Everything (Server + Webapp)
 
 ```bash
 mmdev start
 ```
 
-This command starts both the server and client in a split view with live output from both processes. Use:
-- 'tab' to switch between server/client panes
+This command starts both the server and webapp in a split view with live output from both processes. Use:
+- 'tab' to switch between server/webapp panes
 - 'r' to restart server (when server pane is selected)
 - 'q' to quit
 - ':' to enter command mode
@@ -52,13 +52,13 @@ mmdev server generate mocks   # Generate mock files
 mmdev server generate all     # Generate all code (layers and mocks)
 ```
 
-### Client Commands
+### Webapp Commands
 
 ```bash
-mmdev client start    # Start the client
-mmdev client start -w # Start with file watching
-mmdev client lint     # Run client code linting
-mmdev client fix      # Run auto-fix on client code
+mmdev webapp start    # Start the webapp
+mmdev webapp start -w # Start with file watching
+mmdev webapp lint     # Run webapp code linting
+mmdev webapp fix      # Run auto-fix on webapp code
 ```
 
 ### Docker Commands
