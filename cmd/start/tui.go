@@ -65,6 +65,8 @@ type model struct {
 	serverViewContent strings.Builder
 	clientViewContent strings.Builder
 	shutdownWg        sync.WaitGroup
+	windowWidth       int
+	windowHeight      int
 }
 
 func initialModel() model {
@@ -327,11 +329,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			viewportWidth := msg.Width / 2
-			log.Printf("Initializing viewports with width=%d height=%d", viewportWidth, msg.Height-4)
+			m.windowWidth = msg.Width
+			m.windowHeight = msg.Height
+			log.Printf("Initializing viewports with width=%d height=%d", msg.Width/2, msg.Height-4)
 
-			m.serverViewport = viewport.New(viewportWidth, msg.Height-4)
-			m.clientViewport = viewport.New(viewportWidth, msg.Height-4)
+			m.serverViewport = viewport.New(msg.Width/2, msg.Height-4)
+			m.clientViewport = viewport.New(msg.Width/2, msg.Height-4)
 			m.ready = true
 			log.Printf("Viewports initialized successfully")
 		} else {
@@ -375,6 +378,10 @@ func (m *model) View() string {
 
 	var content string
 	if m.splitVertical {
+		m.serverViewport.Height = m.windowHeight - 4
+		m.serverViewport.Width = m.windowWidth / 2
+		m.clientViewport.Height = m.windowHeight - 4
+		m.clientViewport.Width = m.windowWidth / 2
 		content = lipgloss.JoinHorizontal(lipgloss.Top,
 			lipgloss.JoinVertical(lipgloss.Left,
 				titleServer,
@@ -386,6 +393,10 @@ func (m *model) View() string {
 			),
 		)
 	} else {
+		m.serverViewport.Height = (m.windowHeight / 2) - 4
+		m.serverViewport.Width = m.windowWidth
+		m.clientViewport.Height = (m.windowHeight / 2) - 4
+		m.clientViewport.Width = m.windowWidth
 		content = lipgloss.JoinVertical(lipgloss.Left,
 			lipgloss.JoinVertical(lipgloss.Left,
 				titleServer,
