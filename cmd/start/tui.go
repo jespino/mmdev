@@ -464,6 +464,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "s":
 				m.splitVertical = !m.splitVertical
+				m.serverViewport.GotoBottom()
+				m.clientViewport.GotoBottom()
 				return m, nil
 			}
 		}
