@@ -35,7 +35,7 @@ func (m *Manager) Start(watch bool) error {
 	if watch {
 		npmCmd = "run"
 	}
-	cmd := exec.Command("npm", "run", npmCmd)
+	cmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm run "+npmCmd)
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -56,7 +56,7 @@ func (m *Manager) Lint() error {
 	}
 
 	// Run ESLint once
-	cmd := exec.Command("npm", "run", "check", "--no-cache")
+	cmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm check --no-cache")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -80,7 +80,7 @@ func (m *Manager) Fix() error {
 	}
 
 	// Run ESLint fix
-	cmd := exec.Command("npm", "run", "fix")
+	cmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm run fix")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -103,19 +103,8 @@ func (m *Manager) ensureDependencies() error {
 		return nil
 	}
 
-	// Run nvm use first
-	nvmCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use")
-	nvmCmd.Dir = m.baseDir
-	nvmCmd.Stdout = os.Stdout
-	nvmCmd.Stderr = os.Stderr
-	nvmCmd.Env = os.Environ()
-
-	if err := nvmCmd.Run(); err != nil {
-		return fmt.Errorf("failed to run nvm use: %w", err)
-	}
-
 	// Install dependencies
-	cmd := exec.Command("npm", "install")
+	cmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm install")
 	cmd.Dir = m.baseDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
