@@ -17,6 +17,25 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Skip directory check for help command
+			if cmd.Name() == "help" {
+				return nil
+			}
+
+			// Find and validate Mattermost directory
+			baseDir, err := utils.FindMattermostBaseDir()
+			if err != nil {
+				return err
+			}
+
+			// Change to Mattermost base directory
+			if err := os.Chdir(baseDir); err != nil {
+				return fmt.Errorf("failed to change to Mattermost directory: %w", err)
+			}
+
+			return nil
+		},
 	}
 
 	rootCmd.AddCommand(
