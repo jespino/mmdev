@@ -350,12 +350,15 @@ func (m *model) View() string {
 		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • tab: switch • :: command")
 	}
 
-	titleServer := titleStyle.Render("Server")
-	titleClient := titleStyle.Render("Client")
+	serverScrollPct := fmt.Sprintf("%d%%", int(m.serverViewport.ScrollPercent()*100))
+	clientScrollPct := fmt.Sprintf("%d%%", int(m.clientViewport.ScrollPercent()*100))
+
+	titleServer := titleStyle.Render(fmt.Sprintf("Server [%s]", serverScrollPct))
+	titleClient := titleStyle.Render(fmt.Sprintf("Client [%s]", clientScrollPct))
 	if m.selectedPane == "server" {
-		titleServer = titleSelectedStyle.Render("Server")
+		titleServer = titleSelectedStyle.Render(fmt.Sprintf("Server [%s]", serverScrollPct))
 	} else {
-		titleClient = titleSelectedStyle.Render("Client")
+		titleClient = titleSelectedStyle.Render(fmt.Sprintf("Client [%s]", clientScrollPct))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
