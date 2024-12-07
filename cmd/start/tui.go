@@ -199,7 +199,61 @@ func (m *model) restartServer() {
 func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	// Handle command execution here
 	if cmd == "q" || cmd == "quit" {
-		return m, tea.Quit
+		m.quitting = true
+		log.Printf("Quit requested via command, gracefully stopping processes...")
+
+		// Add to wait group for server process
+		if m.serverCmd != nil && m.serverCmd.Process != nil {
+			m.shutdownWg.Add(1)
+		}
+
+		// Send SIGTERM to both processes
+		if m.clientCmd != nil && m.clientCmd.Process != nil {
+			log.Printf("Sending SIGTERM to client process (PID %d)", m.clientCmd.Process.Pid)
+			if err := m.clientCmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Printf("Error sending SIGTERM to client: %v", err)
+			}
+		}
+
+		if m.serverCmd != nil && m.serverCmd.Process != nil {
+			log.Printf("Sending SIGTERM to server process (PID %d)", m.serverCmd.Process.Pid)
+			if err := m.serverCmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Printf("Error sending SIGTERM to server: %v", err)
+			}
+		}
+
+		// Wait for processes to finish in a goroutine
+		go func() {
+			if m.clientCmd != nil {
+				if err := m.clientCmd.Wait(); err != nil {
+					log.Printf("Client process wait error: %v", err)
+				}
+				log.Printf("Client process terminated")
+			}
+
+			if m.serverCmd != nil {
+				if err := m.serverCmd.Wait(); err != nil {
+					log.Printf("Server process wait error: %v", err)
+				}
+				log.Printf("Server process terminated")
+				m.shutdownWg.Done()
+			}
+
+			// Send quit message through the viewport channel
+			viewportChan <- NewViewportLine{Viewport: "server", Line: "Server stopped\n"}
+			viewportChan <- NewViewportLine{Viewport: "client", Line: "Client stopped\n"}
+		}()
+
+		// Wait for server to finish before quitting
+		go func() {
+			m.shutdownWg.Wait()
+			viewportChan <- NewViewportLine{Viewport: "server", Line: "Shutdown complete\n"}
+			viewportChan <- NewViewportLine{Viewport: "server", Line: "Exiting...\n"}
+			// Send final quit message through the viewport channel
+			viewportChan <- NewViewportLine{Quit: true}
+		}()
+
+		return m, nil
 	}
 	return m, nil
 }
