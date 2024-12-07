@@ -393,9 +393,9 @@ func (m *model) View() string {
 			),
 		)
 	} else {
-		m.serverViewport.Height = (m.windowHeight / 2) - 4
+		m.serverViewport.Height = (m.windowHeight / 2) - 3
 		m.serverViewport.Width = m.windowWidth
-		m.clientViewport.Height = (m.windowHeight / 2) - 4
+		m.clientViewport.Height = (m.windowHeight / 2) - 3
 		m.clientViewport.Width = m.windowWidth
 		content = lipgloss.JoinVertical(lipgloss.Left,
 			lipgloss.JoinVertical(lipgloss.Left,
