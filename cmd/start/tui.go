@@ -416,9 +416,12 @@ func (m *model) View() string {
 		return "Initializing..."
 	}
 
-	commandArea := m.commandMode ?
-		m.commandInput.View() :
-		helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
+	var commandArea string
+	if m.commandMode {
+		commandArea = m.commandInput.View()
+	} else {
+		commandArea = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
+	}
 
 	serverScrollPct := fmt.Sprintf("%d%%", int(m.serverViewport.ScrollPercent()*100))
 	clientScrollPct := fmt.Sprintf("%d%%", int(m.clientViewport.ScrollPercent()*100))
