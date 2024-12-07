@@ -75,6 +75,10 @@ mmdev docker clean # Remove containers and volumes
 mmdev e2e playwright run     # Run Playwright E2E tests
 mmdev e2e playwright ui      # Open Playwright UI
 mmdev e2e playwright report  # Show Playwright test report
+
+mmdev e2e cypress run        # Run Cypress E2E tests
+mmdev e2e cypress ui         # Open Cypress UI
+mmdev e2e cypress report     # Show Cypress test report
 ```
 
 ## Docker Services
