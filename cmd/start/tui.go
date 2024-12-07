@@ -292,12 +292,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.commandMode = false
 				value := m.commandInput.Value()
 				m.commandInput.SetValue("")
-				m.suggestions = nil
 				return m.runCommand(value)
 			case "esc":
 				m.commandMode = false
 				m.commandInput.SetValue("")
-				m.suggestions = nil
 				return m, nil
 			default:
 			}
