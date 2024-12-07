@@ -173,7 +173,7 @@ func (m *model) restartServer() {
 	}
 }
 
-func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
+func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	// Handle command execution here
 	if cmd == "q" || cmd == "quit" {
 		return m, tea.Quit
@@ -181,7 +181,7 @@ func (m model) runCommand(cmd string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	log.Printf("Update called with message type: %T", msg)
 	var (
 		serverCmd tea.Cmd
@@ -328,7 +328,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(serverCmd, clientCmd, cmdCmd)
 }
 
-func (m model) View() string {
+func (m *model) View() string {
 	if !m.ready {
 		return "Initializing..."
 	}
