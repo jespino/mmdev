@@ -167,15 +167,45 @@ func (m model) Init() tea.Cmd {
 
 func (m *model) restartServer() {
 	if m.serverCmd != nil && m.serverCmd.Process != nil {
-		log.Printf("Sending SIGUSR1 to server process (PID %d)", m.serverCmd.Process.Pid)
-		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
-			fmt.Printf("Error sending SIGUSR1 to server: %v\n", err)
+		// Try sending SIGUSR1 first
+		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err == nil {
+			// Signal sent successfully, clear viewport
+			m.serverLogs.Reset()
+			m.serverViewContent.Reset()
+			m.serverViewport.SetContent("")
+			return
 		}
-		// Clear server viewport and content
-		m.serverLogs.Reset()
-		m.serverViewContent.Reset()
-		m.serverViewport.SetContent("")
 	}
+
+	// If we get here, either there's no process or signaling failed
+	// Clear old content
+	m.serverLogs.Reset()
+	m.serverViewContent.Reset()
+	m.serverViewport.SetContent("")
+
+	// Start new server process
+	m.serverCmd = exec.Command("mmdev", "server", "start")
+	serverOutR, serverOutW, err := os.Pipe()
+	if err != nil {
+		fmt.Printf("Error creating server pipe: %v\n", err)
+		return
+	}
+	m.serverCmd.Stdout = serverOutW
+	m.serverCmd.Stderr = serverOutW
+
+	if err := m.serverCmd.Start(); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+		return
+	}
+
+	// Handle output streams
+	go handleOutput(serverOutR, m, "server")
+	go func() {
+		if err := m.serverCmd.Wait(); err != nil {
+			fmt.Printf("Server process ended with error: %v\n", err)
+		}
+		serverOutW.Close()
+	}()
 }
 
 func (m *model) runCommand(cmd string) (tea.Model, tea.Cmd) {
