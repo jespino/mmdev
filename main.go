@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jespino/mmdev/cmd/client"
+	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/generate"
