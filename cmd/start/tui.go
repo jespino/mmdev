@@ -400,12 +400,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if m.selectedPane == "server" {
-		m.serverViewport, serverCmd = m.serverViewport.Update(msg)
-		m.serverAtBottom = m.serverViewport.AtBottom()
-	} else {
-		m.clientViewport, clientCmd = m.clientViewport.Update(msg)
-		m.clientAtBottom = m.clientViewport.AtBottom()
+	// Only process viewport updates if we're not in command mode
+	if !m.commandMode {
+		if m.selectedPane == "server" {
+			m.serverViewport, serverCmd = m.serverViewport.Update(msg)
+			m.serverAtBottom = m.serverViewport.AtBottom()
+		} else {
+			m.clientViewport, clientCmd = m.clientViewport.Update(msg)
+			m.clientAtBottom = m.clientViewport.AtBottom()
+		}
 	}
 
 	return m, tea.Batch(serverCmd, clientCmd, cmdCmd)
