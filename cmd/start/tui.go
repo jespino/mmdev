@@ -313,6 +313,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "tab":
 				if m.suggestion != "" {
 					m.commandInput.SetValue(m.suggestion)
+					m.commandInput.CursorEnd()
 					m.suggestion = ""
 				}
 				return m, nil
