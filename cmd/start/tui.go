@@ -166,24 +166,20 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) restartServer() {
-	if m.serverCmd != nil && m.serverCmd.Process != nil {
-		// Try sending SIGUSR1 first
-		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err == nil {
-			// Signal sent successfully, clear viewport
-			m.serverLogs.Reset()
-			m.serverViewContent.Reset()
-			m.serverViewport.SetContent("")
-			return
-		}
-	}
-
-	// If we get here, either there's no process or signaling failed
-	// Clear old content
+	// Clear viewport content
 	m.serverLogs.Reset()
 	m.serverViewContent.Reset()
 	m.serverViewport.SetContent("")
 
-	// Start new server process
+	if m.serverCmd != nil && m.serverCmd.Process != nil {
+		// Server is running, send SIGUSR1
+		if err := m.serverCmd.Process.Signal(syscall.SIGUSR1); err != nil {
+			fmt.Printf("Error sending SIGUSR1 to server: %v\n", err)
+		}
+		return
+	}
+
+	// Server is not running, start it
 	m.serverCmd = exec.Command("mmdev", "server", "start")
 	serverOutR, serverOutW, err := os.Pipe()
 	if err != nil {
