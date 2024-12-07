@@ -2,6 +2,8 @@
 
 MMDev is a command-line tool designed to streamline the development workflow for Mattermost. It provides a unified interface for managing both the server and client components of Mattermost during development.
 
+![output](https://github.com/user-attachments/assets/f3b51cd0-1f24-404c-8f62-729c8f3b6bab)
+
 ## Features
 
 - Start/stop Mattermost server with development configuration
