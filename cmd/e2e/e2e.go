@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
 	"github.com/jespino/mmdev/pkg/docker"
 	"github.com/jespino/mmdev/pkg/e2e"
 	"github.com/spf13/cobra"
@@ -73,19 +74,19 @@ func PlaywrightUICmd() *cobra.Command {
 
 			// Run npm install if needed
 			if _, err := os.Stat("node_modules"); os.IsNotExist(err) {
-				cmd := exec.Command("npm", "install")
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				if err := cmd.Run(); err != nil {
+				installCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm install")
+				installCmd.Stdout = os.Stdout
+				installCmd.Stderr = os.Stderr
+				if err := installCmd.Run(); err != nil {
 					return fmt.Errorf("failed to install dependencies: %w", err)
 				}
 			}
 
 			// Run playwright UI
-			cmd := exec.Command("npm", "run", "playwright-ui")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
+			runCmd := exec.Command("bash", "-c", "source ~/.nvm/nvm.sh && nvm use && npm run playwright-ui")
+			runCmd.Stdout = os.Stdout
+			runCmd.Stderr = os.Stderr
+			return runCmd.Run()
 		},
 	}
 	return cmd
@@ -118,7 +119,7 @@ func PlaywrightReportCmd() *cobra.Command {
 
 func CypressCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cypress", 
+		Use:   "cypress",
 		Short: "Run Cypress E2E tests",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			panic("Cypress tests not yet implemented")

@@ -62,8 +62,6 @@ func (r *PlaywrightRunner) RunTests() error {
 	// Determine command based on action
 	var cmd string
 	switch r.action {
-	case "ui":
-		cmd = "npm install && npm run playwright-ui"
 	case "report":
 		cmd = "npm install && npm run show-report results/reporter"
 	default: // "run" is the default action
