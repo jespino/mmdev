@@ -393,7 +393,7 @@ func (m *model) View() string {
 			commandArea = m.commandInput.View()
 		}
 	} else {
-		bottomBar = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
+		commandArea = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
 	}
 
 	serverScrollPct := fmt.Sprintf("%d%%", int(m.serverViewport.ScrollPercent()*100))
