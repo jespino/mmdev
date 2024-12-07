@@ -31,6 +31,7 @@ func NewPlaywrightRunner(baseDir string, action string) (*PlaywrightRunner, erro
 	return &PlaywrightRunner{
 		client:  cli,
 		baseDir: baseDir,
+		action:  action,
 	}, nil
 }
 
