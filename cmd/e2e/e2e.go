@@ -28,6 +28,8 @@ func PlaywrightCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		PlaywrightRunCmd(),
+		PlaywrightUICmd(),
+		PlaywrightReportCmd(),
 	)
 	return cmd
 }
@@ -47,7 +49,57 @@ func PlaywrightRunCmd() *cobra.Command {
 			}
 
 			// Create and run the tests
-			runner, err := e2e.NewPlaywrightRunner(".")
+			runner, err := e2e.NewPlaywrightRunner(".", "run")
+			if err != nil {
+				return fmt.Errorf("failed to create playwright runner: %w", err)
+			}
+			return runner.RunTests()
+		},
+	}
+	return cmd
+}
+
+func PlaywrightUICmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ui",
+		Short: "Open Playwright UI",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure Docker image is available
+			dockerManager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
+			if err := dockerManager.EnsurePlaywrightImage(); err != nil {
+				return fmt.Errorf("failed to ensure playwright image: %w", err)
+			}
+
+			// Create and run the UI
+			runner, err := e2e.NewPlaywrightRunner(".", "ui")
+			if err != nil {
+				return fmt.Errorf("failed to create playwright runner: %w", err)
+			}
+			return runner.RunTests()
+		},
+	}
+	return cmd
+}
+
+func PlaywrightReportCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "report",
+		Short: "Show Playwright test report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure Docker image is available
+			dockerManager, err := docker.NewManager()
+			if err != nil {
+				return fmt.Errorf("failed to create docker manager: %w", err)
+			}
+			if err := dockerManager.EnsurePlaywrightImage(); err != nil {
+				return fmt.Errorf("failed to ensure playwright image: %w", err)
+			}
+
+			// Create and show the report
+			runner, err := e2e.NewPlaywrightRunner(".", "report")
 			if err != nil {
 				return fmt.Errorf("failed to create playwright runner: %w", err)
 			}

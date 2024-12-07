@@ -16,9 +16,10 @@ import (
 type PlaywrightRunner struct {
 	client  *client.Client
 	baseDir string
+	action  string
 }
 
-func NewPlaywrightRunner(baseDir string) (*PlaywrightRunner, error) {
+func NewPlaywrightRunner(baseDir string, action string) (*PlaywrightRunner, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Docker client: %w", err)
@@ -49,10 +50,21 @@ func (r *PlaywrightRunner) RunTests() error {
 		return fmt.Errorf("failed to pull Playwright image: %w", err)
 	}
 
+	// Determine command based on action
+	var cmd string
+	switch r.action {
+	case "ui":
+		cmd = "npm install && npm run playwright-ui"
+	case "report":
+		cmd = "npm install && npm run show-report"
+	default: // "run" is the default action
+		cmd = "npm install && npm run test"
+	}
+
 	// Create container config
 	config := &container.Config{
 		Image:        "mcr.microsoft.com/playwright:v1.49.0-noble",
-		Cmd:          []string{"sh", "-c", "npm install && npm run test"},
+		Cmd:          []string{"sh", "-c", cmd},
 		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
