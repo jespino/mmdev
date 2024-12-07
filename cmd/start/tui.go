@@ -44,6 +44,8 @@ type model struct {
 	ready          bool
 	selectedPane   string
 	commandMode    bool
+	serverAtBottom bool
+	clientAtBottom bool
 
 	serverCmd    *exec.Cmd
 	clientCmd    *exec.Cmd
@@ -72,9 +74,11 @@ func initialModel() model {
 	commandInput.Prompt = ": "
 
 	m := model{
-		selectedPane: "server",
-		commandMode:  false,
-		commandInput: commandInput,
+		selectedPane:   "server",
+		commandMode:    false,
+		commandInput:   commandInput,
+		serverAtBottom: true,
+		clientAtBottom: true,
 	}
 
 	log.Printf("Initializing model with selectedPane=%s", m.selectedPane)
@@ -195,12 +199,16 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.serverViewContent.WriteString(msg.Line)
 			log.Printf("Update server logs: %s", msg.Line)
 			m.serverViewport.SetContent(m.serverViewContent.String())
-			m.serverViewport.GotoBottom()
+			if m.serverAtBottom {
+				m.serverViewport.GotoBottom()
+			}
 		} else {
 			m.clientViewContent.WriteString(msg.Line)
 			log.Printf("Update client logs: %s", msg.Line)
 			m.clientViewport.SetContent(m.clientViewContent.String())
-			m.clientViewport.GotoBottom()
+			if m.clientAtBottom {
+				m.clientViewport.GotoBottom()
+			}
 		}
 		if msg.Quit {
 			log.Printf("Received quit message, shutting down application")
@@ -321,8 +329,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.selectedPane == "server" {
 		m.serverViewport, serverCmd = m.serverViewport.Update(msg)
+		m.serverAtBottom = m.serverViewport.AtBottom()
 	} else {
 		m.clientViewport, clientCmd = m.clientViewport.Update(msg)
+		m.clientAtBottom = m.clientViewport.AtBottom()
 	}
 
 	return m, tea.Batch(serverCmd, clientCmd, cmdCmd)
