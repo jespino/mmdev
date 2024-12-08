@@ -77,7 +77,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error reading issue response body: %v", err)
 	}
 	fmt.Printf("Raw Issue Response:\n%s\n\n", string(issueBody))
-	
+
 	// Create new reader from the response body for JSON decoding
 	issueResp.Body = io.NopCloser(bytes.NewBuffer(issueBody))
 
@@ -86,35 +86,35 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 
 	type SentryIssue struct {
-		Title           string `json:"title"`
-		Culprit         string `json:"culprit"`
-		FirstSeen       string `json:"firstSeen"`
-		LastSeen        string `json:"lastSeen"`
-		Count           string `json:"count"`
-		UserCount       int    `json:"userCount"`
-		Level           string `json:"level"`
-		Status          string `json:"status"`
-		StatusDetails   map[string]interface{} `json:"statusDetails"`
-		IsPublic        bool   `json:"isPublic"`
-		Platform        string `json:"platform"`
-		Project         struct {
+		Title         string                 `json:"title"`
+		Culprit       string                 `json:"culprit"`
+		FirstSeen     string                 `json:"firstSeen"`
+		LastSeen      string                 `json:"lastSeen"`
+		Count         string                 `json:"count"`
+		UserCount     int                    `json:"userCount"`
+		Level         string                 `json:"level"`
+		Status        string                 `json:"status"`
+		StatusDetails map[string]interface{} `json:"statusDetails"`
+		IsPublic      bool                   `json:"isPublic"`
+		Platform      string                 `json:"platform"`
+		Project       struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
 			Slug string `json:"slug"`
 		} `json:"project"`
-		Type        string `json:"type"`
-		Metadata    struct {
+		Type     string `json:"type"`
+		Metadata struct {
 			Title string `json:"title"`
 		} `json:"metadata"`
-		NumComments     int    `json:"numComments"`
+		NumComments     int         `json:"numComments"`
 		AssignedTo      interface{} `json:"assignedTo"`
-		IsSubscribed    bool   `json:"isSubscribed"`
-		HasSeen         bool   `json:"hasSeen"`
-		IsBookmarked    bool   `json:"isBookmarked"`
+		IsSubscribed    bool        `json:"isSubscribed"`
+		HasSeen         bool        `json:"hasSeen"`
+		IsBookmarked    bool        `json:"isBookmarked"`
 		ShareID         interface{} `json:"shareId"`
-		ShortID         string `json:"shortId"`
-		Permalink       string `json:"permalink"`
-		UserReportCount int    `json:"userReportCount"`
+		ShortID         string      `json:"shortId"`
+		Permalink       string      `json:"permalink"`
+		UserReportCount int         `json:"userReportCount"`
 	}
 
 	var issue SentryIssue
@@ -159,7 +159,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
 	fmt.Printf("Raw Events Response:\n%s\n\n", string(respBody))
-	
+
 	// Create new reader from the response body for JSON decoding
 	resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
 
@@ -186,25 +186,25 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 
 	type SentryEvent struct {
-		EventID        string                 `json:"eventId"`
-		Message        string                 `json:"message"`
-		Title          string                 `json:"title"`
-		Type           string                 `json:"type"`
-		Platform       string                 `json:"platform"`
-		DateCreated    string                 `json:"dateCreated"`
-		DateReceived   string                 `json:"dateReceived"`
-		Tags           []Tag                  `json:"tags"`
-		Exception      []Exception            `json:"exception"`
-		Entries        []map[string]interface{} `json:"entries"`
-		Packages       map[string]string      `json:"packages"`
-		Sdk           map[string]string      `json:"sdk"`
-		Contexts      map[string]interface{} `json:"contexts"`
-		Fingerprints  []string              `json:"fingerprints"`
-		Context       map[string]interface{} `json:"context"`
-		Release       map[string]interface{} `json:"release"`
-		User          map[string]interface{} `json:"user"`
-		Location      string                 `json:"location"`
-		Culprit       string                 `json:"culprit"`
+		EventID      string                   `json:"eventId"`
+		Message      string                   `json:"message"`
+		Title        string                   `json:"title"`
+		Type         string                   `json:"type"`
+		Platform     string                   `json:"platform"`
+		DateCreated  string                   `json:"dateCreated"`
+		DateReceived string                   `json:"dateReceived"`
+		Tags         []Tag                    `json:"tags"`
+		Exception    []Exception              `json:"exception"`
+		Entries      []map[string]interface{} `json:"entries"`
+		Packages     map[string]string        `json:"packages"`
+		Sdk          map[string]string        `json:"sdk"`
+		Contexts     map[string]interface{}   `json:"contexts"`
+		Fingerprints []string                 `json:"fingerprints"`
+		Context      map[string]interface{}   `json:"context"`
+		Release      map[string]interface{}   `json:"release"`
+		User         map[string]interface{}   `json:"user"`
+		Location     string                   `json:"location"`
+		Culprit      string                   `json:"culprit"`
 	}
 
 	// Parse event list from response
@@ -225,7 +225,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	// Fetch full details for each event
 	for i, eventSummary := range eventList {
 		// Get detailed event data
-		eventReq, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/events/%s/", eventSummary.EventID), nil)
+		eventReq, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/issues/%s/events/%s/", issueID, eventSummary.EventID), nil)
 		if err != nil {
 			return fmt.Errorf("error creating event request: %v", err)
 		}
@@ -296,7 +296,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 					// Print frames in reverse order for better readability
 					for i := len(exc.Stacktrace.Frames) - 1; i >= 0; i-- {
 						frame := exc.Stacktrace.Frames[i]
-						content.WriteString(fmt.Sprintf("  File \"%s\", line %d, in %s\n", 
+						content.WriteString(fmt.Sprintf("  File \"%s\", line %d, in %s\n",
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
