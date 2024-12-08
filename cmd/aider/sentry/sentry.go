@@ -167,16 +167,19 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Sentry API returned status %d with body: %s", resp.StatusCode, string(respBody))
 	}
 
+	type Frame struct {
+		Filename string  `json:"filename"`
+		Lineno   int     `json:"lineno"`
+		Function string  `json:"function"`
+		Context  [][]any `json:"context"`
+	}
+
 	// Define custom event struct to match Sentry API response
 	type Exception struct {
 		Type       string `json:"type"`
 		Value      string `json:"value"`
 		Stacktrace struct {
-			Frames []struct {
-				Filename string `json:"filename"`
-				Lineno   int    `json:"lineno"`
-				Function string `json:"function"`
-			} `json:"frames"`
+			Frames []Frame `json:"frames"`
 		} `json:"stacktrace"`
 	}
 
@@ -330,21 +333,16 @@ func runSentry(cmd *cobra.Command, args []string) error {
 									Type:  excMap["type"].(string),
 									Value: excMap["value"].(string),
 								}
-								
+
 								if stacktrace, ok := excMap["stacktrace"].(map[string]interface{}); ok {
 									if frames, ok := stacktrace["frames"].([]interface{}); ok {
 										for _, f := range frames {
 											if frame, ok := f.(map[string]interface{}); ok {
-												exc.Stacktrace.Frames = append(exc.Stacktrace.Frames, struct {
-													Filename string
-													Lineno   int
-													Function string
-													Context  [][]interface{}
-												}{
+												exc.Stacktrace.Frames = append(exc.Stacktrace.Frames, Frame{
 													Filename: frame["filename"].(string),
 													Lineno:   int(frame["lineNo"].(float64)),
 													Function: frame["function"].(string),
-													Context:  frame["context"].([][]interface{}),
+													Context:  frame["context"].([][]any),
 												})
 											}
 										}
