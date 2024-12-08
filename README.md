@@ -29,6 +29,16 @@ MMDev is a command-line tool designed to streamline the development workflow for
 go install github.com/jespino/mmdev@latest
 ```
 
+After installation, configure the tool:
+
+```bash
+mmdev config
+```
+
+This will guide you through setting up:
+- Jira integration (URL, username, API token)
+- Sentry integration (API token)
+
 ## Usage
 
 ### Start Everything (Server + Webapp)
@@ -73,6 +83,12 @@ mmdev webapp fix      # Run auto-fix on webapp code
 mmdev docker start # Start required Docker services
 mmdev docker stop  # Stop Docker services
 mmdev docker clean # Remove containers and volumes
+
+### Configuration Command
+
+```bash
+mmdev config # Configure Jira and Sentry integration
+```
 ```
 
 ### E2E Testing Commands
