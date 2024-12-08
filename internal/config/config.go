@@ -30,6 +30,7 @@ func LoadConfig() (*Config, error) {
 	config.Jira.URL = os.Getenv("JIRA_URL")
 	config.Jira.Username = os.Getenv("JIRA_USER")
 	config.Jira.Token = os.Getenv("JIRA_TOKEN")
+	config.Sentry.Token = os.Getenv("SENTRY_TOKEN")
 
 	// Get user's home directory
 	homeDir, err := os.UserHomeDir()
@@ -46,4 +47,25 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func SaveConfig(config *Config) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	configPath := filepath.Join(homeDir, ".mmdev.toml")
+	f, err := os.Create(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer f.Close()
+
+	encoder := toml.NewEncoder(f)
+	if err := encoder.Encode(config); err != nil {
+		return fmt.Errorf("failed to encode config: %w", err)
+	}
+
+	return nil
 }

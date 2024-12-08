@@ -48,6 +48,7 @@ func main() {
 		start.StartCmd(),
 		e2e.E2ECmd(),
 		aider.AiderCmd(),
+		config.ConfigCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
