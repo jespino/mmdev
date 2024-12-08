@@ -286,9 +286,9 @@ func runSentry(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		if len(event.Exception) > 0 {
-			content.WriteString("\nExceptions:\n")
-			for _, exc := range event.Exception {
+		// Process exceptions from both direct exception field and entries
+		processExceptions := func(exceptions []Exception) {
+			for _, exc := range exceptions {
 				content.WriteString(fmt.Sprintf("\nException: %s\n", exc.Value))
 				content.WriteString(fmt.Sprintf("Type: %s\n", exc.Type))
 				if len(exc.Stacktrace.Frames) > 0 {
@@ -300,6 +300,59 @@ func runSentry(cmd *cobra.Command, args []string) error {
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
+						if frame.Context != nil && len(frame.Context) > 0 {
+							content.WriteString("    Context:\n")
+							for _, ctx := range frame.Context {
+								if len(ctx) == 2 {
+									content.WriteString(fmt.Sprintf("      %d: %s\n", ctx[0], ctx[1]))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if len(event.Exception) > 0 {
+			content.WriteString("\nDirect Exceptions:\n")
+			processExceptions(event.Exception)
+		}
+
+		// Process entries that contain exceptions
+		for _, entry := range event.Entries {
+			if entry["type"] == "exception" {
+				if data, ok := entry["data"].(map[string]interface{}); ok {
+					if values, ok := data["values"].([]interface{}); ok {
+						content.WriteString("\nException Entries:\n")
+						for _, v := range values {
+							if excMap, ok := v.(map[string]interface{}); ok {
+								exc := Exception{
+									Type:  excMap["type"].(string),
+									Value: excMap["value"].(string),
+								}
+								
+								if stacktrace, ok := excMap["stacktrace"].(map[string]interface{}); ok {
+									if frames, ok := stacktrace["frames"].([]interface{}); ok {
+										for _, f := range frames {
+											if frame, ok := f.(map[string]interface{}); ok {
+												exc.Stacktrace.Frames = append(exc.Stacktrace.Frames, struct {
+													Filename string
+													Lineno   int
+													Function string
+													Context  [][]interface{}
+												}{
+													Filename: frame["filename"].(string),
+													Lineno:   int(frame["lineNo"].(float64)),
+													Function: frame["function"].(string),
+													Context:  frame["context"].([][]interface{}),
+												})
+											}
+										}
+									}
+								}
+								processExceptions([]Exception{exc})
+							}
+						}
 					}
 				}
 			}
