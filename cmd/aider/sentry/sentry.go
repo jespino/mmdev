@@ -87,10 +87,15 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		} `json:"stacktrace"`
 	}
 
+	type Tag struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+
 	type SentryEvent struct {
 		EventID   string      `json:"eventId"`
 		Message   string      `json:"message"`
-		Tags      [][]string  `json:"tags"`
+		Tags      []Tag       `json:"tags"`
 		Exception []Exception `json:"exception"`
 	}
 
@@ -108,9 +113,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		if len(event.Tags) > 0 {
 			content.WriteString("Tags:\n")
 			for _, tag := range event.Tags {
-				if len(tag) == 2 {
-					content.WriteString(fmt.Sprintf("  %s: %s\n", tag[0], tag[1]))
-				}
+				content.WriteString(fmt.Sprintf("  %s: %s\n", tag.Key, tag.Value))
 			}
 		}
 
