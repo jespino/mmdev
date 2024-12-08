@@ -1,7 +1,6 @@
 package sentry
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
