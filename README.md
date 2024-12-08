@@ -87,6 +87,20 @@ mmdev e2e cypress ui         # Open Cypress UI
 mmdev e2e cypress report     # Show Cypress test report
 ```
 
+### AI-Assisted Development Commands
+
+```bash
+mmdev aider github owner/repo#123  # Process GitHub issue with aider
+mmdev aider jira PROJECT-123       # Process Jira issue with aider
+```
+
+The aider commands require:
+- For GitHub: Public repository access
+- For Jira: Credentials configured in ~/.mmdev.toml or environment variables:
+  - JIRA_URL: Your Jira instance URL
+  - JIRA_USER: Your Jira username
+  - JIRA_TOKEN: Your Jira API token
+
 ## Docker Services
 
 The tool manages these Docker services automatically:
