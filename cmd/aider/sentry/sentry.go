@@ -164,50 +164,97 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 
 	type SentryEvent struct {
-		EventID   string      `json:"eventId"`
-		Message   string      `json:"message"`
-		Tags      []Tag       `json:"tags"`
-		Exception []Exception `json:"exception"`
+		EventID        string                 `json:"eventId"`
+		Message        string                 `json:"message"`
+		Title          string                 `json:"title"`
+		Type           string                 `json:"type"`
+		Platform       string                 `json:"platform"`
+		DateCreated    string                 `json:"dateCreated"`
+		DateReceived   string                 `json:"dateReceived"`
+		Tags           []Tag                  `json:"tags"`
+		Exception      []Exception            `json:"exception"`
+		Entries        []map[string]interface{} `json:"entries"`
+		Packages       map[string]string      `json:"packages"`
+		Sdk           map[string]string      `json:"sdk"`
+		Contexts      map[string]interface{} `json:"contexts"`
+		Fingerprints  []string              `json:"fingerprints"`
+		Context       map[string]interface{} `json:"context"`
+		Release       map[string]interface{} `json:"release"`
+		User          map[string]interface{} `json:"user"`
+		Location      string                 `json:"location"`
+		Culprit       string                 `json:"culprit"`
 	}
 
-	// Parse events from response (limit to 10)
+	// Parse events from response (limit to 3)
 	var events []SentryEvent
 	if err := json.NewDecoder(resp.Body).Decode(&events); err != nil {
 		return fmt.Errorf("error decoding events: %v", err)
 	}
 
-	// Limit to 10 most recent events
-	if len(events) > 10 {
-		events = events[:10]
+	// Limit to 3 most recent events
+	if len(events) > 3 {
+		events = events[:3]
 	}
 
 	content.WriteString(fmt.Sprintf("Latest %d Events:\n", len(events)))
 	for i, event := range events {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
-		content.WriteString(fmt.Sprintf("Message: %s\n", event.Message))
+		content.WriteString(fmt.Sprintf("Title: %s\n", event.Title))
+		content.WriteString(fmt.Sprintf("Type: %s\n", event.Type))
+		content.WriteString(fmt.Sprintf("Platform: %s\n", event.Platform))
+		content.WriteString(fmt.Sprintf("Created: %s\n", event.DateCreated))
+		content.WriteString(fmt.Sprintf("Received: %s\n", event.DateReceived))
+		content.WriteString(fmt.Sprintf("Location: %s\n", event.Location))
+		content.WriteString(fmt.Sprintf("Culprit: %s\n", event.Culprit))
+
+		if event.User != nil {
+			content.WriteString("\nUser:\n")
+			userBytes, _ := json.MarshalIndent(event.User, "  ", "  ")
+			content.WriteString(fmt.Sprintf("  %s\n", string(userBytes)))
+		}
 
 		if len(event.Tags) > 0 {
-			content.WriteString("Tags:\n")
+			content.WriteString("\nTags:\n")
 			for _, tag := range event.Tags {
 				content.WriteString(fmt.Sprintf("  %s: %s\n", tag.Key, tag.Value))
 			}
 		}
 
+		if event.Sdk != nil {
+			content.WriteString("\nSDK:\n")
+			for k, v := range event.Sdk {
+				content.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+			}
+		}
+
 		if len(event.Exception) > 0 {
+			content.WriteString("\nExceptions:\n")
 			for _, exc := range event.Exception {
-				content.WriteString(fmt.Sprintf("Exception: %s\n", exc.Value))
+				content.WriteString(fmt.Sprintf("\nException: %s\n", exc.Value))
 				content.WriteString(fmt.Sprintf("Type: %s\n", exc.Type))
 				if len(exc.Stacktrace.Frames) > 0 {
 					content.WriteString("Stacktrace:\n")
 					for _, frame := range exc.Stacktrace.Frames {
-						content.WriteString(fmt.Sprintf("  %s:%d in %s\n",
+						content.WriteString(fmt.Sprintf("  %s:%d in %s\n", 
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
+						if frame.Context != nil {
+							content.WriteString("  Context:\n")
+							for _, ctx := range frame.Context {
+								content.WriteString(fmt.Sprintf("    %d: %s\n", ctx[0], ctx[1]))
+							}
+						}
 					}
 				}
 			}
+		}
+
+		if event.Release != nil {
+			content.WriteString("\nRelease Info:\n")
+			releaseBytes, _ := json.MarshalIndent(event.Release, "  ", "  ")
+			content.WriteString(fmt.Sprintf("  %s\n", string(releaseBytes)))
 		}
 	}
 
