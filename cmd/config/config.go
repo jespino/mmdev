@@ -11,11 +11,13 @@ import (
 )
 
 func ConfigCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Configure mmdev settings",
 		RunE:  runConfig,
+		SilenceUsage: true,
 	}
+	return cmd
 }
 
 func runConfig(cmd *cobra.Command, args []string) error {
