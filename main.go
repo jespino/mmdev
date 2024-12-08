@@ -21,12 +21,12 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for help command
-			if cmd.Name() == "help" {
+			// Skip directory check for help, config and docker commands
+			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "docker" {
 				return nil
 			}
 
-			// Find and validate Mattermost directory
+			// Find and validate Mattermost directory for other commands
 			baseDir, err := utils.FindMattermostBaseDir()
 			if err != nil {
 				return err
