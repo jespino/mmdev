@@ -258,58 +258,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	for i, event := range eventList {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
-		content.WriteString(fmt.Sprintf("Title: %s\n", event.Title))
-		content.WriteString(fmt.Sprintf("Type: %s\n", event.Type))
-		content.WriteString(fmt.Sprintf("Platform: %s\n", event.Platform))
-		content.WriteString(fmt.Sprintf("Created: %s\n", event.DateCreated))
-		content.WriteString(fmt.Sprintf("Received: %s\n", event.DateReceived))
-		content.WriteString(fmt.Sprintf("Location: %s\n", event.Location))
-		content.WriteString(fmt.Sprintf("Culprit: %s\n", event.Culprit))
 
-		if event.User != nil {
-			content.WriteString("\nUser:\n")
-			userBytes, _ := json.MarshalIndent(event.User, "  ", "  ")
-			content.WriteString(fmt.Sprintf("  %s\n", string(userBytes)))
-		}
-
-		if len(event.Tags) > 0 {
-			content.WriteString("\nTags:\n")
-			for _, tag := range event.Tags {
-				content.WriteString(fmt.Sprintf("  %s: %s\n", tag.Key, tag.Value))
-			}
-		}
-
-		if event.Sdk != nil {
-			content.WriteString("\nSDK:\n")
-			for k, v := range event.Sdk {
-				content.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
-			}
-		}
-
-		if len(event.Exception) > 0 {
-			content.WriteString("\nExceptions:\n")
-			for _, exc := range event.Exception {
-				content.WriteString(fmt.Sprintf("\nException: %s\n", exc.Value))
-				content.WriteString(fmt.Sprintf("Type: %s\n", exc.Type))
-				if len(exc.Stacktrace.Frames) > 0 {
-					content.WriteString("Stacktrace:\n")
-					// Print frames in reverse order for better readability
-					for i := len(exc.Stacktrace.Frames) - 1; i >= 0; i-- {
-						frame := exc.Stacktrace.Frames[i]
-						content.WriteString(fmt.Sprintf("  File \"%s\", line %d, in %s\n", 
-							frame.Filename,
-							frame.Lineno,
-							frame.Function))
-					}
-				}
-			}
-		}
-
-		if event.Release != nil {
-			content.WriteString("\nRelease Info:\n")
-			releaseBytes, _ := json.MarshalIndent(event.Release, "  ", "  ")
-			content.WriteString(fmt.Sprintf("  %s\n", string(releaseBytes)))
-		}
 	}
 
 	if err := os.WriteFile(tmpFile.Name(), []byte(content.String()), 0644); err != nil {
