@@ -235,8 +235,10 @@ func runSentry(cmd *cobra.Command, args []string) error {
 				content.WriteString(fmt.Sprintf("Type: %s\n", exc.Type))
 				if len(exc.Stacktrace.Frames) > 0 {
 					content.WriteString("Stacktrace:\n")
-					for _, frame := range exc.Stacktrace.Frames {
-						content.WriteString(fmt.Sprintf("  %s:%d in %s\n", 
+					// Print frames in reverse order for better readability
+					for i := len(exc.Stacktrace.Frames) - 1; i >= 0; i-- {
+						frame := exc.Stacktrace.Frames[i]
+						content.WriteString(fmt.Sprintf("  File \"%s\", line %d, in %s\n", 
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
