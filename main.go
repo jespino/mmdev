@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jespino/mmdev/cmd/aider"
 	"github.com/jespino/mmdev/cmd/webapp"
 	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/jespino/mmdev/cmd/docker"
@@ -46,6 +47,7 @@ func main() {
 		generate.GenerateCmd(),
 		start.StartCmd(),
 		e2e.E2ECmd(),
+		aider.AiderCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
