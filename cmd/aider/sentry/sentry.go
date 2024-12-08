@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/jespino/mmdev/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +34,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 
 	// Create HTTP client for Sentry API
 	httpClient := &http.Client{}
-	
+
 	// Get auth token
 	token := os.Getenv("SENTRY_TOKEN")
 	if token == "" {
@@ -105,7 +104,7 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
 		content.WriteString(fmt.Sprintf("Message: %s\n", event.Message))
-		
+
 		if len(event.Tags) > 0 {
 			content.WriteString("Tags:\n")
 			for _, tag := range event.Tags {
