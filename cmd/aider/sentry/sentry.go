@@ -56,7 +56,50 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("Sentry Issue %s\n\n", issueID))
 
-	// Get issue details from Sentry API
+	// Get issue details
+	issueReq, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/issues/%s/", issueID), nil)
+	if err != nil {
+		return fmt.Errorf("error creating issue request: %v", err)
+	}
+	issueReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	issueResp, err := httpClient.Do(issueReq)
+	if err != nil {
+		return fmt.Errorf("error fetching issue: %v", err)
+	}
+	defer issueResp.Body.Close()
+
+	if issueResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Sentry API returned status %d for issue request", issueResp.StatusCode)
+	}
+
+	type SentryIssue struct {
+		Title       string `json:"title"`
+		Culprit     string `json:"culprit"`
+		FirstSeen   string `json:"firstSeen"`
+		LastSeen    string `json:"lastSeen"`
+		Count       int    `json:"count"`
+		UserCount   int    `json:"userCount"`
+		Platform    string `json:"platform"`
+		Status      string `json:"status"`
+	}
+
+	var issue SentryIssue
+	if err := json.NewDecoder(issueResp.Body).Decode(&issue); err != nil {
+		return fmt.Errorf("error decoding issue: %v", err)
+	}
+
+	// Write issue information
+	content.WriteString(fmt.Sprintf("Title: %s\n", issue.Title))
+	content.WriteString(fmt.Sprintf("Culprit: %s\n", issue.Culprit))
+	content.WriteString(fmt.Sprintf("First Seen: %s\n", issue.FirstSeen))
+	content.WriteString(fmt.Sprintf("Last Seen: %s\n", issue.LastSeen))
+	content.WriteString(fmt.Sprintf("Event Count: %d\n", issue.Count))
+	content.WriteString(fmt.Sprintf("User Count: %d\n", issue.UserCount))
+	content.WriteString(fmt.Sprintf("Platform: %s\n", issue.Platform))
+	content.WriteString(fmt.Sprintf("Status: %s\n\n", issue.Status))
+
+	// Get events
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/issues/%s/events/", issueID), nil)
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
@@ -99,12 +142,18 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		Exception []Exception `json:"exception"`
 	}
 
-	// Parse events from response
+	// Parse events from response (limit to 10)
 	var events []SentryEvent
 	if err := json.NewDecoder(resp.Body).Decode(&events); err != nil {
 		return fmt.Errorf("error decoding events: %v", err)
 	}
 
+	// Limit to 10 most recent events
+	if len(events) > 10 {
+		events = events[:10]
+	}
+
+	content.WriteString(fmt.Sprintf("Latest %d Events:\n", len(events)))
 	for i, event := range events {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
