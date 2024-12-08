@@ -75,22 +75,54 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Sentry API returned status %d", resp.StatusCode)
 	}
 
+	// Define custom event struct to match Sentry API response
+	type Exception struct {
+		Type       string `json:"type"`
+		Value      string `json:"value"`
+		Stacktrace struct {
+			Frames []struct {
+				Filename string `json:"filename"`
+				Lineno   int    `json:"lineno"`
+				Function string `json:"function"`
+			} `json:"frames"`
+		} `json:"stacktrace"`
+	}
+
+	type SentryEvent struct {
+		EventID   string      `json:"eventId"`
+		Message   string      `json:"message"`
+		Tags      [][]string  `json:"tags"`
+		Exception []Exception `json:"exception"`
+	}
+
 	// Parse events from response
-	var events []sentry.Event
+	var events []SentryEvent
 	if err := json.NewDecoder(resp.Body).Decode(&events); err != nil {
 		return fmt.Errorf("error decoding events: %v", err)
 	}
+
 	for i, event := range events {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
+		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
 		content.WriteString(fmt.Sprintf("Message: %s\n", event.Message))
-		if event.Exception != nil {
+		
+		if len(event.Tags) > 0 {
+			content.WriteString("Tags:\n")
+			for _, tag := range event.Tags {
+				if len(tag) == 2 {
+					content.WriteString(fmt.Sprintf("  %s: %s\n", tag[0], tag[1]))
+				}
+			}
+		}
+
+		if len(event.Exception) > 0 {
 			for _, exc := range event.Exception {
 				content.WriteString(fmt.Sprintf("Exception: %s\n", exc.Value))
 				content.WriteString(fmt.Sprintf("Type: %s\n", exc.Type))
-				if exc.Stacktrace != nil {
+				if len(exc.Stacktrace.Frames) > 0 {
 					content.WriteString("Stacktrace:\n")
 					for _, frame := range exc.Stacktrace.Frames {
-						content.WriteString(fmt.Sprintf("  %s:%d in %s\n", 
+						content.WriteString(fmt.Sprintf("  %s:%d in %s\n",
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
