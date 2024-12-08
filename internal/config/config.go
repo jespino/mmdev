@@ -9,7 +9,12 @@ import (
 )
 
 type Config struct {
-	Jira JiraConfig `toml:"jira"`
+	Jira   JiraConfig   `toml:"jira"`
+	Sentry SentryConfig `toml:"sentry"`
+}
+
+type SentryConfig struct {
+	Token string `toml:"token"`
 }
 
 type JiraConfig struct {

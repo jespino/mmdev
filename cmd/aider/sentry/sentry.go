@@ -25,10 +25,25 @@ func NewCommand() *cobra.Command {
 func runSentry(cmd *cobra.Command, args []string) error {
 	issueID := args[0]
 
+	// Load configuration
+	config, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("error loading config: %v", err)
+	}
+
 	// Initialize Sentry client
-	err := sentry.Init(sentry.ClientOptions{
+	options := sentry.ClientOptions{
 		Dsn: os.Getenv("SENTRY_DSN"),
-	})
+	}
+	
+	// Add auth token if configured
+	if token := os.Getenv("SENTRY_TOKEN"); token != "" {
+		options.AuthToken = token
+	} else if config.Sentry.Token != "" {
+		options.AuthToken = config.Sentry.Token
+	}
+
+	err = sentry.Init(options)
 	if err != nil {
 		return fmt.Errorf("sentry initialization failed: %v", err)
 	}
