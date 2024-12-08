@@ -2,12 +2,15 @@ package sentry
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/jespino/mmdev/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -31,23 +34,18 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error loading config: %v", err)
 	}
 
-	// Initialize Sentry client
-	options := sentry.ClientOptions{
-		Dsn: os.Getenv("SENTRY_DSN"),
-	}
+	// Create HTTP client for Sentry API
+	httpClient := &http.Client{}
 	
-	// Add auth token if configured
-	if token := os.Getenv("SENTRY_TOKEN"); token != "" {
-		options.AuthToken = token
-	} else if config.Sentry.Token != "" {
-		options.AuthToken = config.Sentry.Token
+	// Get auth token
+	token := os.Getenv("SENTRY_TOKEN")
+	if token == "" {
+		token = config.Sentry.Token
 	}
 
-	err = sentry.Init(options)
-	if err != nil {
-		return fmt.Errorf("sentry initialization failed: %v", err)
+	if token == "" {
+		return fmt.Errorf("Sentry token not configured. Set SENTRY_TOKEN env var or token in ~/.mmdev.toml")
 	}
-	defer sentry.Flush(2)
 
 	// Create temporary file
 	tmpFile, err := os.CreateTemp("", "sentry-issue-*.txt")
@@ -56,18 +54,33 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	// Get issue details using Sentry API
-	client := sentry.CurrentHub().Client()
-	if client == nil {
-		return fmt.Errorf("failed to get Sentry client")
-	}
-
 	// Write issue content to file
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("Sentry Issue %s\n\n", issueID))
 
-	// Get events for this issue
-	events := client.GetEvents(context.Background(), issueID)
+	// Get issue details from Sentry API
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/issues/%s/events/", issueID), nil)
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error fetching events: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Sentry API returned status %d", resp.StatusCode)
+	}
+
+	// Parse events from response
+	var events []sentry.Event
+	if err := json.NewDecoder(resp.Body).Decode(&events); err != nil {
+		return fmt.Errorf("error decoding events: %v", err)
+	}
 	for i, event := range events {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Message: %s\n", event.Message))
