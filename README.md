@@ -92,6 +92,7 @@ mmdev e2e cypress report     # Show Cypress test report
 ```bash
 mmdev aider github owner/repo#123  # Process GitHub issue with aider
 mmdev aider jira PROJECT-123       # Process Jira issue with aider
+mmdev aider sentry ISSUE-ID        # Process Sentry issue with aider
 ```
 
 The aider commands require:
@@ -100,6 +101,8 @@ The aider commands require:
   - JIRA_URL: Your Jira instance URL
   - JIRA_USER: Your Jira username
   - JIRA_TOKEN: Your Jira API token
+- For Sentry: Environment variable:
+  - SENTRY_DSN: Your Sentry project DSN
 
 ## Docker Services
 
