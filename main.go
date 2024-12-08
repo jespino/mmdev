@@ -5,13 +5,14 @@ import (
 	"os"
 
 	"github.com/jespino/mmdev/cmd/aider"
-	"github.com/jespino/mmdev/cmd/webapp"
-	"github.com/jespino/mmdev/pkg/utils"
+	"github.com/jespino/mmdev/cmd/config"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/generate"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
+	"github.com/jespino/mmdev/cmd/webapp"
+	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
