@@ -33,7 +33,7 @@ func LoadConfig() (*Config, error) {
 	}
 
 	// Try to load config file
-	configPath := filepath.Join(homeDir, ".mattermost-autofixer.toml")
+	configPath := filepath.Join(homeDir, ".mmdev.toml")
 	if _, err := os.Stat(configPath); err == nil {
 		if _, err := toml.DecodeFile(configPath, config); err != nil {
 			return nil, fmt.Errorf("failed to decode config file: %w", err)

@@ -33,13 +33,13 @@ func runJira(cmd *cobra.Command, args []string) error {
 	}
 
 	if config.Jira.URL == "" {
-		return fmt.Errorf("Jira URL not configured. Set it in ~/.mattermost-autofixer.toml or JIRA_URL environment variable")
+		return fmt.Errorf("Jira URL not configured. Set it in ~/.mmdev.toml or JIRA_URL environment variable")
 	}
 	if config.Jira.Username == "" {
-		return fmt.Errorf("Jira username not configured. Set it in ~/.mattermost-autofixer.toml or JIRA_USER environment variable")
+		return fmt.Errorf("Jira username not configured. Set it in ~/.mmdev.toml or JIRA_USER environment variable")
 	}
 	if config.Jira.Token == "" {
-		return fmt.Errorf("Jira token not configured. Set it in ~/.mattermost-autofixer.toml or JIRA_TOKEN environment variable")
+		return fmt.Errorf("Jira token not configured. Set it in ~/.mmdev.toml or JIRA_TOKEN environment variable")
 	}
 
 	// Create Jira client
