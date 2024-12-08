@@ -240,12 +240,6 @@ func runSentry(cmd *cobra.Command, args []string) error {
 							frame.Filename,
 							frame.Lineno,
 							frame.Function))
-						if frame.Context != nil {
-							content.WriteString("  Context:\n")
-							for _, ctx := range frame.Context {
-								content.WriteString(fmt.Sprintf("    %d: %s\n", ctx[0], ctx[1]))
-							}
-						}
 					}
 				}
 			}
