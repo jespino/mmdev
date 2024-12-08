@@ -207,19 +207,55 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		Culprit       string                 `json:"culprit"`
 	}
 
-	// Parse events from response (limit to 3)
-	var events []SentryEvent
-	if err := json.NewDecoder(resp.Body).Decode(&events); err != nil {
-		return fmt.Errorf("error decoding events: %v", err)
+	// Parse event list from response
+	var eventList []struct {
+		EventID string `json:"eventId"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&eventList); err != nil {
+		return fmt.Errorf("error decoding event list: %v", err)
 	}
 
 	// Limit to 3 most recent events
-	if len(events) > 3 {
-		events = events[:3]
+	if len(eventList) > 3 {
+		eventList = eventList[:3]
 	}
 
-	content.WriteString(fmt.Sprintf("Latest %d Events:\n", len(events)))
-	for i, event := range events {
+	content.WriteString(fmt.Sprintf("Latest %d Events:\n", len(eventList)))
+
+	// Fetch full details for each event
+	for i, eventSummary := range eventList {
+		// Get detailed event data
+		eventReq, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/events/%s/", eventSummary.EventID), nil)
+		if err != nil {
+			return fmt.Errorf("error creating event request: %v", err)
+		}
+		eventReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		eventResp, err := httpClient.Do(eventReq)
+		if err != nil {
+			return fmt.Errorf("error fetching event details: %v", err)
+		}
+		defer eventResp.Body.Close()
+
+		// Print raw response for debugging
+		eventBody, err := io.ReadAll(eventResp.Body)
+		if err != nil {
+			return fmt.Errorf("error reading event response body: %v", err)
+		}
+		fmt.Printf("Raw Event %d Response:\n%s\n\n", i+1, string(eventBody))
+
+		// Create new reader from the response body for JSON decoding
+		eventResp.Body = io.NopCloser(bytes.NewBuffer(eventBody))
+
+		if eventResp.StatusCode != http.StatusOK {
+			return fmt.Errorf("Sentry API returned status %d for event request with body: %s", eventResp.StatusCode, string(eventBody))
+		}
+
+		var event SentryEvent
+		if err := json.NewDecoder(eventResp.Body).Decode(&event); err != nil {
+			return fmt.Errorf("error decoding event details: %v", err)
+		}
+	for i, event := range eventList {
 		content.WriteString(fmt.Sprintf("\n--- Event %d ---\n", i+1))
 		content.WriteString(fmt.Sprintf("Event ID: %s\n", event.EventID))
 		content.WriteString(fmt.Sprintf("Title: %s\n", event.Title))
