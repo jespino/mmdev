@@ -1,8 +1,10 @@
 package sentry
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -69,8 +71,18 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 	defer issueResp.Body.Close()
 
+	// Print raw response for debugging
+	issueBody, err := io.ReadAll(issueResp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading issue response body: %v", err)
+	}
+	fmt.Printf("Raw Issue Response:\n%s\n\n", string(issueBody))
+	
+	// Create new reader from the response body for JSON decoding
+	issueResp.Body = io.NopCloser(bytes.NewBuffer(issueBody))
+
 	if issueResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Sentry API returned status %d for issue request", issueResp.StatusCode)
+		return fmt.Errorf("Sentry API returned status %d for issue request with body: %s", issueResp.StatusCode, string(issueBody))
 	}
 
 	type SentryIssue struct {
@@ -141,8 +153,18 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 	defer resp.Body.Close()
 
+	// Print raw response for debugging
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response body: %v", err)
+	}
+	fmt.Printf("Raw Events Response:\n%s\n\n", string(respBody))
+	
+	// Create new reader from the response body for JSON decoding
+	resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Sentry API returned status %d", resp.StatusCode)
+		return fmt.Errorf("Sentry API returned status %d with body: %s", resp.StatusCode, string(respBody))
 	}
 
 	// Define custom event struct to match Sentry API response
