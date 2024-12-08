@@ -1,8 +1,8 @@
 package aider
 
 import (
-	"github.com/jespino/mmdev/cmd/github"
-	"github.com/jespino/mmdev/cmd/jira"
+	"github.com/jespino/mmdev/cmd/aider/github"
+	"github.com/jespino/mmdev/cmd/aider/jira"
 	"github.com/spf13/cobra"
 )
 

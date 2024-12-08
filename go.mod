@@ -3,12 +3,15 @@ module github.com/jespino/mmdev
 go 1.21
 
 require (
+	github.com/BurntSushi/toml v1.4.0
+	github.com/andygrunwald/go-jira v1.16.0
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/fsnotify/fsnotify v1.8.0
+	github.com/google/go-github/v57 v57.0.0
 	github.com/spf13/cobra v1.8.1
 )
 
@@ -22,7 +25,10 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -39,6 +45,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
+	github.com/trivago/tgo v1.0.7 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
