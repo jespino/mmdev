@@ -74,14 +74,35 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 
 	type SentryIssue struct {
-		Title       string `json:"title"`
-		Culprit     string `json:"culprit"`
-		FirstSeen   string `json:"firstSeen"`
-		LastSeen    string `json:"lastSeen"`
-		Count       int    `json:"count"`
-		UserCount   int    `json:"userCount"`
-		Platform    string `json:"platform"`
-		Status      string `json:"status"`
+		Title           string `json:"title"`
+		Culprit         string `json:"culprit"`
+		FirstSeen       string `json:"firstSeen"`
+		LastSeen        string `json:"lastSeen"`
+		Count           string `json:"count"`
+		UserCount       int    `json:"userCount"`
+		Level           string `json:"level"`
+		Status          string `json:"status"`
+		StatusDetails   map[string]interface{} `json:"statusDetails"`
+		IsPublic        bool   `json:"isPublic"`
+		Platform        string `json:"platform"`
+		Project         struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+			Slug string `json:"slug"`
+		} `json:"project"`
+		Type        string `json:"type"`
+		Metadata    struct {
+			Title string `json:"title"`
+		} `json:"metadata"`
+		NumComments     int    `json:"numComments"`
+		AssignedTo      interface{} `json:"assignedTo"`
+		IsSubscribed    bool   `json:"isSubscribed"`
+		HasSeen         bool   `json:"hasSeen"`
+		IsBookmarked    bool   `json:"isBookmarked"`
+		ShareID         interface{} `json:"shareId"`
+		ShortID         string `json:"shortId"`
+		Permalink       string `json:"permalink"`
+		UserReportCount int    `json:"userReportCount"`
 	}
 
 	var issue SentryIssue
@@ -90,14 +111,21 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 
 	// Write issue information
-	content.WriteString(fmt.Sprintf("Title: %s\n", issue.Title))
+	content.WriteString(fmt.Sprintf("Title: %s\n", issue.Metadata.Title))
+	content.WriteString(fmt.Sprintf("Project: %s (%s)\n", issue.Project.Name, issue.Project.Slug))
+	content.WriteString(fmt.Sprintf("Type: %s\n", issue.Type))
+	content.WriteString(fmt.Sprintf("Level: %s\n", issue.Level))
 	content.WriteString(fmt.Sprintf("Culprit: %s\n", issue.Culprit))
 	content.WriteString(fmt.Sprintf("First Seen: %s\n", issue.FirstSeen))
 	content.WriteString(fmt.Sprintf("Last Seen: %s\n", issue.LastSeen))
-	content.WriteString(fmt.Sprintf("Event Count: %d\n", issue.Count))
+	content.WriteString(fmt.Sprintf("Event Count: %s\n", issue.Count))
 	content.WriteString(fmt.Sprintf("User Count: %d\n", issue.UserCount))
+	content.WriteString(fmt.Sprintf("User Reports: %d\n", issue.UserReportCount))
+	content.WriteString(fmt.Sprintf("Comments: %d\n", issue.NumComments))
+	content.WriteString(fmt.Sprintf("Status: %s\n", issue.Status))
 	content.WriteString(fmt.Sprintf("Platform: %s\n", issue.Platform))
-	content.WriteString(fmt.Sprintf("Status: %s\n\n", issue.Status))
+	content.WriteString(fmt.Sprintf("Permalink: %s\n", issue.Permalink))
+	content.WriteString(fmt.Sprintf("Short ID: %s\n\n", issue.ShortID))
 
 	// Get events
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://sentry.io/api/0/issues/%s/events/", issueID), nil)
