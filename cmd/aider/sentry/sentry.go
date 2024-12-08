@@ -1,10 +1,8 @@
 package sentry
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -71,18 +69,8 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 	defer issueResp.Body.Close()
 
-	// Print raw response for debugging
-	issueBody, err := io.ReadAll(issueResp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading issue response body: %v", err)
-	}
-	fmt.Printf("Raw Issue Response:\n%s\n\n", string(issueBody))
-
-	// Create new reader from the response body for JSON decoding
-	issueResp.Body = io.NopCloser(bytes.NewBuffer(issueBody))
-
 	if issueResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Sentry API returned status %d for issue request with body: %s", issueResp.StatusCode, string(issueBody))
+		return fmt.Errorf("Sentry API returned status %d for issue request", issueResp.StatusCode)
 	}
 
 	type SentryIssue struct {
@@ -153,18 +141,8 @@ func runSentry(cmd *cobra.Command, args []string) error {
 	}
 	defer resp.Body.Close()
 
-	// Print raw response for debugging
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response body: %v", err)
-	}
-	fmt.Printf("Raw Events Response:\n%s\n\n", string(respBody))
-
-	// Create new reader from the response body for JSON decoding
-	resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
-
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Sentry API returned status %d with body: %s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("Sentry API returned status %d", resp.StatusCode)
 	}
 
 	type Frame struct {
@@ -240,18 +218,8 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		}
 		defer eventResp.Body.Close()
 
-		// Print raw response for debugging
-		eventBody, err := io.ReadAll(eventResp.Body)
-		if err != nil {
-			return fmt.Errorf("error reading event response body: %v", err)
-		}
-		fmt.Printf("Raw Event %d Response:\n%s\n\n", i+1, string(eventBody))
-
-		// Create new reader from the response body for JSON decoding
-		eventResp.Body = io.NopCloser(bytes.NewBuffer(eventBody))
-
 		if eventResp.StatusCode != http.StatusOK {
-			return fmt.Errorf("Sentry API returned status %d for event request with body: %s", eventResp.StatusCode, string(eventBody))
+			return fmt.Errorf("Sentry API returned status %d for event request", eventResp.StatusCode)
 		}
 
 		var event SentryEvent
