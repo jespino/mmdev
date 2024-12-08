@@ -339,10 +339,10 @@ func runSentry(cmd *cobra.Command, args []string) error {
 										for _, f := range frames {
 											if frame, ok := f.(map[string]interface{}); ok {
 												exc.Stacktrace.Frames = append(exc.Stacktrace.Frames, Frame{
-													Filename: frame["filename"].(string),
-													Lineno:   int(frame["lineNo"].(float64)),
-													Function: frame["function"].(string),
-													Context:  frame["context"].([][]any),
+													Filename: toString(frame["filename"]),
+													Lineno:   toInt(frame["lineNo"]),
+													Function: toString(frame["function"]),
+													Context:  toContext(frame["context"]),
 												})
 											}
 										}
@@ -378,5 +378,45 @@ func runSentry(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error running aider: %v", err)
 	}
 
+	return nil
+}
+
+// Helper functions to safely handle nil values
+func toString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+func toInt(v interface{}) int {
+	if v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return int(n)
+	case float32:
+		return int(n)
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case int32:
+		return int(n)
+	}
+	return 0
+}
+
+func toContext(v interface{}) [][]any {
+	if v == nil {
+		return nil
+	}
+	if ctx, ok := v.([][]any); ok {
+		return ctx
+	}
 	return nil
 }
