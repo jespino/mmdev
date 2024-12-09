@@ -83,6 +83,7 @@ mmdev webapp fix      # Run auto-fix on webapp code
 mmdev docker start # Start required Docker services
 mmdev docker stop  # Stop Docker services
 mmdev docker clean # Remove containers and volumes
+```
 
 ### Configuration Command
 
@@ -94,7 +95,6 @@ mmdev config # Configure Jira and Sentry integration
 
 ```bash
 mmdev dates # Show upcoming Mattermost release dates and milestones
-```
 ```
 
 ### E2E Testing Commands
