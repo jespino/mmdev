@@ -2,6 +2,7 @@ package dates
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -59,8 +60,8 @@ func runDates(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	fmt.Println("Upcoming Mattermost Release Dates:")
-	fmt.Println("================================")
+	fmt.Println("Upcoming Mattermost Release Timeline:")
+	fmt.Println("=================================")
 
 	// Calculate working days (excluding weekends)
 	workingDaysBefore := func(date time.Time, days int) time.Time {
@@ -73,6 +74,14 @@ func runDates(cmd *cobra.Command, args []string) error {
 		}
 		return result
 	}
+
+	// Create a slice to store all dates
+	type releaseDate struct {
+		date    time.Time
+		version string
+		event   string
+	}
+	var dates []releaseDate
 
 	for _, version := range project.Versions {
 		if version.ReleaseDate == "" {
@@ -94,18 +103,30 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		fmt.Printf("\nRelease %s:\n", version.Name)
-		fmt.Printf("  Self-Managed Release:     %s\n", releaseDate.Format("Monday, January 2, 2006"))
-		fmt.Printf("  Cloud Dedicated Release:  %s\n", workingDaysBefore(releaseDate, 2).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Cloud Enterprise Release: %s\n", workingDaysBefore(releaseDate, 3).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Cloud Professional:       %s\n", workingDaysBefore(releaseDate, 5).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Cloud Freemium:          %s\n", workingDaysBefore(releaseDate, 6).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Cloud Beta:              %s\n", workingDaysBefore(releaseDate, 7).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Release Approval:         %s\n", workingDaysBefore(releaseDate, 8).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Code Freeze:             %s\n", workingDaysBefore(releaseDate, 10).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Release Qualification:    %s\n", workingDaysBefore(releaseDate, 18).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Judgment Day:            %s\n", workingDaysBefore(releaseDate, 19).Format("Monday, January 2, 2006"))
-		fmt.Printf("  Feature Complete:         %s\n", workingDaysBefore(releaseDate, 24).Format("Monday, January 2, 2006"))
+		dates = append(dates, releaseDate{releaseDate, version.Name, "Self-Managed Release"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 2), version.Name, "Cloud Dedicated Release"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 3), version.Name, "Cloud Enterprise Release"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 5), version.Name, "Cloud Professional"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 6), version.Name, "Cloud Freemium"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 7), version.Name, "Cloud Beta"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 8), version.Name, "Release Approval"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 10), version.Name, "Code Freeze"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 18), version.Name, "Release Qualification"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 19), version.Name, "Judgment Day"})
+		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 24), version.Name, "Feature Complete"})
+	}
+
+	// Sort dates by date
+	sort.Slice(dates, func(i, j int) bool {
+		return dates[i].date.Before(dates[j].date)
+	})
+
+	// Print sorted dates
+	for _, d := range dates {
+		fmt.Printf("%s: %-23s (%s)\n", 
+			d.date.Format("Monday, January 2, 2006"),
+			d.event,
+			d.version)
 	}
 
 	return nil
