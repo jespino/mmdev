@@ -93,8 +93,9 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Skip past releases
-		if releaseDateDate.Before(now) {
+		// Only show future dates (from tomorrow onwards)
+		tomorrow := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)
+		if releaseDateDate.Before(tomorrow) {
 			continue
 		}
 
