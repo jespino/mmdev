@@ -2,7 +2,6 @@ package dates
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -50,7 +49,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 	now := time.Now()
 
 	// Search for versions for the next 2 months
-	versions, _, err := client.Project.GetVersions("MM")
+	versions, _, err := client.Project.ListVersions("MM")
 	if err != nil {
 		return fmt.Errorf("error searching Jira: %v", err)
 	}
