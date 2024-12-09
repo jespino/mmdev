@@ -68,17 +68,26 @@ func runDates(cmd *cobra.Command, args []string) error {
 	fmt.Println("============================")
 	
 	for _, issue := range issues {
-		dueDate, err := time.Parse("2006-01-02", string(issue.Fields.Duedate))
+		dueDate, err := issue.Fields.Duedate.MarshalJSON()
+		if err != nil {
+			continue
+		}
+		// Remove quotes from the JSON string
+		dateStr := strings.Trim(string(dueDate), `"`)
+		parsedDate, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			continue
+		}
 		if err != nil {
 			continue
 		}
 		
 		// Only show releases in next 2 months
-		if dueDate.After(now.AddDate(0, 2, 0)) {
+		if parsedDate.After(now.AddDate(0, 2, 0)) {
 			continue
 		}
 		
-		fmt.Printf("%s: %s\n", dueDate.Format("Monday, January 2, 2006"), issue.Fields.Summary)
+		fmt.Printf("%s: %s\n", parsedDate.Format("Monday, January 2, 2006"), issue.Fields.Summary)
 	}
 
 	return nil
