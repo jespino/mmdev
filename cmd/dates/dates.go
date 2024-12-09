@@ -93,12 +93,6 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Only show future dates (from tomorrow onwards)
-		tomorrow := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)
-		if releaseDateDate.Before(tomorrow) {
-			continue
-		}
-
 		// Only show releases in next 2 months
 		if releaseDateDate.After(now.AddDate(0, 2, 0)) {
 			continue
@@ -124,6 +118,12 @@ func runDates(cmd *cobra.Command, args []string) error {
 
 	// Print sorted dates
 	for _, d := range dates {
+		// Only show future dates (from tomorrow onwards)
+		tomorrow := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)
+		if d.date.Before(tomorrow) {
+			continue
+		}
+
 		fmt.Printf("%s: %-23s (%s)\n",
 			d.date.Format("Monday, January 2, 2006"),
 			d.event,
