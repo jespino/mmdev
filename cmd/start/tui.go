@@ -348,7 +348,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Type == tea.MouseMotion {
 			// Calculate viewport positions
 			serverHeight := m.splitVertical ? m.windowHeight-4 : (m.windowHeight/2)-3
-			serverWidth := m.splitVertical ? m.windowWidth/2 : m.windowWidth
 			
 			if m.splitVertical {
 				// Vertical split - check if mouse is in left or right half
