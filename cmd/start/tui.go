@@ -343,8 +343,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, listenForUpdates
 	case tea.MouseMsg:
-		switch msg.Action {
-		case tea.MouseActionMotion:
+		if msg.Action == tea.MouseActionMotion {
 			// Calculate viewport positions
 			serverHeight := (m.windowHeight / 2) - 3
 			if m.splitVertical {
@@ -366,24 +365,24 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedPane = "client"
 				}
 			}
-		case tea.MouseActionPress:
-			switch msg.Button {
-			case tea.MouseButtonWheelUp:
-				if m.selectedPane == "server" {
-					m.serverViewport.LineUp(3)
-					m.serverAtBottom = m.serverViewport.AtBottom()
-				} else {
-					m.clientViewport.LineUp(3)
-					m.clientAtBottom = m.clientViewport.AtBottom()
-				}
-			case tea.MouseButtonWheelDown:
-				if m.selectedPane == "server" {
-					m.serverViewport.LineDown(3)
-					m.serverAtBottom = m.serverViewport.AtBottom()
-				} else {
-					m.clientViewport.LineDown(3)
-					m.clientAtBottom = m.clientViewport.AtBottom()
-				}
+			return m, nil
+		}
+		switch msg.Button {
+		case tea.MouseButtonWheelUp:
+			if m.selectedPane == "server" {
+				m.serverViewport.LineUp(3)
+				m.serverAtBottom = m.serverViewport.AtBottom()
+			} else {
+				m.clientViewport.LineUp(3)
+				m.clientAtBottom = m.clientViewport.AtBottom()
+			}
+		case tea.MouseButtonWheelDown:
+			if m.selectedPane == "server" {
+				m.serverViewport.LineDown(3)
+				m.serverAtBottom = m.serverViewport.AtBottom()
+			} else {
+				m.clientViewport.LineDown(3)
+				m.clientAtBottom = m.clientViewport.AtBottom()
 			}
 		}
 		return m, nil
