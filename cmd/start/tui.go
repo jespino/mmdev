@@ -344,6 +344,30 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		return m, listenForUpdates
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseMotion {
+			// Calculate viewport positions
+			serverHeight := m.splitVertical ? m.windowHeight-4 : (m.windowHeight/2)-3
+			serverWidth := m.splitVertical ? m.windowWidth/2 : m.windowWidth
+			
+			if m.splitVertical {
+				// Vertical split - check if mouse is in left or right half
+				if msg.X < m.windowWidth/2 {
+					m.selectedPane = "server"
+				} else {
+					m.selectedPane = "client"
+				}
+			} else {
+				// Horizontal split - check if mouse is in top or bottom half
+				if msg.Y < serverHeight+2 { // +2 for title and padding
+					m.selectedPane = "server"
+				} else {
+					m.selectedPane = "client"
+				}
+			}
+		}
+		return m, nil
+
 	case tea.KeyMsg:
 		if m.commandMode {
 			switch msg.String() {
