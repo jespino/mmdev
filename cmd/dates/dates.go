@@ -88,32 +88,32 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		releaseDate, err := time.Parse("2006-01-02", version.ReleaseDate)
+		releaseDateDate, err := time.Parse("2006-01-02", version.ReleaseDate)
 		if err != nil {
 			continue
 		}
 
 		// Skip past releases
-		if releaseDate.Before(now) {
+		if releaseDateDate.Before(now) {
 			continue
 		}
 
 		// Only show releases in next 2 months
-		if releaseDate.After(now.AddDate(0, 2, 0)) {
+		if releaseDateDate.After(now.AddDate(0, 2, 0)) {
 			continue
 		}
 
-		dates = append(dates, releaseDate{date: releaseDate, version: version.Name, event: "Self-Managed Release"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 2), version: version.Name, event: "Cloud Dedicated Release"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 3), version: version.Name, event: "Cloud Enterprise Release"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 5), version: version.Name, event: "Cloud Professional"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 6), version: version.Name, event: "Cloud Freemium"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 7), version: version.Name, event: "Cloud Beta"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 8), version: version.Name, event: "Release Approval"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 10), version: version.Name, event: "Code Freeze"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 18), version: version.Name, event: "Release Qualification"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 19), version: version.Name, event: "Judgment Day"})
-		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 24), version: version.Name, event: "Feature Complete"})
+		dates = append(dates, releaseDate{date: releaseDateDate, version: version.Name, event: "Self-Managed Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 2), version: version.Name, event: "Cloud Dedicated Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 3), version: version.Name, event: "Cloud Enterprise Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 5), version: version.Name, event: "Cloud Professional"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 6), version: version.Name, event: "Cloud Freemium"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 7), version: version.Name, event: "Cloud Beta"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 8), version: version.Name, event: "Release Approval"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 10), version: version.Name, event: "Code Freeze"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 18), version: version.Name, event: "Release Qualification"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 19), version: version.Name, event: "Judgment Day"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 24), version: version.Name, event: "Feature Complete"})
 	}
 
 	// Sort dates by date
@@ -123,7 +123,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 
 	// Print sorted dates
 	for _, d := range dates {
-		fmt.Printf("%s: %-23s (%s)\n", 
+		fmt.Printf("%s: %-23s (%s)\n",
 			d.date.Format("Monday, January 2, 2006"),
 			d.event,
 			d.version)
