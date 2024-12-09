@@ -80,7 +80,6 @@ type model struct {
 }
 
 func initialModel() model {
-
 	commandInput := textinput.New()
 	commandInput.Prompt = ": "
 
@@ -92,7 +91,6 @@ func initialModel() model {
 		clientAtBottom: true,
 		splitVertical:  false,
 	}
-
 
 	// Start server process
 	m.serverCmd = exec.Command("mmdev", "server", "start")
@@ -345,10 +343,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, listenForUpdates
 	case tea.MouseMsg:
-		if msg.Type == tea.MouseMotion {
+		if msg.Action == tea.MouseActionMotion {
 			// Calculate viewport positions
-			serverHeight := m.splitVertical ? m.windowHeight-4 : (m.windowHeight/2)-3
-			
+			serverHeight := (m.windowHeight / 2) - 3
+			if m.splitVertical {
+				serverHeight = m.windowHeight - 4
+			}
+
 			if m.splitVertical {
 				// Vertical split - check if mouse is in left or right half
 				if msg.X < m.windowWidth/2 {
@@ -366,7 +367,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
-
 	case tea.KeyMsg:
 		if m.commandMode {
 			switch msg.String() {
