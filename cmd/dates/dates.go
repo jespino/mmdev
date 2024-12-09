@@ -103,17 +103,17 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		dates = append(dates, releaseDate{releaseDate, version.Name, "Self-Managed Release"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 2), version.Name, "Cloud Dedicated Release"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 3), version.Name, "Cloud Enterprise Release"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 5), version.Name, "Cloud Professional"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 6), version.Name, "Cloud Freemium"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 7), version.Name, "Cloud Beta"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 8), version.Name, "Release Approval"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 10), version.Name, "Code Freeze"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 18), version.Name, "Release Qualification"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 19), version.Name, "Judgment Day"})
-		dates = append(dates, releaseDate{workingDaysBefore(releaseDate, 24), version.Name, "Feature Complete"})
+		dates = append(dates, releaseDate{date: releaseDate, version: version.Name, event: "Self-Managed Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 2), version: version.Name, event: "Cloud Dedicated Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 3), version: version.Name, event: "Cloud Enterprise Release"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 5), version: version.Name, event: "Cloud Professional"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 6), version: version.Name, event: "Cloud Freemium"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 7), version: version.Name, event: "Cloud Beta"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 8), version: version.Name, event: "Release Approval"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 10), version: version.Name, event: "Code Freeze"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 18), version: version.Name, event: "Release Qualification"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 19), version: version.Name, event: "Judgment Day"})
+		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDate, 24), version: version.Name, event: "Feature Complete"})
 	}
 
 	// Sort dates by date
