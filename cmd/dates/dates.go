@@ -49,20 +49,20 @@ func runDates(cmd *cobra.Command, args []string) error {
 	now := time.Now()
 
 	// Search for versions for the next 2 months
-	versions, _, err := client.Project.ListVersions("MM")
+	project, _, err := client.Project.Get("MM")
 	if err != nil {
 		return fmt.Errorf("error searching Jira: %v", err)
 	}
 
-	if len(versions) == 0 {
+	if len(project.Versions) == 0 {
 		fmt.Println("No upcoming releases found")
 		return nil
 	}
 
 	fmt.Println("Upcoming Mattermost Releases:")
 	fmt.Println("============================")
-	
-	for _, version := range versions {
+
+	for _, version := range project.Versions {
 		if version.ReleaseDate == "" {
 			continue
 		}
@@ -81,7 +81,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 		if releaseDate.After(now.AddDate(0, 2, 0)) {
 			continue
 		}
-		
+
 		fmt.Printf("%s: %s\n", releaseDate.Format("Monday, January 2, 2006"), version.Name)
 	}
 
