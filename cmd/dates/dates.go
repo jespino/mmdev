@@ -2,6 +2,7 @@ package dates
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
