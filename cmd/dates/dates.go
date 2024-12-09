@@ -59,8 +59,20 @@ func runDates(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	fmt.Println("Upcoming Mattermost Releases:")
-	fmt.Println("============================")
+	fmt.Println("Upcoming Mattermost Release Dates:")
+	fmt.Println("================================")
+
+	// Calculate working days (excluding weekends)
+	workingDaysBefore := func(date time.Time, days int) time.Time {
+		result := date
+		for days > 0 {
+			result = result.AddDate(0, 0, -1)
+			if result.Weekday() != time.Saturday && result.Weekday() != time.Sunday {
+				days--
+			}
+		}
+		return result
+	}
 
 	for _, version := range project.Versions {
 		if version.ReleaseDate == "" {
@@ -82,7 +94,18 @@ func runDates(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		fmt.Printf("%s: %s\n", releaseDate.Format("Monday, January 2, 2006"), version.Name)
+		fmt.Printf("\nRelease %s:\n", version.Name)
+		fmt.Printf("  Self-Managed Release:     %s\n", releaseDate.Format("Monday, January 2, 2006"))
+		fmt.Printf("  Cloud Dedicated Release:  %s\n", workingDaysBefore(releaseDate, 2).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Cloud Enterprise Release: %s\n", workingDaysBefore(releaseDate, 3).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Cloud Professional:       %s\n", workingDaysBefore(releaseDate, 5).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Cloud Freemium:          %s\n", workingDaysBefore(releaseDate, 6).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Cloud Beta:              %s\n", workingDaysBefore(releaseDate, 7).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Release Approval:         %s\n", workingDaysBefore(releaseDate, 8).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Code Freeze:             %s\n", workingDaysBefore(releaseDate, 10).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Release Qualification:    %s\n", workingDaysBefore(releaseDate, 18).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Judgment Day:            %s\n", workingDaysBefore(releaseDate, 19).Format("Monday, January 2, 2006"))
+		fmt.Printf("  Feature Complete:         %s\n", workingDaysBefore(releaseDate, 24).Format("Monday, January 2, 2006"))
 	}
 
 	return nil
