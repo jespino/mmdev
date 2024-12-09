@@ -3,6 +3,7 @@ package dates
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -99,7 +100,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 		}
 
 		dates = append(dates, releaseDate{date: releaseDateDate, version: version.Name, event: "Self-Managed Release"})
-		
+
 		// Only add cloud dates for non-Mobile versions
 		if !strings.Contains(version.Name, "Mobile") {
 			dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 2), version: version.Name, event: "Cloud Dedicated Release"})
@@ -108,7 +109,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 			dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 6), version: version.Name, event: "Cloud Freemium"})
 			dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 7), version: version.Name, event: "Cloud Beta"})
 		}
-		
+
 		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 8), version: version.Name, event: "Release Approval"})
 		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 10), version: version.Name, event: "Code Freeze"})
 		dates = append(dates, releaseDate{date: workingDaysBefore(releaseDateDate, 18), version: version.Name, event: "Release Qualification"})
