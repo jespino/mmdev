@@ -6,6 +6,7 @@ import (
 
 	"github.com/jespino/mmdev/cmd/aider"
 	"github.com/jespino/mmdev/cmd/config"
+	"github.com/jespino/mmdev/cmd/dates"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/generate"
@@ -50,6 +51,7 @@ func main() {
 		e2e.E2ECmd(),
 		aider.AiderCmd(),
 		config.ConfigCmd(),
+		dates.DatesCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
