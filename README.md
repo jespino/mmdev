@@ -124,7 +124,6 @@ The aider commands require:
   - JIRA_USER: Your Jira username
   - JIRA_TOKEN: Your Jira API token
 - For Sentry: Environment variables or ~/.mmdev.toml configuration:
-  - SENTRY_DSN: Your Sentry project DSN
   - SENTRY_TOKEN: Your Sentry authentication token
 
 ## Docker Services
