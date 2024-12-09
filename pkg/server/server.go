@@ -10,13 +10,21 @@ import (
 
 // Manager handles server operations
 type Manager struct {
-	baseDir string
+	baseDir           string
+	enterpriseEnabled bool
+	enterpriseDir     string
 }
 
 // NewManager creates a new server manager
 func NewManager(baseDir string) *Manager {
+	enterpriseDir := filepath.Join(baseDir, "..", "enterprise")
+	_, err := os.Stat(enterpriseDir)
+	enterpriseEnabled := err == nil
+
 	return &Manager{
-		baseDir: baseDir,
+		baseDir:           baseDir,
+		enterpriseEnabled: enterpriseEnabled,
+		enterpriseDir:     enterpriseDir,
 	}
 }
 
@@ -50,13 +58,30 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 		}
 	}
 
+	// Get git hashes
+	buildHash := "dev"
+	buildHashEnterprise := "none"
+	if hash, err := exec.Command("git", "rev-parse", "HEAD").Output(); err == nil {
+		buildHash = strings.TrimSpace(string(hash))
+	}
+	if m.enterpriseEnabled {
+		if hash, err := exec.Command("git", "-C", m.enterpriseDir, "rev-parse", "HEAD").Output(); err == nil {
+			buildHashEnterprise = strings.TrimSpace(string(hash))
+		}
+	}
+
 	// Set build flags
 	ldflags := []string{
 		"-X github.com/mattermost/mattermost/server/public/model.BuildNumber=dev",
 		"-X github.com/mattermost/mattermost/server/public/model.BuildDate=dev",
-		"-X github.com/mattermost/mattermost/server/public/model.BuildHash=dev",
-		"-X github.com/mattermost/mattermost/server/public/model.BuildHashEnterprise=none",
-		"-X github.com/mattermost/mattermost/server/public/model.BuildEnterpriseReady=false",
+		"-X github.com/mattermost/mattermost/server/public/model.BuildHash=" + buildHash,
+		"-X github.com/mattermost/mattermost/server/public/model.BuildHashEnterprise=" + buildHashEnterprise,
+		"-X github.com/mattermost/mattermost/server/public/model.BuildEnterpriseReady=" + fmt.Sprintf("%t", m.enterpriseEnabled),
+	}
+
+	buildTags := []string{"debug"}
+	if m.enterpriseEnabled {
+		buildTags = append(buildTags, "enterprise")
 	}
 
 	fmt.Println("Compiling...")
@@ -64,7 +89,7 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 	// Build the server binary
 	buildCmd := exec.Command("go", "build",
 		"-ldflags", strings.Join(ldflags, " "),
-		"-tags", "debug",
+		"-tags", strings.Join(buildTags, " "),
 		"-o", "bin/mattermost",
 		"./cmd/mattermost")
 	buildCmd.Dir = m.baseDir
