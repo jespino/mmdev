@@ -68,7 +68,7 @@ func runDates(cmd *cobra.Command, args []string) error {
 	fmt.Println("============================")
 	
 	for _, issue := range issues {
-		dueDate, err := time.Parse("2006-01-02", issue.Fields.Duedate)
+		dueDate, err := time.Parse("2006-01-02", string(issue.Fields.Duedate))
 		if err != nil {
 			continue
 		}
