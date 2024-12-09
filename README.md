@@ -89,6 +89,12 @@ mmdev docker clean # Remove containers and volumes
 ```bash
 mmdev config # Configure Jira and Sentry integration
 ```
+
+### Release Dates Command
+
+```bash
+mmdev dates # Show upcoming Mattermost release dates and milestones
+```
 ```
 
 ### E2E Testing Commands
