@@ -49,18 +49,13 @@ func runDates(cmd *cobra.Command, args []string) error {
 	// Get current date
 	now := time.Now()
 
-	// Search for release issues for the next 2 months
-	jql := fmt.Sprintf(`project = MM AND issuetype = Release AND status != Done AND duedate >= "%s" ORDER BY duedate ASC`, now.Format("2006/01/02"))
-	
-	issues, _, err := client.Issue.Search(jql, &jira.SearchOptions{
-		MaxResults: 5, // Limit to next few releases
-		Fields:     []string{"summary", "duedate"},
-	})
+	// Search for versions for the next 2 months
+	versions, _, err := client.Project.GetVersions("MM")
 	if err != nil {
 		return fmt.Errorf("error searching Jira: %v", err)
 	}
 
-	if len(issues) == 0 {
+	if len(versions) == 0 {
 		fmt.Println("No upcoming releases found")
 		return nil
 	}
@@ -68,27 +63,27 @@ func runDates(cmd *cobra.Command, args []string) error {
 	fmt.Println("Upcoming Mattermost Releases:")
 	fmt.Println("============================")
 	
-	for _, issue := range issues {
-		dueDate, err := issue.Fields.Duedate.MarshalJSON()
+	for _, version := range versions {
+		if version.ReleaseDate == "" {
+			continue
+		}
+
+		releaseDate, err := time.Parse("2006-01-02", version.ReleaseDate)
 		if err != nil {
 			continue
 		}
-		// Remove quotes from the JSON string
-		dateStr := strings.Trim(string(dueDate), `"`)
-		parsedDate, err := time.Parse("2006-01-02", dateStr)
-		if err != nil {
+
+		// Skip past releases
+		if releaseDate.Before(now) {
 			continue
 		}
-		if err != nil {
-			continue
-		}
-		
+
 		// Only show releases in next 2 months
-		if parsedDate.After(now.AddDate(0, 2, 0)) {
+		if releaseDate.After(now.AddDate(0, 2, 0)) {
 			continue
 		}
 		
-		fmt.Printf("%s: %s\n", parsedDate.Format("Monday, January 2, 2006"), issue.Fields.Summary)
+		fmt.Printf("%s: %s\n", releaseDate.Format("Monday, January 2, 2006"), version.Name)
 	}
 
 	return nil
