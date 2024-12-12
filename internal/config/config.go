@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Jira   JiraConfig   `toml:"jira"`
-	Sentry SentryConfig `toml:"sentry"`
+	Jira       JiraConfig       `toml:"jira"`
+	Sentry     SentryConfig     `toml:"sentry"`
+	Confluence ConfluenceConfig `toml:"confluence"`
 }
 
 type SentryConfig struct {
@@ -18,6 +19,12 @@ type SentryConfig struct {
 }
 
 type JiraConfig struct {
+	URL      string `toml:"url"`
+	Username string `toml:"username"`
+	Token    string `toml:"token"`
+}
+
+type ConfluenceConfig struct {
 	URL      string `toml:"url"`
 	Username string `toml:"username"`
 	Token    string `toml:"token"`
