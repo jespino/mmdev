@@ -272,11 +272,8 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 			continue
 		}
 
-		// Download image - ensure absolute URL
-		downloadURL := attachment.DownloadLink
-		if !strings.HasPrefix(downloadURL, "http") {
-			downloadURL = baseURL + downloadURL
-		}
+		// Download image using v1 API
+		downloadURL := fmt.Sprintf("%s/wiki/rest/api/content/%s/child/attachment/%s/download", baseURL, pageID, attachment.ID)
 		fmt.Printf("Downloading image from URL: %s\n", downloadURL)
 		downloadReq, err := http.NewRequest("GET", downloadURL, nil)
 		if err != nil {
