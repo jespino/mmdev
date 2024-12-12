@@ -1,15 +1,15 @@
 package confluence
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
-	"encoding/json"
-	"io"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/jespino/mmdev/internal/config"
 	"github.com/spf13/cobra"
@@ -82,7 +82,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	defer os.Remove(tmpFile.Name())
 
 	// Get page content
-	pageReq, err := http.NewRequest("GET", 
+	pageReq, err := http.NewRequest("GET",
 		fmt.Sprintf("%s/wiki/rest/api/content/%s?expand=body.storage,version,space", url, pageID),
 		nil)
 	if err != nil {
@@ -188,21 +188,20 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build command with individual --read flags
-	args := []string{}
-	
+	args = []string{}
+
 	// Add content file
 	args = append(args, "--read", tmpFile.Name())
-	
+
 	// Add each image file with its own --read flag
 	var imageFiles []string
-	var err error
 	imageFiles, err = filepath.Glob(filepath.Join(tmpDir, "images", "*"))
 	if err == nil {
 		for _, imgFile := range imageFiles {
 			args = append(args, "--read", imgFile)
 		}
 	}
-	
+
 	cmd2 := exec.Command("aider", args...)
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr
@@ -218,7 +217,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmpDir, content string) string {
 	// Regular expression to find image tags with ac:image-uri
 	re := regexp.MustCompile(`<ac:image[^>]*><ri:url[^>]*>([^<]+)</ri:url></ac:image>`)
-	
+
 	// Create images directory
 	imagesDir := filepath.Join(tmpDir, "images")
 	if err := os.MkdirAll(imagesDir, 0755); err != nil {
