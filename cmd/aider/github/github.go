@@ -84,7 +84,7 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
-	// Run aider with the temporary file
+	// Run aider with explicit --read flag
 	cmd2 := exec.Command("aider", "--read", tmpFile.Name())
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr

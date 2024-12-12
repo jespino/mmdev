@@ -187,18 +187,20 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
-	// Build list of files to pass to aider
-	var files []string
-	files = append(files, tmpFile.Name())
-
-	// Add all downloaded images
+	// Build command with individual --read flags
+	args := []string{}
+	
+	// Add content file
+	args = append(args, "--read", tmpFile.Name())
+	
+	// Add each image file with its own --read flag
 	imageFiles, err := filepath.Glob(filepath.Join(tmpDir, "images", "*"))
 	if err == nil {
-		files = append(files, imageFiles...)
+		for _, imgFile := range imageFiles {
+			args = append(args, "--read", imgFile)
+		}
 	}
-
-	// Run aider with all files
-	args := append([]string{"--read"}, files...)
+	
 	cmd2 := exec.Command("aider", args...)
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr
