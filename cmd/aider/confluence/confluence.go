@@ -32,28 +32,28 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error loading config: %v", err)
 	}
 
-	// Get auth credentials
-	url := os.Getenv("CONFLUENCE_URL")
+	// Use Jira credentials for Confluence
+	url := os.Getenv("JIRA_URL")
 	if url == "" {
-		url = config.Confluence.URL
+		url = config.Jira.URL
 	}
-	username := os.Getenv("CONFLUENCE_USER")
+	username := os.Getenv("JIRA_USER")
 	if username == "" {
-		username = config.Confluence.Username
+		username = config.Jira.Username
 	}
-	token := os.Getenv("CONFLUENCE_TOKEN")
+	token := os.Getenv("JIRA_TOKEN")
 	if token == "" {
-		token = config.Confluence.Token
+		token = config.Jira.Token
 	}
 
 	if url == "" {
-		return fmt.Errorf("Confluence URL not configured. Set CONFLUENCE_URL env var or url in ~/.mmdev.toml")
+		return fmt.Errorf("Jira URL not configured. Set JIRA_URL env var or url in ~/.mmdev.toml")
 	}
 	if username == "" {
-		return fmt.Errorf("Confluence username not configured. Set CONFLUENCE_USER env var or username in ~/.mmdev.toml")
+		return fmt.Errorf("Jira username not configured. Set JIRA_USER env var or username in ~/.mmdev.toml")
 	}
 	if token == "" {
-		return fmt.Errorf("Confluence token not configured. Set CONFLUENCE_TOKEN env var or token in ~/.mmdev.toml")
+		return fmt.Errorf("Jira token not configured. Set JIRA_TOKEN env var or token in ~/.mmdev.toml")
 	}
 
 	// Create HTTP client
