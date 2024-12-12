@@ -181,11 +181,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 			content.WriteString(fmt.Sprintf("\n--- Comment %d ---\n", i+1))
 			content.WriteString(fmt.Sprintf("ID: %s\n", comment.ID))
 			content.WriteString(fmt.Sprintf("Version: %d\n", comment.Version.Number))
-			processedComment, err := downloadAndReplaceImages(client, url, username, token, tmpDir, comment.Body.Storage.Value)
-			if err != nil {
-				return fmt.Errorf("error processing comment attachments: %v", err)
-			}
-			content.WriteString(fmt.Sprintf("Content:\n%s\n", processedComment))
+			content.WriteString(fmt.Sprintf("Content:\n%s\n", comment.Body.Storage.Value))
 		}
 	}
 
