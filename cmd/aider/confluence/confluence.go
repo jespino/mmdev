@@ -277,6 +277,7 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 		if !strings.HasPrefix(downloadURL, "http") {
 			downloadURL = baseURL + downloadURL
 		}
+		fmt.Printf("Downloading image from URL: %s\n", downloadURL)
 		downloadReq, err := http.NewRequest("GET", downloadURL, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to create request for image %s: %v\n", attachment.Title, err)
