@@ -218,6 +218,24 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 	// Regular expression to find image tags with ac:image-uri
 	re := regexp.MustCompile(`<ac:image[^>]*><ri:url[^>]*>([^<]+)</ri:url></ac:image>`)
 
+	// Store all image URLs found in content
+	var imageURLs []string
+	matches := re.FindAllStringSubmatch(content, -1)
+	for _, match := range matches {
+		if len(match) >= 2 {
+			imageURLs = append(imageURLs, match[1])
+		}
+	}
+
+	// Add image URLs to content
+	if len(imageURLs) > 0 {
+		content = content + "\n\nImage URLs found in content:\n"
+		for _, url := range imageURLs {
+			content = content + fmt.Sprintf("- %s\n", url)
+		}
+		content = content + "\n"
+	}
+
 	// Create images directory
 	imagesDir := filepath.Join(tmpDir, "images")
 	if err := os.MkdirAll(imagesDir, 0755); err != nil {
