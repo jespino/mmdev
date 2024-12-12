@@ -7,6 +7,9 @@ import (
 	"os/exec"
 	"strings"
 	"encoding/json"
+	"io"
+	"path/filepath"
+	"regexp"
 
 	"github.com/jespino/mmdev/internal/config"
 	"github.com/spf13/cobra"
@@ -59,8 +62,15 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	// Create HTTP client
 	client := &http.Client{}
 
-	// Create temporary file
-	tmpFile, err := os.CreateTemp("", "confluence-page-*.txt")
+	// Create temporary directory for the page and its resources
+	tmpDir, err := os.MkdirTemp("", "confluence-page-*")
+	if err != nil {
+		return fmt.Errorf("error creating temporary directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create temporary file inside the directory
+	tmpFile, err := os.Create(filepath.Join(tmpDir, "content.txt"))
 	if err != nil {
 		return fmt.Errorf("error creating temporary file: %v", err)
 	}
@@ -118,7 +128,9 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	content.WriteString(fmt.Sprintf("Type: %s\n", page.Type))
 	content.WriteString(fmt.Sprintf("Status: %s\n\n", page.Status))
 	content.WriteString("Content:\n")
-	content.WriteString(page.Body.Storage.Value)
+	// Process content to download images and update references
+	processedContent := downloadAndReplaceImages(client, url, username, token, tmpDir, page.Body.Storage.Value)
+	content.WriteString(processedContent)
 	content.WriteString("\n\n")
 
 	// Get comments
@@ -166,7 +178,8 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 			content.WriteString(fmt.Sprintf("\n--- Comment %d ---\n", i+1))
 			content.WriteString(fmt.Sprintf("ID: %s\n", comment.ID))
 			content.WriteString(fmt.Sprintf("Version: %d\n", comment.Version.Number))
-			content.WriteString(fmt.Sprintf("Content:\n%s\n", comment.Body.Storage.Value))
+			processedComment := downloadAndReplaceImages(client, url, username, token, tmpDir, comment.Body.Storage.Value)
+			content.WriteString(fmt.Sprintf("Content:\n%s\n", processedComment))
 		}
 	}
 
@@ -185,4 +198,68 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmpDir, content string) string {
+	// Regular expression to find image tags with ac:image-uri
+	re := regexp.MustCompile(`<ac:image[^>]*><ri:url[^>]*>([^<]+)</ri:url></ac:image>`)
+	
+	// Create images directory
+	imagesDir := filepath.Join(tmpDir, "images")
+	if err := os.MkdirAll(imagesDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Failed to create images directory: %v\n", err)
+		return content
+	}
+
+	processedContent := re.ReplaceAllStringFunc(content, func(match string) string {
+		// Extract image URL
+		urlMatch := re.FindStringSubmatch(match)
+		if len(urlMatch) < 2 {
+			return match
+		}
+		imageURL := urlMatch[1]
+
+		// Download image
+		req, err := http.NewRequest("GET", imageURL, nil)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to create request for image %s: %v\n", imageURL, err)
+			return match
+		}
+		req.SetBasicAuth(username, token)
+
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: %v\n", imageURL, err)
+			return match
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: status %d\n", imageURL, resp.StatusCode)
+			return match
+		}
+
+		// Generate a filename based on the last part of the URL
+		filename := filepath.Base(imageURL)
+		localPath := filepath.Join("images", filename)
+		fullPath := filepath.Join(imagesDir, filename)
+
+		// Save the image
+		out, err := os.Create(fullPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to create image file %s: %v\n", fullPath, err)
+			return match
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to save image %s: %v\n", fullPath, err)
+			return match
+		}
+
+		// Replace the Confluence image tag with a reference to the local file
+		return fmt.Sprintf("\n[Image: %s]\n", localPath)
+	})
+
+	return processedContent
 }
