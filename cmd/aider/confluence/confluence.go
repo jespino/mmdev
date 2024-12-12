@@ -224,7 +224,7 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 	}
 
 	// Get attachments for the page
-	attachmentsReq, err := http.NewRequest("GET", 
+	attachmentsReq, err := http.NewRequest("GET",
 		fmt.Sprintf("%s/wiki/api/v2/pages/%s/attachments", baseURL, pageID),
 		nil)
 	if err != nil {
@@ -270,7 +270,6 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 
 		// Download image using v1 API
 		downloadURL := fmt.Sprintf("%s/wiki/rest/api/content/%s/child/attachment/%s/download", baseURL, pageID, attachment.ID)
-		fmt.Printf("Downloading image from URL: %s\n", downloadURL)
 		downloadReq, err := http.NewRequest("GET", downloadURL, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to create request for image %s: %v\n", attachment.Title, err)
