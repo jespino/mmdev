@@ -97,17 +97,13 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 
 	type Page struct {
 		ID      string `json:"id"`
-		Type    string `json:"type"`
 		Status  string `json:"status"`
 		Title   string `json:"title"`
 		Version struct {
 			Number int `json:"number"`
 		} `json:"version"`
-		Space struct {
-			Key  string `json:"key"`
-			Name string `json:"name"`
-		} `json:"space"`
-		Body struct {
+		SpaceId string `json:"spaceId"`
+		Body    struct {
 			Storage struct {
 				Value string `json:"value"`
 			} `json:"storage"`
@@ -155,7 +151,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	type CommentsResponse struct {
 		Results []struct {
 			ID      string `json:"id"`
-			Type    string `json:"type"`
+			Status  string `json:"status"`
 			Version struct {
 				Number int `json:"number"`
 			} `json:"version"`
