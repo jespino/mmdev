@@ -283,6 +283,7 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 			continue
 		}
 		downloadReq.SetBasicAuth(username, token)
+		downloadReq.Header.Set("X-Atlassian-Token", "no-check")
 
 		downloadResp, err := client.Do(downloadReq)
 		if err != nil {
