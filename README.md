@@ -115,10 +115,12 @@ mmdev e2e cypress report     # Show Cypress test report
 mmdev aider github owner/repo#123  # Process GitHub issue with aider
 mmdev aider jira PROJECT-123       # Process Jira issue with aider
 mmdev aider sentry ISSUE-ID        # Process Sentry issue with aider
+mmdev aider confluence PAGE-ID     # Process Confluence page with aider
 ```
 
 The aider commands require:
 - For GitHub: Public repository access
+- For Confluence: Jira credentials (uses same authentication)
 - For Jira: Credentials configured in ~/.mmdev.toml or environment variables:
   - JIRA_URL: Your Jira instance URL
   - JIRA_USER: Your Jira username
