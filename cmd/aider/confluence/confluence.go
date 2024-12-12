@@ -78,7 +78,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 
 	// Get page content
 	pageReq, err := http.NewRequest("GET", 
-		fmt.Sprintf("%s/wiki/api/v2/pages/%s?body-format=storage", url, pageID),
+		fmt.Sprintf("%s/wiki/rest/api/content/%s?expand=body.storage,version,space", url, pageID),
 		nil)
 	if err != nil {
 		return fmt.Errorf("error creating page request: %v", err)
@@ -130,7 +130,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 
 	// Get comments
 	commentsReq, err := http.NewRequest("GET",
-		fmt.Sprintf("%s/wiki/api/v2/pages/%s/comments?body-format=storage", url, pageID),
+		fmt.Sprintf("%s/wiki/rest/api/content/%s/child/comment?expand=body.storage,version", url, pageID),
 		nil)
 	if err != nil {
 		return fmt.Errorf("error creating comments request: %v", err)
