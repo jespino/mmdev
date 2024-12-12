@@ -67,7 +67,12 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	// Ensure cleanup of temp directory and all contents
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to cleanup temporary directory %s: %v\n", tmpDir, err)
+		}
+	}()
 
 	// Create temporary file inside the directory
 	tmpFile, err := os.Create(filepath.Join(tmpDir, "content.txt"))
@@ -182,8 +187,19 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
-	// Run aider with the temporary file
-	cmd2 := exec.Command("aider", "--read", tmpFile.Name())
+	// Build list of files to pass to aider
+	var files []string
+	files = append(files, tmpFile.Name())
+
+	// Add all downloaded images
+	imageFiles, err := filepath.Glob(filepath.Join(tmpDir, "images", "*"))
+	if err == nil {
+		files = append(files, imageFiles...)
+	}
+
+	// Run aider with all files
+	args := append([]string{"--read"}, files...)
+	cmd2 := exec.Command("aider", args...)
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr
 	cmd2.Stdin = os.Stdin
