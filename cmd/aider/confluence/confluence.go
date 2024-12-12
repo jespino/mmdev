@@ -254,9 +254,9 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 		return content
 	}
 
-	processedContent := re.ReplaceAllStringFunc(content, func(match string) string {
+	processedContent := reUrl.ReplaceAllStringFunc(content, func(match string) string {
 		// Extract image URL
-		urlMatch := re.FindStringSubmatch(match)
+		urlMatch := reUrl.FindStringSubmatch(match)
 		if len(urlMatch) < 2 {
 			return match
 		}
