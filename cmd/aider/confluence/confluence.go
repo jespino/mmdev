@@ -195,6 +195,7 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	
 	// Add each image file with its own --read flag
 	var imageFiles []string
+	var err error
 	imageFiles, err = filepath.Glob(filepath.Join(tmpDir, "images", "*"))
 	if err == nil {
 		for _, imgFile := range imageFiles {
