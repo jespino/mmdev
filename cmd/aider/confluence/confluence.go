@@ -237,7 +237,7 @@ func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmp
 	processNode = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "ac:image" {
 			var imageURL, filename string
-			
+
 			// Find ri:url or ri:attachment child
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
 				if c.Type == html.ElementNode {
