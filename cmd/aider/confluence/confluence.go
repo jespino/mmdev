@@ -215,15 +215,26 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 }
 
 func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmpDir, content string) string {
-	// Regular expression to find image tags with ac:image-uri
-	re := regexp.MustCompile(`<ac:image[^>]*><ri:url[^>]*>([^<]+)</ri:url></ac:image>`)
+	// Regular expressions to find image tags
+	reUrl := regexp.MustCompile(`<ac:image[^>]*><ri:url[^>]*>([^<]+)</ri:url></ac:image>`)
+	reAttachment := regexp.MustCompile(`<ac:image[^>]*><ri:attachment\s+ri:filename="([^"]+)"[^>]*/></ac:image>`)
 
-	// Store all image URLs found in content
+	// Store all image URLs and attachments found in content
 	var imageURLs []string
-	matches := re.FindAllStringSubmatch(content, -1)
-	for _, match := range matches {
+	
+	// Find URLs
+	urlMatches := reUrl.FindAllStringSubmatch(content, -1)
+	for _, match := range urlMatches {
 		if len(match) >= 2 {
-			imageURLs = append(imageURLs, match[1])
+			imageURLs = append(imageURLs, fmt.Sprintf("URL: %s", match[1]))
+		}
+	}
+
+	// Find attachments
+	attachmentMatches := reAttachment.FindAllStringSubmatch(content, -1)
+	for _, match := range attachmentMatches {
+		if len(match) >= 2 {
+			imageURLs = append(imageURLs, fmt.Sprintf("Attachment: %s", match[1]))
 		}
 	}
 
