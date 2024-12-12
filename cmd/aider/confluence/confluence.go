@@ -118,10 +118,9 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	// Write page content to file
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("Confluence Page: %s\n", page.Title))
-	content.WriteString(fmt.Sprintf("Space: %s (%s)\n", page.Space.Name, page.Space.Key))
+	content.WriteString(fmt.Sprintf("Space ID: %s\n", page.SpaceId))
 	content.WriteString(fmt.Sprintf("Version: %d\n", page.Version.Number))
 	content.WriteString(fmt.Sprintf("ID: %s\n", page.ID))
-	content.WriteString(fmt.Sprintf("Type: %s\n", page.Type))
 	content.WriteString(fmt.Sprintf("Status: %s\n\n", page.Status))
 	content.WriteString("Content:\n")
 	// Process content to download images and update references
