@@ -9,7 +9,6 @@ import (
 	"github.com/jespino/mmdev/cmd/dates"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
-	"github.com/jespino/mmdev/cmd/generate"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
 	"github.com/jespino/mmdev/cmd/webapp"
@@ -46,7 +45,6 @@ func main() {
 		server.ServerCmd(),
 		webapp.WebappCmd(),
 		docker.DockerCmd(),
-		generate.GenerateCmd(),
 		start.StartCmd(),
 		e2e.E2ECmd(),
 		aider.AiderCmd(),
