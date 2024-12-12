@@ -12,7 +12,6 @@ import (
 
 	"github.com/jespino/mmdev/internal/config"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/html"
 )
 
 func NewCommand() *cobra.Command {
@@ -129,7 +128,11 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	content.WriteString(fmt.Sprintf("Status: %s\n\n", page.Status))
 	content.WriteString("Content:\n")
 	// Process content to download images and update references
-	processedContent := downloadAndReplaceImages(client, url, username, token, tmpDir, page.Body.Storage.Value)
+	processedContent, err := downloadAndReplaceImages(client, url, username, token, tmpDir, page.ID)
+	if err != nil {
+		return fmt.Errorf("failed to process attachments: %v", err)
+	}
+	content.WriteString(page.Body.Storage.Value)
 	content.WriteString(processedContent)
 	content.WriteString("\n\n")
 
@@ -214,115 +217,97 @@ func runConfluence(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmpDir, content string) string {
+func downloadAndReplaceImages(client *http.Client, baseURL, username, token, tmpDir, pageID string) (string, error) {
 	// Create images directory
 	imagesDir := filepath.Join(tmpDir, "images")
 	if err := os.MkdirAll(imagesDir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to create images directory: %v\n", err)
-		return content
+		return "", fmt.Errorf("failed to create images directory: %v", err)
 	}
 
-	// Parse HTML content
-	doc, err := html.Parse(strings.NewReader(content))
+	// Get attachments for the page
+	attachmentsReq, err := http.NewRequest("GET", 
+		fmt.Sprintf("%s/wiki/api/v2/pages/%s/attachments", baseURL, pageID),
+		nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to parse HTML content: %v\n", err)
-		return content
+		return "", fmt.Errorf("failed to create attachments request: %v", err)
+	}
+	attachmentsReq.SetBasicAuth(username, token)
+	attachmentsReq.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(attachmentsReq)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch attachments: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("attachments API returned status %d", resp.StatusCode)
 	}
 
-	var imageURLs []string
-	var buf strings.Builder
-
-	// Recursive function to process nodes
-	var processNode func(*html.Node)
-	processNode = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "ac:image" {
-			var imageURL, filename string
-
-			// Find ri:url or ri:attachment child
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				if c.Type == html.ElementNode {
-					switch c.Data {
-					case "ri:url":
-						if c.FirstChild != nil {
-							imageURL = c.FirstChild.Data
-							imageURLs = append(imageURLs, fmt.Sprintf("URL: %s", imageURL))
-						}
-					case "ri:attachment":
-						for _, attr := range c.Attr {
-							if attr.Key == "ri:filename" {
-								filename = attr.Val
-								imageURLs = append(imageURLs, fmt.Sprintf("Attachment: %s", filename))
-							}
-						}
-					}
-				}
-			}
-
-			if imageURL != "" {
-				// Download and save image
-				req, err := http.NewRequest("GET", imageURL, nil)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to create request for image %s: %v\n", imageURL, err)
-					return
-				}
-				req.SetBasicAuth(username, token)
-
-				resp, err := client.Do(req)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: %v\n", imageURL, err)
-					return
-				}
-				defer resp.Body.Close()
-
-				if resp.StatusCode != http.StatusOK {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: status %d\n", imageURL, resp.StatusCode)
-					return
-				}
-
-				// Generate filename and save image
-				filename = filepath.Base(imageURL)
-				localPath := filepath.Join("images", filename)
-				fullPath := filepath.Join(imagesDir, filename)
-
-				out, err := os.Create(fullPath)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to create image file %s: %v\n", fullPath, err)
-					return
-				}
-				defer out.Close()
-
-				if _, err := io.Copy(out, resp.Body); err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to save image %s: %v\n", fullPath, err)
-					return
-				}
-
-				buf.WriteString(fmt.Sprintf("\n[Image: %s]\n", localPath))
-				return
-			}
-		}
-
-		// Process other nodes normally
-		if n.Type == html.TextNode {
-			buf.WriteString(n.Data)
-		}
-
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			processNode(c)
-		}
+	type Attachment struct {
+		ID           string `json:"id"`
+		Title        string `json:"title"`
+		MediaType    string `json:"mediaType"`
+		DownloadLink string `json:"downloadLink"`
 	}
 
-	processNode(doc)
-
-	result := buf.String()
-
-	// Add image URLs to content if any were found
-	if len(imageURLs) > 0 {
-		result += "\n\nImage URLs found in content:\n"
-		for _, url := range imageURLs {
-			result += fmt.Sprintf("- %s\n", url)
-		}
-		result += "\n"
+	type AttachmentsResponse struct {
+		Results []Attachment `json:"results"`
 	}
 
-	return result
+	var attachments AttachmentsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&attachments); err != nil {
+		return "", fmt.Errorf("failed to decode attachments response: %v", err)
+	}
+
+	var content strings.Builder
+	content.WriteString("\nAttachments:\n")
+
+	for _, attachment := range attachments.Results {
+		// Only process image attachments
+		if !strings.HasPrefix(attachment.MediaType, "image/") {
+			continue
+		}
+
+		// Download image
+		downloadReq, err := http.NewRequest("GET", attachment.DownloadLink, nil)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to create request for image %s: %v\n", attachment.Title, err)
+			continue
+		}
+		downloadReq.SetBasicAuth(username, token)
+
+		downloadResp, err := client.Do(downloadReq)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: %v\n", attachment.Title, err)
+			continue
+		}
+		defer downloadResp.Body.Close()
+
+		if downloadResp.StatusCode != http.StatusOK {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to download image %s: status %d\n", attachment.Title, downloadResp.StatusCode)
+			continue
+		}
+
+		// Save image
+		localPath := filepath.Join("images", attachment.Title)
+		fullPath := filepath.Join(imagesDir, attachment.Title)
+
+		out, err := os.Create(fullPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to create image file %s: %v\n", fullPath, err)
+			continue
+		}
+
+		if _, err := io.Copy(out, downloadResp.Body); err != nil {
+			out.Close()
+			fmt.Fprintf(os.Stderr, "Warning: Failed to save image %s: %v\n", fullPath, err)
+			continue
+		}
+		out.Close()
+
+		content.WriteString(fmt.Sprintf("[Image: %s]\n", localPath))
+	}
+
+	return content.String(), nil
 }
