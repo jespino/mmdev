@@ -369,7 +369,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 }
 
 func getAITranslation(source []string, currentTranslation []string, context, note string, targetLang string) (string, error) {
-	client := anthropic.NewClient()
+	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
 
 	var prompt strings.Builder
 	prompt.WriteString("You are a professional translator for the Mattermost application. ")
@@ -389,13 +389,13 @@ func getAITranslation(source []string, currentTranslation []string, context, not
 
 	prompt.WriteString("\nProvide only the translation, without any explanations or additional text.")
 
-	msg, err := client.Messages.New(&anthropic.MessageNewParams{
-		Model:     "claude-3-opus-20240229",
+	resp, err := client.CreateMessage(context.Background(), anthropic.MessageRequest{
+		Model:     anthropic.Claude3OpusModel,
 		MaxTokens: 1024,
 		System:    "You are a professional translator for the Mattermost application.",
-		Messages: []anthropic.Message{
+		Messages: []anthropic.InputMessage{
 			{
-				Role:    "user",
+				Role:    anthropic.MessageRoleUser,
 				Content: prompt.String(),
 			},
 		},
