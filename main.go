@@ -22,8 +22,8 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for commands with the "standalone" annotation
-			if cmd.Annotations != nil && cmd.Annotations["standalone"] == "true" {
+			// Skip directory check for commands with the "standalone" annotation or completion command
+			if cmd.Name() == "completion" || (cmd.Annotations != nil && cmd.Annotations["standalone"] == "true") {
 				return nil
 			}
 
