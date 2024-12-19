@@ -122,19 +122,20 @@ func NewLanguagesCmd() *cobra.Command {
 
 			fmt.Printf("Available languages (%d):\n\n", languages.Count)
 
+			// Sort languages by population in descending order
+			sort.Slice(languages.Results, func(i, j int) bool {
+				return languages.Results[i].Population > languages.Results[j].Population
+			})
+
 			// Print header
-			fmt.Printf("%-10s %-30s %10s %12s %10s\n",
-				"Code", "Name", "Direction", "Total", "Translated")
-			fmt.Println(strings.Repeat("-", 75))
+			fmt.Printf("%-10s %-50s\n", "Code", "Name")
+			fmt.Println(strings.Repeat("-", 60))
 
 			// Print each row
 			for _, lang := range languages.Results {
-				fmt.Printf("%-10s %-30s %10s %12d %10d\n",
+				fmt.Printf("%-10s %-50s\n",
 					lang.Code,
-					lang.Name,
-					lang.Direction,
-					lang.TotalStrings,
-					lang.Translated)
+					lang.Name)
 			}
 
 			return nil
@@ -215,6 +216,7 @@ type Language struct {
 	WebURL       string `json:"web_url"`
 	TotalStrings int    `json:"total_strings"`
 	Translated   int    `json:"translated"`
+	Population   int    `json:"population"`
 }
 
 type LanguagesResponse struct {
