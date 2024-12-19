@@ -64,10 +64,6 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(
-		NewComponentsCmd(),
-		NewStatsCmd(),
-	)
 	return cmd
 }
 
@@ -75,10 +71,12 @@ func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate",
 		Short: "Manage translations",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
-		},
 	}
+
+	cmd.AddCommand(
+		NewComponentsCmd(),
+		NewStatsCmd(),
+	)
 
 	return cmd
 }
