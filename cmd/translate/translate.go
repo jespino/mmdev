@@ -8,15 +8,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mattermost/mattermost-developer-kit/internal/config"
+	"github.com/jespino/mmdev/internal/config"
 )
 
 type TranslationStats struct {
 	TranslatedPercent float64 `json:"translated_percent"`
-	FuzzyPercent     float64 `json:"fuzzy_percent"`
-	TotalStrings     int     `json:"total_strings"`
-	TranslatedStrings int    `json:"translated"`
-	FuzzyStrings     int    `json:"fuzzy"`
+	FuzzyPercent      float64 `json:"fuzzy_percent"`
+	TotalStrings      int     `json:"total_strings"`
+	TranslatedStrings int     `json:"translated"`
+	FuzzyStrings      int     `json:"fuzzy"`
 }
 
 func NewTranslateCmd() *cobra.Command {
