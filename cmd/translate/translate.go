@@ -230,7 +230,7 @@ func getNextTranslationUnitsPage(baseURL, token, project, component, language st
 func NewTranslateTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate <project:component> <language>",
-		Short: "List translations for a component and language",
+		Short: "Interactive translation wizard for a component and language",
 		Args:  cobra.ExactArgs(2),
 		Annotations: map[string]string{
 			"standalone": "true",
