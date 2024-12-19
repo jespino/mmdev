@@ -181,26 +181,7 @@ func NewLanguagesCmd() *cobra.Command {
 
 			if !showAll && len(languages.Results) > displayCount {
 				fmt.Printf("\nNote: %d other languages available (use --all to show all)\n", len(languages.Results)-displayCount)
-				}
-
-				// Check if we need to fetch next page
-				if len(currentPage.Results) == 0 || nextURL == nil {
-					break
-				}
-
-				currentPage, err = getNextTranslationUnitsPage(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language, nextURL)
-				if err != nil {
-					return fmt.Errorf("failed to get next page of translation units: %w", err)
-				}
-				nextURL = currentPage.Next
 			}
-
-			if processedCount == 0 {
-				fmt.Println("No untranslated units found!")
-			} else {
-				fmt.Printf("\nCompleted translation wizard. Translated %d units.\n", translatedCount)
-			}
-
 			return nil
 		},
 	}
@@ -335,6 +316,24 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					fmt.Println("Translation submitted successfully!")
 					translatedCount++
 					fmt.Println(strings.Repeat("-", 80))
+			}
+
+				// Check if we need to fetch next page
+				if len(currentPage.Results) == 0 || nextURL == nil {
+					break
+				}
+
+				currentPage, err = getNextTranslationUnitsPage(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language, nextURL)
+				if err != nil {
+					return fmt.Errorf("failed to get next page of translation units: %w", err)
+				}
+				nextURL = currentPage.Next
+			}
+
+			if processedCount == 0 {
+				fmt.Println("No untranslated units found!")
+			} else {
+				fmt.Printf("\nCompleted translation wizard. Translated %d units.\n", translatedCount)
 			}
 
 			return nil
