@@ -12,9 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adamchol/go-anthropic-sdk"
 	"github.com/spf13/cobra"
-	anthropic "github.com/anthropics/anthropic-sdk-go"
-	"github.com/anthropics/anthropic-sdk-go/anthropic"
 
 	"github.com/jespino/mmdev/internal/config"
 )
@@ -234,7 +233,7 @@ func getNextTranslationUnitsPage(baseURL, token, project, component, language st
 
 func NewTranslateTranslateCmd() *cobra.Command {
 	var useAI bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "translate <project:component> <language>",
 		Short: "Interactive translation wizard for a component and language",
@@ -303,7 +302,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						if os.Getenv("ANTHROPIC_API_KEY") == "" {
 							return fmt.Errorf("ANTHROPIC_API_KEY environment variable not set")
 						}
-						
+
 						aiTranslation, err := getAITranslation(unit.Source, unit.Target, unit.Context, unit.Note, language)
 						if err != nil {
 							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
@@ -313,7 +312,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						}
 					}
 
-					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit, 'y' to accept suggestion) [%d untranslated remaining]: ", 
+					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit, 'y' to accept suggestion) [%d untranslated remaining]: ",
 						firstPage.Count-translatedCount)
 					input, err := reader.ReadString('\n')
 					if err != nil {
@@ -329,7 +328,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						fmt.Println("Skipping...")
 						continue
 					}
-					
+
 					if input == "y" && suggestion != "" {
 						input = suggestion
 					}
@@ -342,7 +341,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					fmt.Println("Translation submitted successfully!")
 					translatedCount++
 					fmt.Println(strings.Repeat("-", 80))
-			}
+				}
 
 				// Check if we need to fetch next page
 				if len(currentPage.Results) == 0 || nextURL == nil {
@@ -370,33 +369,33 @@ func NewTranslateTranslateCmd() *cobra.Command {
 }
 
 func getAITranslation(source []string, currentTranslation []string, context, note string, targetLang string) (string, error) {
-	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+	client := anthropic.NewClient()
 
 	var prompt strings.Builder
 	prompt.WriteString("You are a professional translator for the Mattermost application. ")
 	prompt.WriteString(fmt.Sprintf("Translate the following text from English to %s:\n\n", targetLang))
 	prompt.WriteString(fmt.Sprintf("Source text: %v\n", source))
-	
+
 	if len(currentTranslation) > 0 {
 		prompt.WriteString(fmt.Sprintf("Current translation (review and improve if needed): %v\n", currentTranslation))
 	}
-	
+
 	if context != "" {
 		prompt.WriteString(fmt.Sprintf("Context: %s\n", context))
 	}
 	if note != "" {
 		prompt.WriteString(fmt.Sprintf("Note: %s\n", note))
 	}
-	
+
 	prompt.WriteString("\nProvide only the translation, without any explanations or additional text.")
 
-	msg, err := client.Messages.Create(&anthropic.MessageCreateParams{
-		Model: "claude-3-opus-20240229",
+	msg, err := client.Messages.New(&anthropic.MessageNewParams{
+		Model:     "claude-3-opus-20240229",
 		MaxTokens: 1024,
-		System: "You are a professional translator for the Mattermost application.",
+		System:    "You are a professional translator for the Mattermost application.",
 		Messages: []anthropic.Message{
 			{
-				Role: "user",
+				Role:    "user",
 				Content: prompt.String(),
 			},
 		},
@@ -494,7 +493,7 @@ type LanguagesResponse struct {
 }
 
 type TranslationUnit struct {
-	Translation      string    `json:"translation"`
+	Translation     string    `json:"translation"`
 	Source          []string  `json:"source"`
 	PreviousSource  string    `json:"previous_source"`
 	Target          []string  `json:"target"`
@@ -515,20 +514,20 @@ type TranslationUnit struct {
 	HasFailingCheck bool      `json:"has_failing_check"`
 	NumWords        int       `json:"num_words"`
 	Priority        int       `json:"priority"`
-	ID             int       `json:"id"`
-	Explanation    string    `json:"explanation"`
-	ExtraFlags     string    `json:"extra_flags"`
-	WebURL         string    `json:"web_url"`
-	SourceUnit     string    `json:"source_unit"`
-	Pending        bool      `json:"pending"`
-	Timestamp      time.Time `json:"timestamp"`
-	LastUpdated    time.Time `json:"last_updated"`
+	ID              int       `json:"id"`
+	Explanation     string    `json:"explanation"`
+	ExtraFlags      string    `json:"extra_flags"`
+	WebURL          string    `json:"web_url"`
+	SourceUnit      string    `json:"source_unit"`
+	Pending         bool      `json:"pending"`
+	Timestamp       time.Time `json:"timestamp"`
+	LastUpdated     time.Time `json:"last_updated"`
 }
 
 type TranslationUnitsResponse struct {
-	Count    int              `json:"count"`
-	Next     *string          `json:"next"`
-	Previous *string          `json:"previous"`
+	Count    int               `json:"count"`
+	Next     *string           `json:"next"`
+	Previous *string           `json:"previous"`
 	Results  []TranslationUnit `json:"results"`
 }
 
@@ -616,12 +615,12 @@ func submitTranslation(baseURL, token string, unitID int, translation string) er
 	}
 
 	url := joinURL(baseURL, fmt.Sprintf("/api/units/%d/", unitID))
-	
+
 	payload := map[string]interface{}{
 		"target": []string{translation},
-		"state": 20, // Translated state
+		"state":  20, // Translated state
 	}
-	
+
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshaling payload: %w", err)
