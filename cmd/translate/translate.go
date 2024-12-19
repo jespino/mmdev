@@ -33,10 +33,10 @@ type TranslationStats struct {
 }
 
 type ComponentStats struct {
-	Total                   int       `json:"total"`
+	Total                  int       `json:"total"`
 	TotalWords             int       `json:"total_words"`
 	TotalChars             int       `json:"total_chars"`
-	LastChange             time.Time  `json:"last_change"`
+	LastChange             time.Time `json:"last_change"`
 	Translated             int       `json:"translated"`
 	TranslatedPercent      float64   `json:"translated_percent"`
 	TranslatedWords        int       `json:"translated_words"`
@@ -44,13 +44,13 @@ type ComponentStats struct {
 	TranslatedChars        int       `json:"translated_chars"`
 	TranslatedCharsPercent float64   `json:"translated_chars_percent"`
 	Fuzzy                  int       `json:"fuzzy"`
-	FuzzyPercent          float64   `json:"fuzzy_percent"`
+	FuzzyPercent           float64   `json:"fuzzy_percent"`
 	Failing                int       `json:"failing"`
-	FailingPercent        float64   `json:"failing_percent"`
-	Approved              int       `json:"approved"`
-	ApprovedPercent       float64   `json:"approved_percent"`
-	Suggestions           int       `json:"suggestions"`
-	Comments              int       `json:"comments"`
+	FailingPercent         float64   `json:"failing_percent"`
+	Approved               int       `json:"approved"`
+	ApprovedPercent        float64   `json:"approved_percent"`
+	Suggestions            int       `json:"suggestions"`
+	Comments               int       `json:"comments"`
 }
 
 func NewComponentsCmd() *cobra.Command {
