@@ -285,6 +285,9 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					processedCount++
 					fmt.Printf("[Processing unit %d] Translation unit:\n", processedCount)
 					fmt.Printf("Source: %v\n", unit.Source)
+					if unit.PreviousSource != "" {
+						fmt.Printf("Previous source: %s\n", unit.PreviousSource)
+					}
 					if unit.Context != "" {
 						fmt.Printf("Context: %s\n", unit.Context)
 					}
