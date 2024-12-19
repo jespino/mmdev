@@ -111,8 +111,25 @@ func NewComponentsCmd() *cobra.Command {
 
 			for _, comp := range components.Results {
 				fmt.Printf("%s:%s\n", comp.Project.Slug, comp.Slug)
+				}
+
+				// Check if we need to fetch next page
+				if len(currentPage.Results) == 0 || nextURL == nil {
+					break
+				}
+
+				currentPage, err = getNextTranslationUnitsPage(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language, nextURL)
+				if err != nil {
+					return fmt.Errorf("failed to get next page of translation units: %w", err)
+				}
+				nextURL = currentPage.Next
 			}
 
+			if processedCount == 0 {
+				fmt.Println("No untranslated units found!")
+			} else {
+				fmt.Printf("\nCompleted translation wizard. Translated %d units.\n", translatedCount)
+			}
 			return nil
 		},
 	}
@@ -192,50 +209,41 @@ func NewLanguagesCmd() *cobra.Command {
 	return cmd
 }
 
-func getTranslationUnits(baseURL, token, project, component, language string) (*TranslationUnitsResponse, error) {
+func getNextTranslationUnitsPage(baseURL, token, project, component, language string, nextURL *string) (*TranslationUnitsResponse, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	var allUnits TranslationUnitsResponse
-	nextURL := joinURL(baseURL, fmt.Sprintf("/api/translations/%s/%s/%s/units/", project, component, language))
-
-	for nextURL != "" {
-		req, err := http.NewRequest("GET", nextURL, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return nil, err
-		}
-
-		var pageResponse TranslationUnitsResponse
-		if err := json.NewDecoder(resp.Body).Decode(&pageResponse); err != nil {
-			resp.Body.Close()
-			return nil, err
-		}
-		resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
-		}
-
-		allUnits.Results = append(allUnits.Results, pageResponse.Results...)
-		allUnits.Count = pageResponse.Count
-
-		if pageResponse.Next != nil {
-			nextURL = *pageResponse.Next
-		} else {
-			nextURL = ""
-		}
+	url := nextURL
+	if url == nil {
+		initialURL := joinURL(baseURL, fmt.Sprintf("/api/translations/%s/%s/%s/units/", project, component, language))
+		url = &initialURL
 	}
 
-	return &allUnits, nil
+	req, err := http.NewRequest("GET", *url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var pageResponse TranslationUnitsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pageResponse); err != nil {
+		return nil, err
+	}
+
+	return &pageResponse, nil
 }
 
 func NewTranslateTranslateCmd() *cobra.Command {
@@ -268,25 +276,29 @@ func NewTranslateTranslateCmd() *cobra.Command {
 			project, component := parts[0], parts[1]
 			language := args[1]
 
-			units, err := getTranslationUnits(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language)
+			// Get first page to get total count
+			firstPage, err := getNextTranslationUnitsPage(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language, nil)
 			if err != nil {
 				return fmt.Errorf("failed to get translation units: %w", err)
 			}
 
-			// Filter out translated units
-			untranslatedUnits := []TranslationUnit{}
-			for _, unit := range units.Results {
-				if !unit.Translated {
-					untranslatedUnits = append(untranslatedUnits, unit)
-				}
-			}
-
-			fmt.Printf("Starting translation wizard for %s:%s in %s (Untranslated: %d/%d)\n\n", 
-				project, component, language, len(untranslatedUnits), units.Count)
+			fmt.Printf("Starting translation wizard for %s:%s in %s\n\n", project, component, language)
 
 			reader := bufio.NewReader(os.Stdin)
-			for i, unit := range untranslatedUnits {
-				fmt.Printf("[%d/%d] Translation unit:\n", i+1, len(untranslatedUnits))
+			nextURL := firstPage.Next
+			currentPage := firstPage
+			processedCount := 0
+			translatedCount := 0
+
+			for {
+				// Process current page
+				for _, unit := range currentPage.Results {
+					if unit.Translated {
+						continue
+					}
+
+					processedCount++
+					fmt.Printf("[Processing unit %d] Translation unit:\n", processedCount)
 				fmt.Printf("Source: %v\n", unit.Source)
 				if unit.Context != "" {
 					fmt.Printf("Context: %s\n", unit.Context)
@@ -298,7 +310,8 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					fmt.Printf("Current translation: %v\n", unit.Target)
 				}
 
-				fmt.Print("\nEnter translation (or press Enter to skip, 'q' to quit): ")
+				fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit) [%d untranslated remaining]: ", 
+					firstPage.Count-translatedCount)
 				input, err := reader.ReadString('\n')
 				if err != nil {
 					return fmt.Errorf("error reading input: %w", err)
@@ -320,6 +333,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					return fmt.Errorf("failed to submit translation: %w", err)
 				}
 				fmt.Println("Translation submitted successfully!")
+				translatedCount++
 				fmt.Println(strings.Repeat("-", 80))
 			}
 
