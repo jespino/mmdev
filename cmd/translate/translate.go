@@ -13,8 +13,11 @@ import (
 )
 
 type Component struct {
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	Name    string `json:"name"`
+	Slug    string `json:"slug"`
+	Project struct {
+		Slug string `json:"slug"`
+	} `json:"project"`
 }
 
 type ComponentsResponse struct {
@@ -53,9 +56,8 @@ func NewComponentsCmd() *cobra.Command {
 				return fmt.Errorf("failed to get components: %w", err)
 			}
 
-			fmt.Println("Available components:")
 			for _, comp := range components.Results {
-				fmt.Printf("- %s (%s)\n", comp.Name, comp.Slug)
+				fmt.Printf("%s: %s %s\n", comp.Slug, comp.Project.Slug, comp.Name)
 			}
 
 			return nil
