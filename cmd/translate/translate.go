@@ -1,7 +1,7 @@
 package translate
 
 import (
-	"bufio"
+	"github.com/chzyer/readline"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -313,21 +313,31 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						}
 					}
 
-					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit, 'y' to accept suggestion) [%d untranslated remaining]: ",
+					fmt.Printf("\nEnter translation (Alt+Enter for new line, Enter to submit, Ctrl+C to skip, Ctrl+D to quit) [%d untranslated remaining]\n",
 						firstPage.Count-translatedCount)
-					input, err := reader.ReadString('\n')
+					
+					rl, err := readline.New("")
 					if err != nil {
-						return fmt.Errorf("error reading input: %w", err)
+						return fmt.Errorf("error initializing readline: %w", err)
 					}
+					defer rl.Close()
 
-					input = strings.TrimSpace(input)
-					if input == "q" {
-						fmt.Println("Exiting translation wizard")
-						return nil
-					}
-					if input == "" {
-						fmt.Println("Skipping...")
-						continue
+					// Set multi-line mode
+					rl.SetConfig(&readline.Config{
+						UniqueEditLine: true,
+					})
+
+					input, err := rl.Readline()
+					if err != nil {
+						if err == readline.ErrInterrupt {
+							fmt.Println("Skipping...")
+							continue
+						}
+						if err == io.EOF {
+							fmt.Println("Exiting translation wizard")
+							return nil
+						}
+						return fmt.Errorf("error reading input: %w", err)
 					}
 
 					if input == "y" && suggestion != "" {
