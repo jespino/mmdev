@@ -3,6 +3,7 @@ package translate
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -83,8 +84,6 @@ type ComponentStats struct {
 	Comments               int       `json:"comments"`
 }
 
-var useAI bool
-
 func NewComponentsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "components",
@@ -119,7 +118,6 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&useAI, "ai", false, "Use AI to suggest translations")
 	return cmd
 }
 
@@ -364,11 +362,12 @@ func NewTranslateTranslateCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&useAI, "ai", false, "Use AI to suggest translations")
 
 	return cmd
 }
 
-func getAITranslation(source []string, currentTranslation []string, context, note string, targetLang string) (string, error) {
+func getAITranslation(source []string, currentTranslation []string, ctx, note string, targetLang string) (string, error) {
 	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
 
 	var prompt strings.Builder
@@ -380,8 +379,8 @@ func getAITranslation(source []string, currentTranslation []string, context, not
 		prompt.WriteString(fmt.Sprintf("Current translation (review and improve if needed): %v\n", currentTranslation))
 	}
 
-	if context != "" {
-		prompt.WriteString(fmt.Sprintf("Context: %s\n", context))
+	if ctx != "" {
+		prompt.WriteString(fmt.Sprintf("Context: %s\n", ctx))
 	}
 	if note != "" {
 		prompt.WriteString(fmt.Sprintf("Note: %s\n", note))
