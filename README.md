@@ -109,6 +109,10 @@ mmdev translate translate <project:component> <language>  # Interactive translat
 mmdev translate translate --ai <project:component> <language>  # Translation wizard with AI suggestions
 ```
 
+Translation commands require Weblate configuration in environment variables or ~/.mmdev.toml:
+- WEBLATE_URL: Your Weblate instance URL
+- WEBLATE_TOKEN: Your Weblate API token
+
 ### E2E Testing Commands
 
 ```bash
@@ -133,9 +137,6 @@ mmdev aider confluence PAGE-ID     # Process Confluence page with aider
 The aider commands require:
 - For GitHub: Public repository access
 - For Confluence: Jira credentials (uses same authentication)
-- For Weblate: Environment variables or ~/.mmdev.toml configuration:
-  - WEBLATE_URL: Your Weblate instance URL
-  - WEBLATE_TOKEN: Your Weblate API token
 - For Jira: Credentials configured in ~/.mmdev.toml or environment variables:
   - JIRA_URL: Your Jira instance URL
   - JIRA_USER: Your Jira username
