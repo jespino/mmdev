@@ -120,7 +120,7 @@ func NewLanguagesCmd() *cobra.Command {
 				return fmt.Errorf("failed to get languages: %w", err)
 			}
 
-			fmt.Printf("Available languages (%d):\n\n", languages.Count)
+			fmt.Printf("Most spoken languages (showing top 30 out of %d):\n\n", languages.Count)
 
 			// Sort languages by population in descending order
 			sort.Slice(languages.Results, func(i, j int) bool {
@@ -128,14 +128,24 @@ func NewLanguagesCmd() *cobra.Command {
 			})
 
 			// Print header
-			fmt.Printf("%-10s %-50s\n", "Code", "Name")
-			fmt.Println(strings.Repeat("-", 60))
+			fmt.Printf("%-10s %-50s %15s\n", "Code", "Name", "Population")
+			fmt.Println(strings.Repeat("-", 75))
 
-			// Print each row
-			for _, lang := range languages.Results {
-				fmt.Printf("%-10s %-50s\n",
+			// Print top 30 rows
+			maxDisplay := 30
+			if len(languages.Results) < maxDisplay {
+				maxDisplay = len(languages.Results)
+			}
+			
+			for _, lang := range languages.Results[:maxDisplay] {
+				fmt.Printf("%-10s %-50s %15d\n",
 					lang.Code,
-					lang.Name)
+					lang.Name,
+					lang.Population)
+			}
+
+			if len(languages.Results) > maxDisplay {
+				fmt.Printf("\nNote: %d other languages available\n", len(languages.Results)-maxDisplay)
 			}
 
 			return nil
@@ -263,31 +273,45 @@ func getLanguages(baseURL, token string) (*LanguagesResponse, error) {
 		Timeout: 10 * time.Second,
 	}
 
-	url := joinURL(baseURL, "/api/languages/")
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+	var allLanguages LanguagesResponse
+	nextURL := joinURL(baseURL, "/api/languages/")
+
+	for nextURL != "" {
+		req, err := http.NewRequest("GET", nextURL, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		var pageResponse LanguagesResponse
+		if err := json.NewDecoder(resp.Body).Decode(&pageResponse); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+		}
+
+		allLanguages.Results = append(allLanguages.Results, pageResponse.Results...)
+		allLanguages.Count = pageResponse.Count
+
+		if pageResponse.Next != nil {
+			nextURL = *pageResponse.Next
+		} else {
+			nextURL = ""
+		}
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
-	}
-
-	var languages LanguagesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&languages); err != nil {
-		return nil, err
-	}
-
-	return &languages, nil
+	return &allLanguages, nil
 }
 
 func getTranslationStats(baseURL, token, language string) (*TranslationStats, error) {
