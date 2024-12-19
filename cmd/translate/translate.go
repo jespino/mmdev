@@ -1,7 +1,6 @@
 package translate
 
 import (
-	"github.com/chzyer/readline"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -12,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/chzyer/readline"
 
 	anthropic "github.com/adamchol/go-anthropic-sdk"
 	"github.com/spf13/cobra"
@@ -60,7 +61,6 @@ type ComponentsResponse struct {
 	Results []Component `json:"results"`
 }
 
-
 type ComponentStats struct {
 	Language               string    `json:"name"`
 	Total                  int       `json:"total"`
@@ -88,9 +88,6 @@ func NewComponentsCmd() *cobra.Command {
 		Use:   "components",
 		Short: "List available Weblate components",
 		Args:  cobra.NoArgs,
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
@@ -127,9 +124,6 @@ func NewLanguagesCmd() *cobra.Command {
 		Use:   "languages",
 		Short: "List available languages",
 		Args:  cobra.NoArgs,
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
@@ -235,9 +229,6 @@ func NewTranslateTranslateCmd() *cobra.Command {
 		Use:   "translate <project:component> <language>",
 		Short: "Interactive translation wizard for a component and language",
 		Args:  cobra.ExactArgs(2),
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
@@ -285,7 +276,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 
 					promptBuilder.WriteString(fmt.Sprintf("%sTranslating id:%s %s\n", colorCyan, colorReset, unit.Context))
 					promptBuilder.WriteString(strings.Repeat("-", 50) + "\n\n")
-					
+
 					if unit.PreviousSource != "" {
 						promptBuilder.WriteString(fmt.Sprintf("%sPrevious Source:%s\n%s\n", colorYellow, colorReset, unit.PreviousSource))
 					}
@@ -315,7 +306,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					}
 					promptBuilder.WriteString(fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline%s, Ctrl+C=skip, Ctrl+D=quit): ",
 						firstPage.Count-translatedCount, aiHelp))
-					
+
 					rl, err := readline.NewEx(&readline.Config{
 						Prompt:                 promptBuilder.String(),
 						InterruptPrompt:        "^C",
@@ -436,9 +427,6 @@ func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate",
 		Short: "Manage translations",
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 	}
 
 	cmd.AddCommand(
@@ -675,9 +663,6 @@ func NewComponentStatsCmd() *cobra.Command {
 		Use:   "component-stats <project:component>",
 		Short: "Get translation statistics for a specific component",
 		Args:  cobra.ExactArgs(1),
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
@@ -733,4 +718,3 @@ func NewComponentStatsCmd() *cobra.Command {
 
 	return cmd
 }
-

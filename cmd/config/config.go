@@ -12,13 +12,10 @@ import (
 
 func ConfigCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "Configure mmdev settings",
-		RunE:  runConfig,
+		Use:          "config",
+		Short:        "Configure mmdev settings",
+		RunE:         runConfig,
 		SilenceUsage: true,
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 	}
 	return cmd
 }
@@ -37,7 +34,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	fmt.Println("2. Your Jira email address")
 	fmt.Println("3. An API token from https://id.atlassian.com/manage-profile/security/api-tokens")
 	fmt.Print("\nWould you like to configure Jira? (y/N): ")
-	
+
 	configureJira, _ := reader.ReadString('\n')
 	if strings.ToLower(strings.TrimSpace(configureJira)) == "y" {
 		fmt.Printf("Jira URL [%s]: ", cfg.Jira.URL)
@@ -68,7 +65,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	fmt.Println("1. A Sentry auth token from https://sentry.io/settings/account/api/auth-tokens/")
 	fmt.Println("   - Required scopes: event:read, project:read")
 	fmt.Print("\nWould you like to configure Sentry? (y/N): ")
-	
+
 	configureSentry, _ := reader.ReadString('\n')
 	if strings.ToLower(strings.TrimSpace(configureSentry)) == "y" {
 		fmt.Printf("Sentry API Token [%s]: ", maskToken(cfg.Sentry.Token))
@@ -85,7 +82,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	fmt.Println("1. The Weblate instance URL (e.g., https://translate.mattermost.com)")
 	fmt.Println("2. An API token from your Weblate user settings")
 	fmt.Print("\nWould you like to configure Weblate? (y/N): ")
-	
+
 	configureWeblate, _ := reader.ReadString('\n')
 	if strings.ToLower(strings.TrimSpace(configureWeblate)) == "y" {
 		fmt.Printf("Weblate URL [%s]: ", cfg.Weblate.URL)
