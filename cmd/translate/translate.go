@@ -311,7 +311,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
 						} else {
 							suggestion = aiTranslation
-							fmt.Printf("%sAI Suggested Translation:%s %s\n", colorYellow, colorReset, suggestion)
+							fmt.Printf("%sAI Suggested Translation:%s\n%s\n", colorYellow, colorReset, suggestion)
 						}
 					}
 
