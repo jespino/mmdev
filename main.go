@@ -11,6 +11,7 @@ import (
 	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
+	"github.com/jespino/mmdev/cmd/translate"
 	"github.com/jespino/mmdev/cmd/webapp"
 	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/spf13/cobra"
@@ -50,6 +51,7 @@ func main() {
 		aider.AiderCmd(),
 		config.ConfigCmd(),
 		dates.DatesCmd(),
+		translate.NewTranslateCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
