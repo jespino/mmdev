@@ -273,11 +273,20 @@ func NewTranslateTranslateCmd() *cobra.Command {
 				return fmt.Errorf("failed to get translation units: %w", err)
 			}
 
-			fmt.Printf("Starting translation wizard for %s:%s in %s (Total: %d)\n\n", project, component, language, units.Count)
+			// Filter out translated units
+			untranslatedUnits := []TranslationUnit{}
+			for _, unit := range units.Results {
+				if !unit.Translated {
+					untranslatedUnits = append(untranslatedUnits, unit)
+				}
+			}
+
+			fmt.Printf("Starting translation wizard for %s:%s in %s (Untranslated: %d/%d)\n\n", 
+				project, component, language, len(untranslatedUnits), units.Count)
 
 			reader := bufio.NewReader(os.Stdin)
-			for i, unit := range units.Results {
-				fmt.Printf("[%d/%d] Translation unit:\n", i+1, len(units.Results))
+			for i, unit := range untranslatedUnits {
+				fmt.Printf("[%d/%d] Translation unit:\n", i+1, len(untranslatedUnits))
 				fmt.Printf("Source: %v\n", unit.Source)
 				if unit.Context != "" {
 					fmt.Printf("Context: %s\n", unit.Context)
