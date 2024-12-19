@@ -30,9 +30,6 @@ func DockerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "docker",
 		Short: "Docker related commands",
-		Annotations: map[string]string{
-			"standalone": "true",
-		},
 	}
 
 	cmd.AddCommand(
