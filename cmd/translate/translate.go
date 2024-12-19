@@ -293,11 +293,11 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					fmt.Println()
 					
 					if unit.PreviousSource != "" {
-						fmt.Printf("%sPrevious Source:%s %s\n", colorYellow, colorReset, unit.PreviousSource)
+						fmt.Printf("%sPrevious Source:%s\n%s\n", colorYellow, colorReset, unit.PreviousSource)
 					}
-					fmt.Printf("%sCurrent Source:%s %s\n", colorYellow, colorReset, strings.Join(unit.Source, ""))
+					fmt.Printf("%sCurrent Source:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Source, ""))
 					if len(unit.Target) > 0 {
-						fmt.Printf("%sCurrent Translation:%s %s\n", colorYellow, colorReset, strings.Join(unit.Target, ""))
+						fmt.Printf("%sCurrent Translation:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Target, ""))
 					}
 
 					var suggestion string
