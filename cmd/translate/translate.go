@@ -64,42 +64,19 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewComponentsCmd())
+	cmd.AddCommand(
+		NewComponentsCmd(),
+		NewStatsCmd(),
+	)
 	return cmd
 }
 
 func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "translate [language]",
-		Short: "Get translation status for a specific language",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.LoadConfig()
-			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
-			}
-
-			if cfg.Weblate.URL == "" {
-				return fmt.Errorf("Weblate URL not configured. Set WEBLATE_URL environment variable or configure in ~/.mmdev.toml")
-			}
-
-			if cfg.Weblate.Token == "" {
-				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
-			}
-
-			// Get the translation stats
-			stats, err := getTranslationStats(cfg.Weblate.URL, cfg.Weblate.Token, args[0])
-			if err != nil {
-				return fmt.Errorf("failed to get translation stats: %w", err)
-			}
-
-			// Print the translation stats
-			fmt.Printf("Translation status for language: %s\n", args[0])
-			fmt.Printf("Total strings: %d\n", stats.TotalStrings)
-			fmt.Printf("Translated: %d (%.1f%%)\n", stats.TranslatedStrings, stats.TranslatedPercent)
-			fmt.Printf("Fuzzy: %d (%.1f%%)\n", stats.FuzzyStrings, stats.FuzzyPercent)
-
-			return nil
+		Use:   "translate",
+		Short: "Manage translations",
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
 		},
 	}
 
@@ -174,4 +151,39 @@ func getTranslationStats(baseURL, token, language string) (*TranslationStats, er
 	}
 
 	return &stats, nil
+}
+func NewStatsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stats [language]",
+		Short: "Get translation status for a specific language",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.LoadConfig()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if cfg.Weblate.URL == "" {
+				return fmt.Errorf("Weblate URL not configured. Set WEBLATE_URL environment variable or configure in ~/.mmdev.toml")
+			}
+
+			if cfg.Weblate.Token == "" {
+				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
+			}
+
+			stats, err := getTranslationStats(cfg.Weblate.URL, cfg.Weblate.Token, args[0])
+			if err != nil {
+				return fmt.Errorf("failed to get translation stats: %w", err)
+			}
+
+			fmt.Printf("Translation status for language: %s\n", args[0])
+			fmt.Printf("Total strings: %d\n", stats.TotalStrings)
+			fmt.Printf("Translated: %d (%.1f%%)\n", stats.TranslatedStrings, stats.TranslatedPercent)
+			fmt.Printf("Fuzzy: %d (%.1f%%)\n", stats.FuzzyStrings, stats.FuzzyPercent)
+
+			return nil
+		},
+	}
+
+	return cmd
 }
