@@ -239,6 +239,9 @@ func NewTranslateUnitsCmd() *cobra.Command {
 		Use:   "units <project:component> <language>",
 		Short: "List translation units for a component and language",
 		Args:  cobra.ExactArgs(2),
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
