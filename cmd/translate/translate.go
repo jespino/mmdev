@@ -306,12 +306,15 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						} else {
 							suggestion = aiTranslation
 							fmt.Printf("AI Suggested Translation: %s\n", suggestion)
-							fmt.Printf("\nType 'y' to use this suggestion, or enter your own translation.\n")
 						}
 					}
 
-					prompt := fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline, Ctrl+C=skip, Ctrl+D=quit): ",
-						firstPage.Count-translatedCount)
+					aiHelp := ""
+					if useAI {
+						aiHelp = ", 'y'=accept AI suggestion"
+					}
+					prompt := fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline%s, Ctrl+C=skip, Ctrl+D=quit): ",
+						firstPage.Count-translatedCount, aiHelp)
 					
 					rl, err := readline.NewEx(&readline.Config{
 						Prompt:            prompt,
