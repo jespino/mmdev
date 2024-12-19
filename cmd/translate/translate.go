@@ -11,6 +11,15 @@ import (
 	"github.com/jespino/mmdev/internal/config"
 )
 
+type Component struct {
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+type ComponentsResponse struct {
+	Results []Component `json:"results"`
+}
+
 type TranslationStats struct {
 	TranslatedPercent float64 `json:"translated_percent"`
 	FuzzyPercent      float64 `json:"fuzzy_percent"`
@@ -38,12 +47,25 @@ func NewTranslateCmd() *cobra.Command {
 				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
 			}
 
+			// First get and display available components
+			components, err := getComponents(cfg.Weblate.URL, cfg.Weblate.Token)
+			if err != nil {
+				return fmt.Errorf("failed to get components: %w", err)
+			}
+
+			fmt.Println("Available components:")
+			for _, comp := range components.Results {
+				fmt.Printf("- %s (%s)\n", comp.Name, comp.Slug)
+			}
+			fmt.Println()
+
+			// Then get the translation stats
 			stats, err := getTranslationStats(cfg.Weblate.URL, cfg.Weblate.Token, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to get translation stats: %w", err)
 			}
 
-			// Print the stats
+			// Print the translation stats
 			fmt.Printf("Translation status for language: %s\n", args[0])
 			fmt.Printf("Total strings: %d\n", stats.TotalStrings)
 			fmt.Printf("Translated: %d (%.1f%%)\n", stats.TranslatedStrings, stats.TranslatedPercent)
@@ -54,6 +76,38 @@ func NewTranslateCmd() *cobra.Command {
 	}
 
 	return cmd
+}
+
+func getComponents(baseURL, token string) (*ComponentsResponse, error) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	url := fmt.Sprintf("%s/api/components/", baseURL)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var components ComponentsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&components); err != nil {
+		return nil, err
+	}
+
+	return &components, nil
 }
 
 func getTranslationStats(baseURL, token, language string) (*TranslationStats, error) {
