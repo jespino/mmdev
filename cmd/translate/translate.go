@@ -387,7 +387,7 @@ type TranslationUnit struct {
 	PreviousSource  string    `json:"previous_source"`
 	Target          []string  `json:"target"`
 	IDHash          int       `json:"id_hash"`
-	ContentHash     string    `json:"content_hash"`
+	ContentHash     int       `json:"content_hash"`
 	Location        string    `json:"location"`
 	Context         string    `json:"context"`
 	Note            string    `json:"note"`
