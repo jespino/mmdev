@@ -11,6 +11,7 @@ import (
 	"github.com/jespino/mmdev/cmd/e2e"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
+	"github.com/jespino/mmdev/cmd/translate"
 	"github.com/jespino/mmdev/cmd/webapp"
 	"github.com/jespino/mmdev/pkg/utils"
 	"github.com/spf13/cobra"
@@ -21,8 +22,8 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for help, config, docker and dates commands
-			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "docker" || cmd.Name() == "dates" {
+			// Skip directory check for commands with the "standalone" annotation
+			if cmd.Annotations != nil && cmd.Annotations["standalone"] == "true" {
 				return nil
 			}
 
@@ -50,6 +51,7 @@ func main() {
 		aider.AiderCmd(),
 		config.ConfigCmd(),
 		dates.DatesCmd(),
+		translate.NewTranslateCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

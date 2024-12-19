@@ -16,6 +16,9 @@ func ConfigCmd() *cobra.Command {
 		Short: "Configure mmdev settings",
 		RunE:  runConfig,
 		SilenceUsage: true,
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 	}
 	return cmd
 }
@@ -73,6 +76,30 @@ func runConfig(cmd *cobra.Command, args []string) error {
 		token = strings.TrimSpace(token)
 		if token != "" {
 			cfg.Sentry.Token = token
+		}
+	}
+
+	fmt.Println("\nWeblate Configuration")
+	fmt.Println("====================")
+	fmt.Println("To configure Weblate integration, you'll need:")
+	fmt.Println("1. The Weblate instance URL (e.g., https://translate.mattermost.com)")
+	fmt.Println("2. An API token from your Weblate user settings")
+	fmt.Print("\nWould you like to configure Weblate? (y/N): ")
+	
+	configureWeblate, _ := reader.ReadString('\n')
+	if strings.ToLower(strings.TrimSpace(configureWeblate)) == "y" {
+		fmt.Printf("Weblate URL [%s]: ", cfg.Weblate.URL)
+		url, _ := reader.ReadString('\n')
+		url = strings.TrimSpace(url)
+		if url != "" {
+			cfg.Weblate.URL = url
+		}
+
+		fmt.Printf("Weblate API Token [%s]: ", maskToken(cfg.Weblate.Token))
+		token, _ := reader.ReadString('\n')
+		token = strings.TrimSpace(token)
+		if token != "" {
+			cfg.Weblate.Token = token
 		}
 	}
 

@@ -38,6 +38,7 @@ mmdev config
 This will guide you through setting up:
 - Jira integration (URL, username, API token)
 - Sentry integration (API token)
+- Weblate integration (URL, API token)
 
 ## Usage
 
@@ -96,6 +97,21 @@ mmdev config # Configure Jira and Sentry integration
 ```bash
 mmdev dates # Show upcoming Mattermost release dates and milestones
 ```
+
+### Translation Commands
+
+```bash
+mmdev translate components           # List available Weblate components
+mmdev translate languages           # List available languages
+mmdev translate languages --all     # List all available languages
+mmdev translate component-stats <project:component>  # Show component translation stats
+mmdev translate translate <project:component> <language>  # Interactive translation wizard
+mmdev translate translate --ai <project:component> <language>  # Translation wizard with AI suggestions
+```
+
+Translation commands require Weblate configuration in environment variables or ~/.mmdev.toml:
+- WEBLATE_URL: Your Weblate instance URL
+- WEBLATE_TOKEN: Your Weblate API token
 
 ### E2E Testing Commands
 
