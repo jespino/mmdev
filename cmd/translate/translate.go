@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -250,10 +251,21 @@ func NewComponentStatsCmd() *cobra.Command {
 				return fmt.Errorf("failed to get component stats: %w", err)
 			}
 
-			fmt.Printf("Statistics for component: %s:%s (%d results)\n", parts[0], parts[1], statsResp.Count)
+			fmt.Printf("Statistics for component: %s:%s (%d results)\n\n", parts[0], parts[1], statsResp.Count)
 
+			// Sort results by translated percentage in descending order
+			sort.Slice(statsResp.Results, func(i, j int) bool {
+				return statsResp.Results[i].TranslatedPercent > statsResp.Results[j].TranslatedPercent
+			})
+
+			// Print header
+			fmt.Printf("%-20s %8s %12s %8s %10s %10s %12s %10s\n",
+				"Language", "Total", "Translated%", "Fuzzy%", "Failing%", "Approved%", "Suggestions", "Comments")
+			fmt.Println(strings.Repeat("-", 95))
+
+			// Print each row
 			for _, stats := range statsResp.Results {
-				fmt.Printf("%s: %d total, %.1f%% translated, %.1f%% fuzzy, %.1f%% failing, %.1f%% approved, %d suggestions, %d comments\n",
+				fmt.Printf("%-20s %8d %11.1f%% %7.1f%% %9.1f%% %9.1f%% %12d %10d\n",
 					stats.Language,
 					stats.Total,
 					stats.TranslatedPercent,
