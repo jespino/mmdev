@@ -1,13 +1,17 @@
 module github.com/jespino/mmdev
 
-go 1.21
+go 1.22.2
+
+toolchain go1.22.10
 
 require (
 	github.com/BurntSushi/toml v1.4.0
+	github.com/adamchol/go-anthropic-sdk v1.0.0
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
+	github.com/chzyer/readline v1.5.1
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/fsnotify/fsnotify v1.8.0
@@ -51,7 +55,7 @@ require (
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
