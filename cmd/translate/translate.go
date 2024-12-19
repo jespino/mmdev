@@ -33,7 +33,7 @@ type TranslationStats struct {
 }
 
 type ComponentStats struct {
-	Language              string    `json:"language_code"`
+	Language              string    `json:"name"`
 	Total                  int       `json:"total"`
 	TotalWords             int       `json:"total_words"`
 	TotalChars             int       `json:"total_chars"`
