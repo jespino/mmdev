@@ -147,7 +147,14 @@ func getComponents(baseURL, token string) (*ComponentsResponse, error) {
 	return &components, nil
 }
 
-func getComponentStats(baseURL, token, project, component string) (*ComponentStats, error) {
+type ComponentStatsResponse struct {
+	Count    int             `json:"count"`
+	Next     *string         `json:"next"`
+	Previous *string         `json:"previous"`
+	Results  []ComponentStats `json:"results"`
+}
+
+func getComponentStats(baseURL, token, project, component string) (*ComponentStatsResponse, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -171,12 +178,12 @@ func getComponentStats(baseURL, token, project, component string) (*ComponentSta
 		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
 	}
 
-	var stats ComponentStats
-	if err := json.NewDecoder(resp.Body).Decode(&stats); err != nil {
+	var statsResp ComponentStatsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&statsResp); err != nil {
 		return nil, err
 	}
 
-	return &stats, nil
+	return &statsResp, nil
 }
 
 func getTranslationStats(baseURL, token, language string) (*TranslationStats, error) {
@@ -237,20 +244,27 @@ func NewComponentStatsCmd() *cobra.Command {
 				return fmt.Errorf("invalid format. Use project:component")
 			}
 
-			stats, err := getComponentStats(cfg.Weblate.URL, cfg.Weblate.Token, parts[0], parts[1])
+			statsResp, err := getComponentStats(cfg.Weblate.URL, cfg.Weblate.Token, parts[0], parts[1])
 			if err != nil {
 				return fmt.Errorf("failed to get component stats: %w", err)
 			}
 
-			fmt.Printf("Statistics for component: %s:%s\n\n", parts[0], parts[1])
-			fmt.Printf("Total strings: %d (words: %d, chars: %d)\n", stats.Total, stats.TotalWords, stats.TotalChars)
-			fmt.Printf("Translated: %d (%.1f%%)\n", stats.Translated, stats.TranslatedPercent)
-			fmt.Printf("Fuzzy: %d (%.1f%%)\n", stats.Fuzzy, stats.FuzzyPercent)
-			fmt.Printf("Failing checks: %d (%.1f%%)\n", stats.Failing, stats.FailingPercent)
-			fmt.Printf("Approved: %d (%.1f%%)\n", stats.Approved, stats.ApprovedPercent)
-			fmt.Printf("Suggestions: %d\n", stats.Suggestions)
-			fmt.Printf("Comments: %d\n", stats.Comments)
-			fmt.Printf("Last change: %s\n", stats.LastChange.Format(time.RFC3339))
+			fmt.Printf("Statistics for component: %s:%s\n", parts[0], parts[1])
+			fmt.Printf("Total results: %d\n\n", statsResp.Count)
+
+			for i, stats := range statsResp.Results {
+				if i > 0 {
+					fmt.Println("\n---\n")
+				}
+				fmt.Printf("Total strings: %d (words: %d, chars: %d)\n", stats.Total, stats.TotalWords, stats.TotalChars)
+				fmt.Printf("Translated: %d (%.1f%%)\n", stats.Translated, stats.TranslatedPercent)
+				fmt.Printf("Fuzzy: %d (%.1f%%)\n", stats.Fuzzy, stats.FuzzyPercent)
+				fmt.Printf("Failing checks: %d (%.1f%%)\n", stats.Failing, stats.FailingPercent)
+				fmt.Printf("Approved: %d (%.1f%%)\n", stats.Approved, stats.ApprovedPercent)
+				fmt.Printf("Suggestions: %d\n", stats.Suggestions)
+				fmt.Printf("Comments: %d\n", stats.Comments)
+				fmt.Printf("Last change: %s\n", stats.LastChange.Format(time.RFC3339))
+			}
 
 			return nil
 		},
