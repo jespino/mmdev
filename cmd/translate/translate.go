@@ -111,24 +111,6 @@ func NewComponentsCmd() *cobra.Command {
 
 			for _, comp := range components.Results {
 				fmt.Printf("%s:%s\n", comp.Project.Slug, comp.Slug)
-				}
-
-				// Check if we need to fetch next page
-				if len(currentPage.Results) == 0 || nextURL == nil {
-					break
-				}
-
-				currentPage, err = getNextTranslationUnitsPage(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language, nextURL)
-				if err != nil {
-					return fmt.Errorf("failed to get next page of translation units: %w", err)
-				}
-				nextURL = currentPage.Next
-			}
-
-			if processedCount == 0 {
-				fmt.Println("No untranslated units found!")
-			} else {
-				fmt.Printf("\nCompleted translation wizard. Translated %d units.\n", translatedCount)
 			}
 			return nil
 		},
@@ -299,42 +281,42 @@ func NewTranslateTranslateCmd() *cobra.Command {
 
 					processedCount++
 					fmt.Printf("[Processing unit %d] Translation unit:\n", processedCount)
-				fmt.Printf("Source: %v\n", unit.Source)
-				if unit.Context != "" {
-					fmt.Printf("Context: %s\n", unit.Context)
-				}
-				if unit.Note != "" {
-					fmt.Printf("Note: %s\n", unit.Note)
-				}
-				if len(unit.Target) > 0 {
-					fmt.Printf("Current translation: %v\n", unit.Target)
-				}
+					fmt.Printf("Source: %v\n", unit.Source)
+					if unit.Context != "" {
+						fmt.Printf("Context: %s\n", unit.Context)
+					}
+					if unit.Note != "" {
+						fmt.Printf("Note: %s\n", unit.Note)
+					}
+					if len(unit.Target) > 0 {
+						fmt.Printf("Current translation: %v\n", unit.Target)
+					}
 
-				fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit) [%d untranslated remaining]: ", 
-					firstPage.Count-translatedCount)
-				input, err := reader.ReadString('\n')
-				if err != nil {
-					return fmt.Errorf("error reading input: %w", err)
-				}
+					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit) [%d untranslated remaining]: ", 
+						firstPage.Count-translatedCount)
+					input, err := reader.ReadString('\n')
+					if err != nil {
+						return fmt.Errorf("error reading input: %w", err)
+					}
 
-				input = strings.TrimSpace(input)
-				if input == "q" {
-					fmt.Println("Exiting translation wizard")
-					return nil
-				}
-				if input == "" {
-					fmt.Println("Skipping...")
-					continue
-				}
+					input = strings.TrimSpace(input)
+					if input == "q" {
+						fmt.Println("Exiting translation wizard")
+						return nil
+					}
+					if input == "" {
+						fmt.Println("Skipping...")
+						continue
+					}
 
-				// Submit translation
-				err = submitTranslation(cfg.Weblate.URL, cfg.Weblate.Token, unit.ID, input)
-				if err != nil {
-					return fmt.Errorf("failed to submit translation: %w", err)
-				}
-				fmt.Println("Translation submitted successfully!")
-				translatedCount++
-				fmt.Println(strings.Repeat("-", 80))
+					// Submit translation
+					err = submitTranslation(cfg.Weblate.URL, cfg.Weblate.Token, unit.ID, input)
+					if err != nil {
+						return fmt.Errorf("failed to submit translation: %w", err)
+					}
+					fmt.Println("Translation submitted successfully!")
+					translatedCount++
+					fmt.Println(strings.Repeat("-", 80))
 			}
 
 			return nil
