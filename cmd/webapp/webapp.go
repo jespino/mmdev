@@ -12,6 +12,9 @@ func WebappCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "webapp",
 		Short: "Webapp related commands",
+		Annotations: map[string]string{
+			"requiresMMRepo": "true",
+		},
 	}
 
 	cmd.AddCommand(

@@ -14,6 +14,9 @@ func E2ECmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "e2e",
 		Short: "E2E testing related commands",
+		Annotations: map[string]string{
+			"requiresMMRepo": "true",
+		},
 	}
 
 	cmd.AddCommand(
