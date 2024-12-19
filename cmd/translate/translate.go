@@ -288,16 +288,17 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					}
 
 					processedCount++
-					fmt.Printf("%sTranslating id:%s %s\n", colorCyan, colorReset, unit.Context)
-					fmt.Println(strings.Repeat("-", 50))
-					fmt.Println()
+					var promptBuilder strings.Builder
+
+					promptBuilder.WriteString(fmt.Sprintf("%sTranslating id:%s %s\n", colorCyan, colorReset, unit.Context))
+					promptBuilder.WriteString(strings.Repeat("-", 50) + "\n\n")
 					
 					if unit.PreviousSource != "" {
-						fmt.Printf("%sPrevious Source:%s\n%s\n", colorYellow, colorReset, unit.PreviousSource)
+						promptBuilder.WriteString(fmt.Sprintf("%sPrevious Source:%s\n%s\n", colorYellow, colorReset, unit.PreviousSource))
 					}
-					fmt.Printf("%sCurrent Source:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Source, ""))
+					promptBuilder.WriteString(fmt.Sprintf("%sCurrent Source:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Source, "")))
 					if len(unit.Target) > 0 {
-						fmt.Printf("%sCurrent Translation:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Target, ""))
+						promptBuilder.WriteString(fmt.Sprintf("%sCurrent Translation:%s\n%s\n", colorYellow, colorReset, strings.Join(unit.Target, "")))
 					}
 
 					var suggestion string
@@ -308,29 +309,29 @@ func NewTranslateTranslateCmd() *cobra.Command {
 
 						aiTranslation, err := getAITranslation(unit.Source, unit.Target, unit.Context, unit.Note, language)
 						if err != nil {
-							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
+							promptBuilder.WriteString(fmt.Sprintf("Warning: Failed to get AI translation: %v\n", err))
 						} else {
 							suggestion = aiTranslation
-							fmt.Printf("%sAI Suggested Translation:%s\n%s\n", colorYellow, colorReset, suggestion)
+							promptBuilder.WriteString(fmt.Sprintf("%sAI Suggested Translation:%s\n%s\n", colorYellow, colorReset, suggestion))
 						}
 					}
 
 					aiHelp := ""
 					if useAI {
-						aiHelp = ", 'y' or Ctrl+A=accept AI suggestion"
+						aiHelp = ", 'y' or Ctrl+Y=accept AI suggestion"
 					}
-					prompt := fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline%s, Ctrl+C=skip, Ctrl+D=quit): ",
-						firstPage.Count-translatedCount, aiHelp)
+					promptBuilder.WriteString(fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline%s, Ctrl+C=skip, Ctrl+D=quit): ",
+						firstPage.Count-translatedCount, aiHelp))
 					
 					rl, err := readline.NewEx(&readline.Config{
-						Prompt:            prompt,
-						InterruptPrompt:   "^C",
-						EOFPrompt:         "^D",
-						HistorySearchFold: true,
-						UniqueEditLine:    true,
+						Prompt:                 promptBuilder.String(),
+						InterruptPrompt:        "^C",
+						EOFPrompt:              "^D",
+						HistorySearchFold:      true,
+						UniqueEditLine:         true,
 						DisableAutoSaveHistory: true,
-						VimMode:           false,
-						Stdin:             readline.NewCancelableStdin(os.Stdin),
+						VimMode:                false,
+						Stdin:                  readline.NewCancelableStdin(os.Stdin),
 					})
 					if err != nil {
 						return fmt.Errorf("error initializing readline: %w", err)
