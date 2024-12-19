@@ -11,6 +11,12 @@ import (
 type Config struct {
 	Jira       JiraConfig       `toml:"jira"`
 	Sentry     SentryConfig     `toml:"sentry"`
+	Weblate    WeblateConfig    `toml:"weblate"`
+}
+
+type WeblateConfig struct {
+	Token string `toml:"token"`
+	URL   string `toml:"url"`
 }
 
 type SentryConfig struct {
@@ -32,6 +38,8 @@ func LoadConfig() (*Config, error) {
 	config.Jira.Username = os.Getenv("JIRA_USER")
 	config.Jira.Token = os.Getenv("JIRA_TOKEN")
 	config.Sentry.Token = os.Getenv("SENTRY_TOKEN")
+	config.Weblate.Token = os.Getenv("WEBLATE_TOKEN")
+	config.Weblate.URL = os.Getenv("WEBLATE_URL")
 
 	// Get user's home directory
 	homeDir, err := os.UserHomeDir()
