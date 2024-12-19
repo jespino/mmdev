@@ -282,19 +282,16 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					}
 
 					processedCount++
-					fmt.Printf("[Processing unit %d] Translation unit:\n", processedCount)
-					fmt.Printf("Source: %v\n", unit.Source)
+					fmt.Printf("Translating id %s\n", unit.Context)
+					fmt.Println(strings.Repeat("-", 50))
+					fmt.Println()
+					
 					if unit.PreviousSource != "" {
-						fmt.Printf("Previous source: %s\n", unit.PreviousSource)
+						fmt.Printf("Previous Source: %s\n", unit.PreviousSource)
 					}
-					if unit.Context != "" {
-						fmt.Printf("Context: %s\n", unit.Context)
-					}
-					if unit.Note != "" {
-						fmt.Printf("Note: %s\n", unit.Note)
-					}
+					fmt.Printf("Current Source: %v\n", unit.Source)
 					if len(unit.Target) > 0 {
-						fmt.Printf("Current translation: %v\n", unit.Target)
+						fmt.Printf("Current Translation: %v\n", unit.Target)
 					}
 
 					var suggestion string
@@ -308,8 +305,8 @@ func NewTranslateTranslateCmd() *cobra.Command {
 							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
 						} else {
 							suggestion = aiTranslation
-							fmt.Printf("\nAI suggested translation: %s\n", suggestion)
-							fmt.Printf("Type 'y' to use this suggestion, or enter your own translation.\n")
+							fmt.Printf("AI Suggested Translation: %s\n", suggestion)
+							fmt.Printf("\nType 'y' to use this suggestion, or enter your own translation.\n")
 						}
 					}
 
