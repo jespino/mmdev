@@ -116,7 +116,6 @@ func getComponents(baseURL, token string) (*ComponentsResponse, error) {
 	}
 
 	url := joinURL(baseURL, "/api/components/")
-	fmt.Printf("Fetching components from: %s\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -149,7 +148,6 @@ func getTranslationStats(baseURL, token, language string) (*TranslationStats, er
 	}
 
 	url := joinURL(baseURL, fmt.Sprintf("/api/components/mattermost/mattermost-server/%s/statistics/", language))
-	fmt.Printf("Fetching translation stats from: %s\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
