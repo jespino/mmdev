@@ -312,21 +312,21 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						}
 					}
 
-					fmt.Printf("\nEnter translation (Alt+Enter for new line, Enter to submit, Ctrl+C to skip, Ctrl+D to quit) [%d untranslated remaining]\n",
+					prompt := fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline, Ctrl+C=skip, Ctrl+D=quit): ",
 						firstPage.Count-translatedCount)
 					
-					rl, err := readline.New("")
+					rl, err := readline.NewEx(&readline.Config{
+						Prompt:            prompt,
+						InterruptPrompt:   "^C",
+						EOFPrompt:         "^D",
+						HistorySearchFold: true,
+					})
 					if err != nil {
 						return fmt.Errorf("error initializing readline: %w", err)
 					}
 					defer rl.Close()
 
-					// Set multi-line mode
-					rl.SetConfig(&readline.Config{
-						UniqueEditLine: true,
-					})
-
-					input, err := rl.Readline()
+					input, err := rl.ReadlineWithDefault("")
 					if err != nil {
 						if err == readline.ErrInterrupt {
 							fmt.Println("Skipping...")
