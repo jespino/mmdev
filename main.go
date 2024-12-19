@@ -22,8 +22,8 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for help, config, docker and dates commands
-			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "docker" || cmd.Name() == "dates" {
+			// Skip directory check for help, config, docker, dates and translate commands
+			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "docker" || cmd.Name() == "dates" || cmd.Name() == "translate" {
 				return nil
 			}
 
