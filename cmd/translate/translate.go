@@ -401,10 +401,11 @@ func getAITranslation(source []string, currentTranslation []string, ctx, note st
 	var prompt strings.Builder
 	prompt.WriteString("You are a professional translator for the Mattermost application. ")
 	prompt.WriteString(fmt.Sprintf("Translate the following text from English to %s:\n\n", targetLang))
-	prompt.WriteString(fmt.Sprintf("Source text: %v\n", source))
+	prompt.WriteString(fmt.Sprintf("Previous source text: %v\n", source))
+	prompt.WriteString(fmt.Sprintf("Current source text: %v\n", source))
 
 	if len(currentTranslation) > 0 {
-		prompt.WriteString(fmt.Sprintf("Current translation (review and improve if needed): %v\n", currentTranslation))
+		prompt.WriteString(fmt.Sprintf("Current translation (only modify parts that need to change): %v\n", currentTranslation))
 	}
 
 	if ctx != "" {
