@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	anthropic "github.com/anthropics/anthropic-sdk-go"
 
 	"github.com/jespino/mmdev/internal/config"
 )
@@ -116,6 +117,7 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVar(&useAI, "ai", false, "Use AI to suggest translations")
 	return cmd
 }
 
@@ -228,6 +230,8 @@ func getNextTranslationUnitsPage(baseURL, token, project, component, language st
 }
 
 func NewTranslateTranslateCmd() *cobra.Command {
+	var useAI bool
+	
 	cmd := &cobra.Command{
 		Use:   "translate <project:component> <language>",
 		Short: "Interactive translation wizard for a component and language",
@@ -291,7 +295,22 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						fmt.Printf("Current translation: %v\n", unit.Target)
 					}
 
-					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit) [%d untranslated remaining]: ", 
+					var suggestion string
+					if useAI {
+						if os.Getenv("ANTHROPIC_API_KEY") == "" {
+							return fmt.Errorf("ANTHROPIC_API_KEY environment variable not set")
+						}
+						
+						aiTranslation, err := getAITranslation(unit.Source, unit.Target, unit.Context, unit.Note, language)
+						if err != nil {
+							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
+						} else {
+							suggestion = aiTranslation
+							fmt.Printf("\nAI suggested translation: %s\n", suggestion)
+						}
+					}
+
+					fmt.Printf("\nEnter translation (or press Enter to skip, 'q' to quit, 'y' to accept suggestion) [%d untranslated remaining]: ", 
 						firstPage.Count-translatedCount)
 					input, err := reader.ReadString('\n')
 					if err != nil {
@@ -306,6 +325,10 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					if input == "" {
 						fmt.Println("Skipping...")
 						continue
+					}
+					
+					if input == "y" && suggestion != "" {
+						input = suggestion
 					}
 
 					// Submit translation
@@ -341,6 +364,44 @@ func NewTranslateTranslateCmd() *cobra.Command {
 	}
 
 	return cmd
+}
+
+func getAITranslation(source []string, currentTranslation []string, context, note string, targetLang string) (string, error) {
+	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+
+	var prompt strings.Builder
+	prompt.WriteString("You are a professional translator for the Mattermost application. ")
+	prompt.WriteString(fmt.Sprintf("Translate the following text from English to %s:\n\n", targetLang))
+	prompt.WriteString(fmt.Sprintf("Source text: %v\n", source))
+	
+	if len(currentTranslation) > 0 {
+		prompt.WriteString(fmt.Sprintf("Current translation (review and improve if needed): %v\n", currentTranslation))
+	}
+	
+	if context != "" {
+		prompt.WriteString(fmt.Sprintf("Context: %s\n", context))
+	}
+	if note != "" {
+		prompt.WriteString(fmt.Sprintf("Note: %s\n", note))
+	}
+	
+	prompt.WriteString("\nProvide only the translation, without any explanations or additional text.")
+
+	msg, err := client.Messages.Create(context.Background(), &anthropic.MessageCreateParams{
+		Model:    "claude-3-opus-20240229",
+		MaxTokens: 1024,
+		Messages: []anthropic.Message{
+			{
+				Role: "user",
+				Content: prompt.String(),
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("AI translation error: %w", err)
+	}
+
+	return msg.Content[0].Text, nil
 }
 
 func NewTranslateCmd() *cobra.Command {
