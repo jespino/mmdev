@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -78,12 +79,18 @@ func NewTranslateCmd() *cobra.Command {
 	return cmd
 }
 
+func joinURL(base, path string) string {
+	base = strings.TrimSuffix(base, "/")
+	path = strings.TrimPrefix(path, "/")
+	return base + "/" + path
+}
+
 func getComponents(baseURL, token string) (*ComponentsResponse, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	url := fmt.Sprintf("%s/api/components/", baseURL)
+	url := joinURL(baseURL, "/api/components/")
 	fmt.Printf("Fetching components from: %s\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -116,7 +123,7 @@ func getTranslationStats(baseURL, token, language string) (*TranslationStats, er
 		Timeout: 10 * time.Second,
 	}
 
-	url := fmt.Sprintf("%s/api/components/mattermost/mattermost-server/%s/statistics/", baseURL, language)
+	url := joinURL(baseURL, fmt.Sprintf("/api/components/mattermost/mattermost-server/%s/statistics/", language))
 	fmt.Printf("Fetching translation stats from: %s\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
