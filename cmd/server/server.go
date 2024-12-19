@@ -23,6 +23,9 @@ func ServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "server",
 		Short: "Server related commands",
+		Annotations: map[string]string{
+			"requiresMMRepo": "true",
+		},
 	}
 
 	cmd.AddCommand(

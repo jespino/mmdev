@@ -22,8 +22,8 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for commands with the "standalone" annotation or zsh command
-			if cmd.Name() == "zsh" || (cmd.Annotations != nil && cmd.Annotations["standalone"] == "true") {
+			// Skip directory check for commands that don't require Mattermost repository
+			if cmd.Annotations == nil || cmd.Annotations["requiresMMRepo"] != "true" {
 				return nil
 			}
 
