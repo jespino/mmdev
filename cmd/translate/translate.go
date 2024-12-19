@@ -317,7 +317,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 
 					aiHelp := ""
 					if useAI {
-						aiHelp = ", 'y'=accept AI suggestion"
+						aiHelp = ", 'y' or Ctrl+A=accept AI suggestion"
 					}
 					prompt := fmt.Sprintf("\nEnter translation [%d remaining] (Alt+Enter=newline%s, Ctrl+C=skip, Ctrl+D=quit): ",
 						firstPage.Count-translatedCount, aiHelp)
@@ -329,6 +329,8 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						HistorySearchFold: true,
 						UniqueEditLine:    true,
 						DisableAutoSaveHistory: true,
+						VimMode:           false,
+						Stdin:             readline.NewCancelableStdin(os.Stdin),
 					})
 					if err != nil {
 						return fmt.Errorf("error initializing readline: %w", err)
@@ -345,10 +347,15 @@ func NewTranslateTranslateCmd() *cobra.Command {
 							fmt.Println("Exiting translation wizard")
 							return nil
 						}
-						return fmt.Errorf("error reading input: %w", err)
+						// Check for Ctrl+A (ASCII value 1)
+						if err.Error() == "char: 1" && suggestion != "" {
+							input = suggestion
+						} else {
+							return fmt.Errorf("error reading input: %w", err)
+						}
 					}
 
-					if input == "y" && suggestion != "" {
+					if (input == "y" || input == "\x01") && suggestion != "" {
 						input = suggestion
 					}
 
