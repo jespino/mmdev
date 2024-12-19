@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adamchol/go-anthropic-sdk"
+	anthropic "github.com/adamchol/go-anthropic-sdk"
 	"github.com/spf13/cobra"
 
 	"github.com/jespino/mmdev/internal/config"
@@ -404,10 +404,10 @@ func getAITranslation(source []string, currentTranslation []string, context, not
 		return "", fmt.Errorf("AI translation error: %w", err)
 	}
 
-	if len(msg.Content) == 0 {
+	if len(resp.Content) == 0 {
 		return "", fmt.Errorf("no content in AI response")
 	}
-	return msg.Content[0].Text, nil
+	return resp.Content[0].Text, nil
 }
 
 func NewTranslateCmd() *cobra.Command {
