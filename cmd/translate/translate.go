@@ -269,7 +269,6 @@ func NewTranslateTranslateCmd() *cobra.Command {
 
 			fmt.Printf("Starting translation wizard for %s:%s in %s\n\n", project, component, language)
 
-			reader := bufio.NewReader(os.Stdin)
 			nextURL := firstPage.Next
 			currentPage := firstPage
 			processedCount := 0
