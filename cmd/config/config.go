@@ -16,6 +16,9 @@ func ConfigCmd() *cobra.Command {
 		Short: "Configure mmdev settings",
 		RunE:  runConfig,
 		SilenceUsage: true,
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 	}
 	return cmd
 }

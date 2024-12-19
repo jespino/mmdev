@@ -71,6 +71,9 @@ func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate",
 		Short: "Manage translations",
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 	}
 
 	cmd.AddCommand(

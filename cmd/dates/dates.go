@@ -16,6 +16,9 @@ func DatesCmd() *cobra.Command {
 		Use:   "dates",
 		Short: "Show next Mattermost release dates",
 		RunE:  runDates,
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 	}
 	return cmd
 }
