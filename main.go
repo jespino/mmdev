@@ -22,8 +22,9 @@ func main() {
 		Use:   "mmdev",
 		Short: "MMDev - Development tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Skip directory check for commands with the "standalone" annotation or completion command
-			if cmd.Name() == "completion" || (cmd.Annotations != nil && cmd.Annotations["standalone"] == "true") {
+			// Skip directory check for commands with the "standalone" annotation or zsh command
+			fmt.Printf("Command name: %s\n", cmd.Name())
+			if cmd.Name() == "zsh" || (cmd.Annotations != nil && cmd.Annotations["standalone"] == "true") {
 				return nil
 			}
 
