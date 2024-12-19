@@ -309,6 +309,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						} else {
 							suggestion = aiTranslation
 							fmt.Printf("\nAI suggested translation: %s\n", suggestion)
+							fmt.Printf("Type 'y' to use this suggestion, or enter your own translation.\n")
 						}
 					}
 
