@@ -23,7 +23,7 @@ func formatNumber(n int) string {
 
 	// Convert number to string
 	str := fmt.Sprintf("%d", n)
-	
+
 	// Add commas
 	var result []byte
 	for i, c := range str {
@@ -32,7 +32,7 @@ func formatNumber(n int) string {
 		}
 		result = append(result, byte(c))
 	}
-	
+
 	return sign + string(result)
 }
 
@@ -57,7 +57,7 @@ type TranslationStats struct {
 }
 
 type ComponentStats struct {
-	Language              string    `json:"name"`
+	Language               string    `json:"name"`
 	Total                  int       `json:"total"`
 	TotalWords             int       `json:"total_words"`
 	TotalChars             int       `json:"total_chars"`
@@ -113,13 +113,12 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&showAll, "all", false, "Show all languages instead of just top 50")
 	return cmd
 }
 
 func NewLanguagesCmd() *cobra.Command {
 	var showAll bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "languages",
 		Short: "List available languages",
@@ -169,7 +168,7 @@ func NewLanguagesCmd() *cobra.Command {
 					displayCount = len(languages.Results)
 				}
 			}
-			
+
 			for _, lang := range languages.Results[:displayCount] {
 				fmt.Printf("%-20s %-50s %15s\n",
 					lang.Code,
@@ -184,6 +183,7 @@ func NewLanguagesCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&showAll, "all", false, "Show all languages instead of just top 50")
 
 	return cmd
 }
@@ -246,9 +246,9 @@ func getComponents(baseURL, token string) (*ComponentsResponse, error) {
 }
 
 type ComponentStatsResponse struct {
-	Count    int             `json:"count"`
-	Next     *string         `json:"next"`
-	Previous *string         `json:"previous"`
+	Count    int              `json:"count"`
+	Next     *string          `json:"next"`
+	Previous *string          `json:"previous"`
 	Results  []ComponentStats `json:"results"`
 }
 
