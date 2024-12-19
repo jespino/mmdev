@@ -37,6 +37,9 @@ func NewComponentsCmd() *cobra.Command {
 		Use:   "components",
 		Short: "List available Weblate components",
 		Args:  cobra.NoArgs,
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
@@ -158,6 +161,9 @@ func NewStatsCmd() *cobra.Command {
 		Use:   "stats [language]",
 		Short: "Get translation status for a specific language",
 		Args:  cobra.ExactArgs(1),
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.LoadConfig()
 			if err != nil {
