@@ -295,9 +295,9 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					if unit.PreviousSource != "" {
 						fmt.Printf("%sPrevious Source:%s %s\n", colorYellow, colorReset, unit.PreviousSource)
 					}
-					fmt.Printf("%sCurrent Source:%s %v\n", colorYellow, colorReset, unit.Source)
+					fmt.Printf("%sCurrent Source:%s %s\n", colorYellow, colorReset, strings.Join(unit.Source, ""))
 					if len(unit.Target) > 0 {
-						fmt.Printf("%sCurrent Translation:%s %v\n", colorYellow, colorReset, unit.Target)
+						fmt.Printf("%sCurrent Translation:%s %s\n", colorYellow, colorReset, strings.Join(unit.Target, ""))
 					}
 
 					var suggestion string
@@ -401,11 +401,11 @@ func getAITranslation(source []string, currentTranslation []string, ctx, note st
 	var prompt strings.Builder
 	prompt.WriteString("You are a professional translator for the Mattermost application. ")
 	prompt.WriteString(fmt.Sprintf("Translate the following text from English to %s:\n\n", targetLang))
-	prompt.WriteString(fmt.Sprintf("Previous source text: %v\n", source))
-	prompt.WriteString(fmt.Sprintf("Current source text: %v\n", source))
+	prompt.WriteString(fmt.Sprintf("Previous source text: %s\n", strings.Join(source, "")))
+	prompt.WriteString(fmt.Sprintf("Current source text: %s\n", strings.Join(source, "")))
 
 	if len(currentTranslation) > 0 {
-		prompt.WriteString(fmt.Sprintf("Current translation (only modify parts that need to change): %v\n", currentTranslation))
+		prompt.WriteString(fmt.Sprintf("Current translation (only modify parts that need to change): %s\n", strings.Join(currentTranslation, "")))
 	}
 
 	if ctx != "" {
