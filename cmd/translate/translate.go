@@ -13,6 +13,29 @@ import (
 	"github.com/jespino/mmdev/internal/config"
 )
 
+func formatNumber(n int) string {
+	// Handle negative numbers
+	sign := ""
+	if n < 0 {
+		sign = "-"
+		n = -n
+	}
+
+	// Convert number to string
+	str := fmt.Sprintf("%d", n)
+	
+	// Add commas
+	var result []byte
+	for i, c := range str {
+		if i > 0 && (len(str)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(c))
+	}
+	
+	return sign + string(result)
+}
+
 type Component struct {
 	Name    string `json:"name"`
 	Slug    string `json:"slug"`
@@ -120,7 +143,7 @@ func NewLanguagesCmd() *cobra.Command {
 				return fmt.Errorf("failed to get languages: %w", err)
 			}
 
-			fmt.Printf("Most spoken languages (showing top 30 out of %d):\n\n", languages.Count)
+			fmt.Printf("Most spoken languages (showing top 50 out of %d):\n\n", languages.Count)
 
 			// Sort languages by population in descending order
 			sort.Slice(languages.Results, func(i, j int) bool {
@@ -128,20 +151,20 @@ func NewLanguagesCmd() *cobra.Command {
 			})
 
 			// Print header
-			fmt.Printf("%-10s %-50s %15s\n", "Code", "Name", "Population")
-			fmt.Println(strings.Repeat("-", 75))
+			fmt.Printf("%-20s %-50s %15s\n", "Code", "Name", "Population")
+			fmt.Println(strings.Repeat("-", 85))
 
 			// Print top 30 rows
-			maxDisplay := 30
+			maxDisplay := 50
 			if len(languages.Results) < maxDisplay {
 				maxDisplay = len(languages.Results)
 			}
 			
 			for _, lang := range languages.Results[:maxDisplay] {
-				fmt.Printf("%-10s %-50s %15d\n",
+				fmt.Printf("%-20s %-50s %15s\n",
 					lang.Code,
 					lang.Name,
-					lang.Population)
+					formatNumber(lang.Population))
 			}
 
 			if len(languages.Results) > maxDisplay {
