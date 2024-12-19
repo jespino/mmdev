@@ -19,6 +19,12 @@ import (
 	"github.com/jespino/mmdev/internal/config"
 )
 
+const (
+	colorReset  = "\033[0m"
+	colorCyan   = "\033[36m"
+	colorYellow = "\033[33m"
+)
+
 func formatNumber(n int) string {
 	// Handle negative numbers
 	sign := ""
@@ -282,16 +288,16 @@ func NewTranslateTranslateCmd() *cobra.Command {
 					}
 
 					processedCount++
-					fmt.Printf("Translating id %s\n", unit.Context)
+					fmt.Printf("%sTranslating id:%s %s\n", colorCyan, colorReset, unit.Context)
 					fmt.Println(strings.Repeat("-", 50))
 					fmt.Println()
 					
 					if unit.PreviousSource != "" {
-						fmt.Printf("Previous Source: %s\n", unit.PreviousSource)
+						fmt.Printf("%sPrevious Source:%s %s\n", colorYellow, colorReset, unit.PreviousSource)
 					}
-					fmt.Printf("Current Source: %v\n", unit.Source)
+					fmt.Printf("%sCurrent Source:%s %v\n", colorYellow, colorReset, unit.Source)
 					if len(unit.Target) > 0 {
-						fmt.Printf("Current Translation: %v\n", unit.Target)
+						fmt.Printf("%sCurrent Translation:%s %v\n", colorYellow, colorReset, unit.Target)
 					}
 
 					var suggestion string
@@ -305,7 +311,7 @@ func NewTranslateTranslateCmd() *cobra.Command {
 							fmt.Printf("Warning: Failed to get AI translation: %v\n", err)
 						} else {
 							suggestion = aiTranslation
-							fmt.Printf("AI Suggested Translation: %s\n", suggestion)
+							fmt.Printf("%sAI Suggested Translation:%s %s\n", colorYellow, colorReset, suggestion)
 						}
 					}
 
