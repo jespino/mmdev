@@ -551,7 +551,7 @@ func submitTranslation(baseURL, token string, unitID int, translation string) er
 	
 	payload := map[string]interface{}{
 		"target": []string{translation},
-		"state": 1, // Translated state
+		"state": 20, // Translated state
 	}
 	
 	jsonData, err := json.Marshal(payload)
