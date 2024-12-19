@@ -38,6 +38,7 @@ mmdev config
 This will guide you through setting up:
 - Jira integration (URL, username, API token)
 - Sentry integration (API token)
+- Weblate integration (URL, API token)
 
 ## Usage
 
@@ -132,6 +133,9 @@ mmdev aider confluence PAGE-ID     # Process Confluence page with aider
 The aider commands require:
 - For GitHub: Public repository access
 - For Confluence: Jira credentials (uses same authentication)
+- For Weblate: Environment variables or ~/.mmdev.toml configuration:
+  - WEBLATE_URL: Your Weblate instance URL
+  - WEBLATE_TOKEN: Your Weblate API token
 - For Jira: Credentials configured in ~/.mmdev.toml or environment variables:
   - JIRA_URL: Your Jira instance URL
   - JIRA_USER: Your Jira username
