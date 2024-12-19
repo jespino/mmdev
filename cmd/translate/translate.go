@@ -60,7 +60,7 @@ func NewComponentsCmd() *cobra.Command {
 			}
 
 			for _, comp := range components.Results {
-				fmt.Printf("%s: %s %s\n", comp.Slug, comp.Project.Slug, comp.Name)
+				fmt.Printf("%s:%s\n", comp.Project.Slug, comp.Slug)
 			}
 
 			return nil
