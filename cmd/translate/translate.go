@@ -93,6 +93,57 @@ func NewComponentsCmd() *cobra.Command {
 	return cmd
 }
 
+func NewLanguagesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "languages",
+		Short: "List available languages",
+		Args:  cobra.NoArgs,
+		Annotations: map[string]string{
+			"standalone": "true",
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.LoadConfig()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if cfg.Weblate.URL == "" {
+				return fmt.Errorf("Weblate URL not configured. Set WEBLATE_URL environment variable or configure in ~/.mmdev.toml")
+			}
+
+			if cfg.Weblate.Token == "" {
+				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
+			}
+
+			languages, err := getLanguages(cfg.Weblate.URL, cfg.Weblate.Token)
+			if err != nil {
+				return fmt.Errorf("failed to get languages: %w", err)
+			}
+
+			fmt.Printf("Available languages (%d):\n\n", languages.Count)
+
+			// Print header
+			fmt.Printf("%-10s %-30s %10s %12s %10s\n",
+				"Code", "Name", "Direction", "Total", "Translated")
+			fmt.Println(strings.Repeat("-", 75))
+
+			// Print each row
+			for _, lang := range languages.Results {
+				fmt.Printf("%-10s %-30s %10s %12d %10d\n",
+					lang.Code,
+					lang.Name,
+					lang.Direction,
+					lang.TotalStrings,
+					lang.Translated)
+			}
+
+			return nil
+		},
+	}
+
+	return cmd
+}
+
 func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate",
@@ -106,6 +157,7 @@ func NewTranslateCmd() *cobra.Command {
 		NewComponentsCmd(),
 		NewStatsCmd(),
 		NewComponentStatsCmd(),
+		NewLanguagesCmd(),
 	)
 
 	return cmd
@@ -156,6 +208,22 @@ type ComponentStatsResponse struct {
 	Results  []ComponentStats `json:"results"`
 }
 
+type Language struct {
+	Code         string `json:"code"`
+	Name         string `json:"name"`
+	Direction    string `json:"direction"`
+	WebURL       string `json:"web_url"`
+	TotalStrings int    `json:"total_strings"`
+	Translated   int    `json:"translated"`
+}
+
+type LanguagesResponse struct {
+	Count    int        `json:"count"`
+	Next     *string    `json:"next"`
+	Previous *string    `json:"previous"`
+	Results  []Language `json:"results"`
+}
+
 func getComponentStats(baseURL, token, project, component string) (*ComponentStatsResponse, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -186,6 +254,38 @@ func getComponentStats(baseURL, token, project, component string) (*ComponentSta
 	}
 
 	return &statsResp, nil
+}
+
+func getLanguages(baseURL, token string) (*LanguagesResponse, error) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	url := joinURL(baseURL, "/api/languages/")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var languages LanguagesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&languages); err != nil {
+		return nil, err
+	}
+
+	return &languages, nil
 }
 
 func getTranslationStats(baseURL, token, language string) (*TranslationStats, error) {
