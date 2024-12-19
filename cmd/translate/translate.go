@@ -188,6 +188,114 @@ func NewLanguagesCmd() *cobra.Command {
 	return cmd
 }
 
+func getTranslationUnits(baseURL, token, project, component, language string) (*TranslationUnitsResponse, error) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	var allUnits TranslationUnitsResponse
+	nextURL := joinURL(baseURL, fmt.Sprintf("/api/translations/%s/%s/%s/units/", project, component, language))
+
+	for nextURL != "" {
+		req, err := http.NewRequest("GET", nextURL, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		var pageResponse TranslationUnitsResponse
+		if err := json.NewDecoder(resp.Body).Decode(&pageResponse); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+		}
+
+		allUnits.Results = append(allUnits.Results, pageResponse.Results...)
+		allUnits.Count = pageResponse.Count
+
+		if pageResponse.Next != nil {
+			nextURL = *pageResponse.Next
+		} else {
+			nextURL = ""
+		}
+	}
+
+	return &allUnits, nil
+}
+
+func NewTranslateUnitsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "units <project:component> <language>",
+		Short: "List translation units for a component and language",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.LoadConfig()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if cfg.Weblate.URL == "" {
+				return fmt.Errorf("Weblate URL not configured. Set WEBLATE_URL environment variable or configure in ~/.mmdev.toml")
+			}
+
+			if cfg.Weblate.Token == "" {
+				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
+			}
+
+			parts := strings.Split(args[0], ":")
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid format. Use project:component")
+			}
+
+			project, component := parts[0], parts[1]
+			language := args[1]
+
+			units, err := getTranslationUnits(cfg.Weblate.URL, cfg.Weblate.Token, project, component, language)
+			if err != nil {
+				return fmt.Errorf("failed to get translation units: %w", err)
+			}
+
+			fmt.Printf("Translation units for %s:%s in %s (Total: %d)\n\n", project, component, language, units.Count)
+
+			for _, unit := range units.Results {
+				fmt.Printf("ID: %d\n", unit.ID)
+				fmt.Printf("Source: %v\n", unit.Source)
+				fmt.Printf("Target: %v\n", unit.Target)
+				fmt.Printf("State: %d\n", unit.State)
+				fmt.Printf("Location: %s\n", unit.Location)
+				if unit.Context != "" {
+					fmt.Printf("Context: %s\n", unit.Context)
+				}
+				if unit.Note != "" {
+					fmt.Printf("Note: %s\n", unit.Note)
+				}
+				fmt.Printf("Translated: %v\n", unit.Translated)
+				fmt.Printf("Approved: %v\n", unit.Approved)
+				fmt.Printf("Fuzzy: %v\n", unit.Fuzzy)
+				fmt.Printf("Has failing checks: %v\n", unit.HasFailingCheck)
+				fmt.Printf("Web URL: %s\n", unit.WebURL)
+				fmt.Printf("Last updated: %s\n", unit.LastUpdated)
+				fmt.Println(strings.Repeat("-", 80))
+			}
+
+			return nil
+		},
+	}
+
+	return cmd
+}
+
 func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate",
@@ -202,6 +310,7 @@ func NewTranslateCmd() *cobra.Command {
 		NewStatsCmd(),
 		NewComponentStatsCmd(),
 		NewLanguagesCmd(),
+		NewTranslateUnitsCmd(),
 	)
 
 	return cmd
@@ -267,6 +376,45 @@ type LanguagesResponse struct {
 	Next     *string    `json:"next"`
 	Previous *string    `json:"previous"`
 	Results  []Language `json:"results"`
+}
+
+type TranslationUnit struct {
+	Translation      string    `json:"translation"`
+	Source          []string  `json:"source"`
+	PreviousSource  string    `json:"previous_source"`
+	Target          []string  `json:"target"`
+	IDHash          string    `json:"id_hash"`
+	ContentHash     string    `json:"content_hash"`
+	Location        string    `json:"location"`
+	Context         string    `json:"context"`
+	Note            string    `json:"note"`
+	Flags           string    `json:"flags"`
+	Labels          []string  `json:"labels"`
+	State           int       `json:"state"`
+	Fuzzy           bool      `json:"fuzzy"`
+	Translated      bool      `json:"translated"`
+	Approved        bool      `json:"approved"`
+	Position        int       `json:"position"`
+	HasSuggestion   bool      `json:"has_suggestion"`
+	HasComment      bool      `json:"has_comment"`
+	HasFailingCheck bool      `json:"has_failing_check"`
+	NumWords        int       `json:"num_words"`
+	Priority        int       `json:"priority"`
+	ID             int       `json:"id"`
+	Explanation    string    `json:"explanation"`
+	ExtraFlags     string    `json:"extra_flags"`
+	WebURL         string    `json:"web_url"`
+	SourceUnit     string    `json:"source_unit"`
+	Pending        bool      `json:"pending"`
+	Timestamp      time.Time `json:"timestamp"`
+	LastUpdated    time.Time `json:"last_updated"`
+}
+
+type TranslationUnitsResponse struct {
+	Count    int              `json:"count"`
+	Next     *string          `json:"next"`
+	Previous *string          `json:"previous"`
+	Results  []TranslationUnit `json:"results"`
 }
 
 func getComponentStats(baseURL, token, project, component string) (*ComponentStatsResponse, error) {
