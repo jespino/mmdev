@@ -29,6 +29,43 @@ type TranslationStats struct {
 	FuzzyStrings      int     `json:"fuzzy"`
 }
 
+func NewComponentsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "components",
+		Short: "List available Weblate components",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.LoadConfig()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if cfg.Weblate.URL == "" {
+				return fmt.Errorf("Weblate URL not configured. Set WEBLATE_URL environment variable or configure in ~/.mmdev.toml")
+			}
+
+			if cfg.Weblate.Token == "" {
+				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
+			}
+
+			components, err := getComponents(cfg.Weblate.URL, cfg.Weblate.Token)
+			if err != nil {
+				return fmt.Errorf("failed to get components: %w", err)
+			}
+
+			fmt.Println("Available components:")
+			for _, comp := range components.Results {
+				fmt.Printf("- %s (%s)\n", comp.Name, comp.Slug)
+			}
+
+			return nil
+		},
+	}
+
+	cmd.AddCommand(NewComponentsCmd())
+	return cmd
+}
+
 func NewTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "translate [language]",
@@ -48,19 +85,7 @@ func NewTranslateCmd() *cobra.Command {
 				return fmt.Errorf("Weblate token not configured. Set WEBLATE_TOKEN environment variable or configure in ~/.mmdev.toml")
 			}
 
-			// First get and display available components
-			components, err := getComponents(cfg.Weblate.URL, cfg.Weblate.Token)
-			if err != nil {
-				return fmt.Errorf("failed to get components: %w", err)
-			}
-
-			fmt.Println("Available components:")
-			for _, comp := range components.Results {
-				fmt.Printf("- %s (%s)\n", comp.Name, comp.Slug)
-			}
-			fmt.Println()
-
-			// Then get the translation stats
+			// Get the translation stats
 			stats, err := getTranslationStats(cfg.Weblate.URL, cfg.Weblate.Token, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to get translation stats: %w", err)
