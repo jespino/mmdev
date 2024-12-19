@@ -321,6 +321,8 @@ func NewTranslateTranslateCmd() *cobra.Command {
 						InterruptPrompt:   "^C",
 						EOFPrompt:         "^D",
 						HistorySearchFold: true,
+						UniqueEditLine:    true,
+						DisableAutoSaveHistory: true,
 					})
 					if err != nil {
 						return fmt.Errorf("error initializing readline: %w", err)
