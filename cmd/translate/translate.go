@@ -11,9 +11,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"context"
 
 	"github.com/spf13/cobra"
-	anthropic "github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go"
 
 	"github.com/jespino/mmdev/internal/config"
 )
@@ -82,6 +83,8 @@ type ComponentStats struct {
 	Suggestions            int       `json:"suggestions"`
 	Comments               int       `json:"comments"`
 }
+
+var useAI bool
 
 func NewComponentsCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -367,7 +370,10 @@ func NewTranslateTranslateCmd() *cobra.Command {
 }
 
 func getAITranslation(source []string, currentTranslation []string, context, note string, targetLang string) (string, error) {
-	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+	client, err := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+	if err != nil {
+		return "", fmt.Errorf("failed to create Anthropic client: %w", err)
+	}
 
 	var prompt strings.Builder
 	prompt.WriteString("You are a professional translator for the Mattermost application. ")
@@ -387,13 +393,19 @@ func getAITranslation(source []string, currentTranslation []string, context, not
 	
 	prompt.WriteString("\nProvide only the translation, without any explanations or additional text.")
 
-	msg, err := client.Messages.Create(context.Background(), &anthropic.MessageCreateParams{
-		Model:    "claude-3-opus-20240229",
+	msg, err := client.Messages.Create(context.Background(), &anthropic.CreateMessageRequest{
+		Model: anthropic.Claude3Opus,
 		MaxTokens: 1024,
+		System: "You are a professional translator for the Mattermost application.",
 		Messages: []anthropic.Message{
 			{
-				Role: "user",
-				Content: prompt.String(),
+				Role: anthropic.MessageRoleUser,
+				Content: []anthropic.Content{
+					{
+						Type: anthropic.ContentTypeText,
+						Text: prompt.String(),
+					},
+				},
 			},
 		},
 	})
@@ -401,6 +413,9 @@ func getAITranslation(source []string, currentTranslation []string, context, not
 		return "", fmt.Errorf("AI translation error: %w", err)
 	}
 
+	if len(msg.Content) == 0 {
+		return "", fmt.Errorf("no content in AI response")
+	}
 	return msg.Content[0].Text, nil
 }
 
