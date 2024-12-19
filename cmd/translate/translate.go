@@ -1,9 +1,13 @@
 package translate
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -269,26 +273,44 @@ func NewTranslateTranslateCmd() *cobra.Command {
 				return fmt.Errorf("failed to get translation units: %w", err)
 			}
 
-			fmt.Printf("Translation units for %s:%s in %s (Total: %d)\n\n", project, component, language, units.Count)
+			fmt.Printf("Starting translation wizard for %s:%s in %s (Total: %d)\n\n", project, component, language, units.Count)
 
-			for _, unit := range units.Results {
-				fmt.Printf("ID: %d\n", unit.ID)
+			reader := bufio.NewReader(os.Stdin)
+			for i, unit := range units.Results {
+				fmt.Printf("[%d/%d] Translation unit:\n", i+1, len(units.Results))
 				fmt.Printf("Source: %v\n", unit.Source)
-				fmt.Printf("Target: %v\n", unit.Target)
-				fmt.Printf("State: %d\n", unit.State)
-				fmt.Printf("Location: %s\n", unit.Location)
 				if unit.Context != "" {
 					fmt.Printf("Context: %s\n", unit.Context)
 				}
 				if unit.Note != "" {
 					fmt.Printf("Note: %s\n", unit.Note)
 				}
-				fmt.Printf("Translated: %v\n", unit.Translated)
-				fmt.Printf("Approved: %v\n", unit.Approved)
-				fmt.Printf("Fuzzy: %v\n", unit.Fuzzy)
-				fmt.Printf("Has failing checks: %v\n", unit.HasFailingCheck)
-				fmt.Printf("Web URL: %s\n", unit.WebURL)
-				fmt.Printf("Last updated: %s\n", unit.LastUpdated)
+				if len(unit.Target) > 0 {
+					fmt.Printf("Current translation: %v\n", unit.Target)
+				}
+
+				fmt.Print("\nEnter translation (or press Enter to skip, 'q' to quit): ")
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					return fmt.Errorf("error reading input: %w", err)
+				}
+
+				input = strings.TrimSpace(input)
+				if input == "q" {
+					fmt.Println("Exiting translation wizard")
+					return nil
+				}
+				if input == "" {
+					fmt.Println("Skipping...")
+					continue
+				}
+
+				// Submit translation
+				err = submitTranslation(cfg.Weblate.URL, cfg.Weblate.Token, unit.ID, input)
+				if err != nil {
+					return fmt.Errorf("failed to submit translation: %w", err)
+				}
+				fmt.Println("Translation submitted successfully!")
 				fmt.Println(strings.Repeat("-", 80))
 			}
 
@@ -496,6 +518,46 @@ func getLanguages(baseURL, token string) (*LanguagesResponse, error) {
 	}
 
 	return &allLanguages, nil
+}
+
+func submitTranslation(baseURL, token string, unitID int, translation string) error {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	url := joinURL(baseURL, fmt.Sprintf("/api/units/%d/", unitID))
+	
+	payload := map[string]interface{}{
+		"target": []string{translation},
+		"state": 1, // Translated state
+	}
+	
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error marshaling payload: %w", err)
+	}
+
+	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Token %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 func getTranslationStats(baseURL, token, language string) (*TranslationStats, error) {
