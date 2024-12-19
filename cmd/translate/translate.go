@@ -205,7 +205,7 @@ func getNextTranslationUnitsPage(baseURL, token, project, component, language st
 
 	url := nextURL
 	if url == nil {
-		initialURL := joinURL(baseURL, fmt.Sprintf("/api/translations/%s/%s/%s/units/", project, component, language))
+		initialURL := joinURL(baseURL, fmt.Sprintf("/api/translations/%s/%s/%s/units/?q=state:untranslated", project, component, language))
 		url = &initialURL
 	}
 
