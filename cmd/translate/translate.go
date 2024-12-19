@@ -113,10 +113,13 @@ func NewComponentsCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVar(&showAll, "all", false, "Show all languages instead of just top 50")
 	return cmd
 }
 
 func NewLanguagesCmd() *cobra.Command {
+	var showAll bool
+	
 	cmd := &cobra.Command{
 		Use:   "languages",
 		Short: "List available languages",
@@ -143,7 +146,11 @@ func NewLanguagesCmd() *cobra.Command {
 				return fmt.Errorf("failed to get languages: %w", err)
 			}
 
-			fmt.Printf("Most spoken languages (showing top 50 out of %d):\n\n", languages.Count)
+			if showAll {
+				fmt.Printf("All languages (%d total):\n\n", languages.Count)
+			} else {
+				fmt.Printf("Most spoken languages (showing top 50 out of %d):\n\n", languages.Count)
+			}
 
 			// Sort languages by population in descending order
 			sort.Slice(languages.Results, func(i, j int) bool {
@@ -155,20 +162,23 @@ func NewLanguagesCmd() *cobra.Command {
 			fmt.Println(strings.Repeat("-", 85))
 
 			// Print top 30 rows
-			maxDisplay := 50
-			if len(languages.Results) < maxDisplay {
-				maxDisplay = len(languages.Results)
+			displayCount := len(languages.Results)
+			if !showAll {
+				displayCount = 50
+				if len(languages.Results) < displayCount {
+					displayCount = len(languages.Results)
+				}
 			}
 			
-			for _, lang := range languages.Results[:maxDisplay] {
+			for _, lang := range languages.Results[:displayCount] {
 				fmt.Printf("%-20s %-50s %15s\n",
 					lang.Code,
 					lang.Name,
 					formatNumber(lang.Population))
 			}
 
-			if len(languages.Results) > maxDisplay {
-				fmt.Printf("\nNote: %d other languages available\n", len(languages.Results)-maxDisplay)
+			if !showAll && len(languages.Results) > displayCount {
+				fmt.Printf("\nNote: %d other languages available (use --all to show all)\n", len(languages.Results)-displayCount)
 			}
 
 			return nil
