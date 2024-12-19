@@ -234,10 +234,10 @@ func getTranslationUnits(baseURL, token, project, component, language string) (*
 	return &allUnits, nil
 }
 
-func NewTranslateUnitsCmd() *cobra.Command {
+func NewTranslateTranslateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "units <project:component> <language>",
-		Short: "List translation units for a component and language",
+		Use:   "translate <project:component> <language>",
+		Short: "List translations for a component and language",
 		Args:  cobra.ExactArgs(2),
 		Annotations: map[string]string{
 			"standalone": "true",
@@ -313,7 +313,7 @@ func NewTranslateCmd() *cobra.Command {
 		NewStatsCmd(),
 		NewComponentStatsCmd(),
 		NewLanguagesCmd(),
-		NewTranslateUnitsCmd(),
+		NewTranslateTranslateCmd(),
 	)
 
 	return cmd
