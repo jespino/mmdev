@@ -33,6 +33,7 @@ type TranslationStats struct {
 }
 
 type ComponentStats struct {
+	Language              string    `json:"language_code"`
 	Total                  int       `json:"total"`
 	TotalWords             int       `json:"total_words"`
 	TotalChars             int       `json:"total_chars"`
@@ -249,21 +250,18 @@ func NewComponentStatsCmd() *cobra.Command {
 				return fmt.Errorf("failed to get component stats: %w", err)
 			}
 
-			fmt.Printf("Statistics for component: %s:%s\n", parts[0], parts[1])
-			fmt.Printf("Total results: %d\n\n", statsResp.Count)
+			fmt.Printf("Statistics for component: %s:%s (%d results)\n", parts[0], parts[1], statsResp.Count)
 
-			for i, stats := range statsResp.Results {
-				if i > 0 {
-					fmt.Println("\n---\n")
-				}
-				fmt.Printf("Total strings: %d (words: %d, chars: %d)\n", stats.Total, stats.TotalWords, stats.TotalChars)
-				fmt.Printf("Translated: %d (%.1f%%)\n", stats.Translated, stats.TranslatedPercent)
-				fmt.Printf("Fuzzy: %d (%.1f%%)\n", stats.Fuzzy, stats.FuzzyPercent)
-				fmt.Printf("Failing checks: %d (%.1f%%)\n", stats.Failing, stats.FailingPercent)
-				fmt.Printf("Approved: %d (%.1f%%)\n", stats.Approved, stats.ApprovedPercent)
-				fmt.Printf("Suggestions: %d\n", stats.Suggestions)
-				fmt.Printf("Comments: %d\n", stats.Comments)
-				fmt.Printf("Last change: %s\n", stats.LastChange.Format(time.RFC3339))
+			for _, stats := range statsResp.Results {
+				fmt.Printf("%s: %d total, %.1f%% translated, %.1f%% fuzzy, %.1f%% failing, %.1f%% approved, %d suggestions, %d comments\n",
+					stats.Language,
+					stats.Total,
+					stats.TranslatedPercent,
+					stats.FuzzyPercent,
+					stats.FailingPercent,
+					stats.ApprovedPercent,
+					stats.Suggestions,
+					stats.Comments)
 			}
 
 			return nil
