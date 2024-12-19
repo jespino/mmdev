@@ -97,6 +97,18 @@ mmdev config # Configure Jira and Sentry integration
 mmdev dates # Show upcoming Mattermost release dates and milestones
 ```
 
+### Translation Commands
+
+```bash
+mmdev translate components           # List available Weblate components
+mmdev translate languages           # List available languages
+mmdev translate languages --all     # List all available languages
+mmdev translate stats <language>    # Show translation stats for a language
+mmdev translate component-stats <project:component>  # Show component translation stats
+mmdev translate translate <project:component> <language>  # Interactive translation wizard
+mmdev translate translate --ai <project:component> <language>  # Translation wizard with AI suggestions
+```
+
 ### E2E Testing Commands
 
 ```bash
