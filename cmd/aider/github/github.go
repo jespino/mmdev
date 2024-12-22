@@ -71,12 +71,12 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 	// Write issue content and comments to file
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("Issue #%d: %s\n\n%s\n\n", issueNum, *issue.Title, *issue.Body))
-	
+
 	if len(comments) > 0 {
 		content.WriteString("Comments:\n")
 		for i, comment := range comments {
-			content.WriteString(fmt.Sprintf("\n--- Comment %d by @%s ---\n%s\n", 
-				i+1, 
+			content.WriteString(fmt.Sprintf("\n--- Comment %d by @%s ---\n%s\n",
+				i+1,
 				*comment.User.Login,
 				*comment.Body))
 		}
@@ -116,7 +116,7 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run aider with all files
-	args := []string{"--read", tmpFile.Name()}
+	args = []string{"--read", tmpFile.Name()}
 	args = append(args, patchFiles...)
 	aiderCmd := exec.Command("aider", args...)
 	aiderCmd.Stdout = os.Stdout
