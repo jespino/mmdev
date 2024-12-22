@@ -23,6 +23,54 @@ type CommitIndex struct {
 	Graph *hnsw.Graph[string]
 }
 
+func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, error) {
+	// Load the saved graph
+	savedGraph := &hnsw.SavedGraph[string]{
+		Path: ".commits.idx",
+	}
+	if err := savedGraph.Load(); err != nil {
+		return nil, fmt.Errorf("error loading index: %v", err)
+	}
+
+	// Create a simple vector from the query text
+	vector := make([]float32, 128)
+	for i, c := range query {
+		if i < 128 {
+			vector[i] = float32(c) / 255.0
+		}
+	}
+
+	// Search the graph
+	results := savedGraph.Graph.Search(vector, limit)
+
+	// Get commit dates to filter by age
+	hashes := make([]string, 0, limit)
+	for _, result := range results {
+		// Get commit date
+		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.ID)
+		output, err := gitCmd.Output()
+		if err != nil {
+			continue
+		}
+
+		date, err := time.Parse(time.RFC3339, strings.TrimSpace(string(output)))
+		if err != nil {
+			continue
+		}
+
+		// Check if commit is within maxAge
+		if time.Since(date) <= maxAge {
+			hashes = append(hashes, result.ID)
+		}
+
+		if len(hashes) >= limit {
+			break
+		}
+	}
+
+	return hashes, nil
+}
+
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "index-commits",

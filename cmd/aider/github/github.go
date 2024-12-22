@@ -85,8 +85,39 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
-	// Run aider with explicit --read flag
-	cmd2 := exec.Command("aider", "--read", tmpFile.Name())
+	// Search for related commits
+	searchQuery := *issue.Title + "\n" + *issue.Body
+	relatedCommits, err := indexcommits.SearchCommits(searchQuery, 3, 365*24*time.Hour)
+	if err != nil {
+		return fmt.Errorf("error searching commits: %v", err)
+	}
+
+	// Create temporary patch files for each related commit
+	var patchFiles []string
+	for i, hash := range relatedCommits {
+		patchFile, err := os.CreateTemp("", fmt.Sprintf("commit-%d-*.patch", i))
+		if err != nil {
+			return fmt.Errorf("error creating patch file: %v", err)
+		}
+		defer os.Remove(patchFile.Name())
+		patchFiles = append(patchFiles, patchFile.Name())
+
+		// Generate patch using git show
+		gitCmd := exec.Command("git", "show", hash)
+		patch, err := gitCmd.Output()
+		if err != nil {
+			return fmt.Errorf("error generating patch for commit %s: %v", hash, err)
+		}
+
+		if err := os.WriteFile(patchFile.Name(), patch, 0644); err != nil {
+			return fmt.Errorf("error writing patch file: %v", err)
+		}
+	}
+
+	// Run aider with all files
+	args := []string{"--read", tmpFile.Name()}
+	args = append(args, patchFiles...)
+	cmd2 := exec.Command("aider", args...)
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr
 	cmd2.Stdin = os.Stdin
