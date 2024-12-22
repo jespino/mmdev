@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v57/github"
 	"github.com/jespino/mmdev/cmd/aider/indexcommits"
@@ -117,12 +118,12 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 	// Run aider with all files
 	args := []string{"--read", tmpFile.Name()}
 	args = append(args, patchFiles...)
-	cmd2 := exec.Command("aider", args...)
-	cmd2.Stdout = os.Stdout
-	cmd2.Stderr = os.Stderr
-	cmd2.Stdin = os.Stdin
+	aiderCmd := exec.Command("aider", args...)
+	aiderCmd.Stdout = os.Stdout
+	aiderCmd.Stderr = os.Stderr
+	aiderCmd.Stdin = os.Stdin
 
-	if err := cmd2.Run(); err != nil {
+	if err := aiderCmd.Run(); err != nil {
 		return fmt.Errorf("error running aider: %v", err)
 	}
 
