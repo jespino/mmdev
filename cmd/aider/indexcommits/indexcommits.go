@@ -1,7 +1,6 @@
 package indexcommits
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,24 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type Commit struct {
-	Hash    string    `json:"hash"`
-	Message string    `json:"message"`
-	Date    time.Time `json:"date"`
-	Vector  []float32 `json:"vector"`
-}
 
 type CommitIndex struct {
 	Graph *hnsw.Graph[string]
 }
 
 func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, error) {
-	// Load the saved graph
-	savedGraph := &hnsw.SavedGraph[string]{
-		Path: ".commits.idx",
-	}
-	if err := savedGraph.Load(); err != nil {
+	// Load the graph from disk
+	graph := hnsw.NewGraph[string]()
+	data, err := os.ReadFile(".commits.idx")
+	if err != nil {
 		return nil, fmt.Errorf("error loading index: %v", err)
+	}
+	if err := graph.UnmarshalBinary(data); err != nil {
+		return nil, fmt.Errorf("error unmarshaling index: %v", err)
 	}
 
 	// Create a simple vector from the query text
@@ -41,13 +36,13 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 	}
 
 	// Search the graph
-	results := savedGraph.Graph.Search(vector, limit)
+	results := graph.Search(vector, limit)
 
 	// Get commit dates to filter by age
 	hashes := make([]string, 0, limit)
 	for _, result := range results {
 		// Get commit date
-		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.ID)
+		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.Node.ID)
 		output, err := gitCmd.Output()
 		if err != nil {
 			continue
@@ -130,13 +125,12 @@ func runIndexCommits(cmd *cobra.Command, args []string) error {
 		graph.Add(node)
 	}
 
-	// Save the graph
-	savedGraph := &hnsw.SavedGraph[string]{
-		Graph: graph,
-		Path:  ".commits.idx",
+	// Save the graph to disk
+	data, err := graph.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("error marshaling index: %v", err)
 	}
-
-	if err := savedGraph.Save(); err != nil {
+	if err := os.WriteFile(".commits.idx", data, 0644); err != nil {
 		return fmt.Errorf("error saving index: %v", err)
 	}
 
