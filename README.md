@@ -128,11 +128,14 @@ mmdev e2e cypress report     # Show Cypress test report
 ### AI-Assisted Development Commands
 
 ```bash
-mmdev aider github owner/repo#123  # Process GitHub issue with aider
-mmdev aider jira PROJECT-123       # Process Jira issue with aider
-mmdev aider sentry ISSUE-ID        # Process Sentry issue with aider
-mmdev aider confluence PAGE-ID     # Process Confluence page with aider
+mmdev aider index-commits         # Create semantic index of git commits
+mmdev aider github owner/repo#123 # Process GitHub issue with aider
+mmdev aider jira PROJECT-123      # Process Jira issue with aider
+mmdev aider sentry ISSUE-ID       # Process Sentry issue with aider
+mmdev aider confluence PAGE-ID    # Process Confluence page with aider
 ```
+
+The `index-commits` command creates a semantic search index of your git repository's commit history. This index is used by the other aider commands to find relevant commits when processing issues. The index should be rebuilt whenever significant new commits are added to the repository.
 
 The aider commands require:
 - For GitHub: Public repository access
