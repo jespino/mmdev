@@ -87,8 +87,15 @@ func runJira(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
+	// Get current working directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting current directory: %v", err)
+	}
+
 	// Run aider with explicit --read flag
 	aiderCmd := exec.Command("aider", "--read", tmpFile.Name())
+	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
 	aiderCmd.Stdin = os.Stdin

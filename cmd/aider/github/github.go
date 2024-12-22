@@ -115,10 +115,17 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Get current working directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting current directory: %v", err)
+	}
+
 	// Run aider with all files
-	args = []string{"--read", tmpFile.Name()}
+	args := []string{"--read", tmpFile.Name()}
 	args = append(args, patchFiles...)
 	aiderCmd := exec.Command("aider", args...)
+	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
 	aiderCmd.Stdin = os.Stdin
