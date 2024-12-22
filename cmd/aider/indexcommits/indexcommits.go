@@ -84,8 +84,9 @@ func runIndexCommits(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("not a git repository (or any of the parent directories)")
 	}
 
-	// Get all commits
-	gitCmd := exec.Command("git", "log", "--pretty=format:%H|||%s|||%aI")
+	// Get commits from the last year
+	oneYearAgo := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	gitCmd := exec.Command("git", "log", "--since", oneYearAgo, "--pretty=format:%H|||%s|||%aI")
 	output, err := gitCmd.Output()
 	if err != nil {
 		return fmt.Errorf("error getting git commits: %v", err)
