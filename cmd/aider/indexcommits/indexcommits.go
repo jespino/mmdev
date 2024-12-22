@@ -43,7 +43,7 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 	hashes := make([]string, 0, limit)
 	for _, result := range results {
 		// Get commit date
-		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.Value)
+		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.Key)
 		output, err := gitCmd.Output()
 		if err != nil {
 			continue
@@ -56,7 +56,7 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 
 		// Check if commit is within maxAge
 		if time.Since(date) <= maxAge {
-			hashes = append(hashes, result.ID)
+			hashes = append(hashes, result.Key)
 		}
 
 		if len(hashes) >= limit {
