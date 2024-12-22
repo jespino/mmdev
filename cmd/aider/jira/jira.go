@@ -88,7 +88,7 @@ func runJira(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run aider with explicit --read flag
-	cmd2 := exec.Command("aider", "--read", tmpFile.Name())
+	cmd2 = exec.Command("aider", "--read", tmpFile.Name())
 	cmd2.Stdout = os.Stdout
 	cmd2.Stderr = os.Stderr
 	cmd2.Stdin = os.Stdin
