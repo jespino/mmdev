@@ -101,7 +101,7 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("error creating patch file: %v", err)
 		}
 		defer os.Remove(patchFile.Name())
-		patchFiles = append(patchFiles, patchFile.Name())
+		patchFiles = append(patchFiles, "--read", patchFile.Name())
 
 		// Generate patch using git show
 		gitCmd := exec.Command("git", "show", hash)
@@ -122,7 +122,7 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run aider with all files
-	args := []string{"--read", tmpFile.Name()}
+	args = []string{"--read", tmpFile.Name()}
 	args = append(args, patchFiles...)
 	aiderCmd := exec.Command("aider", args...)
 	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
