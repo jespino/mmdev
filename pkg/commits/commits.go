@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/coder/hnsw"
+	"github.com/jespino/mmdev/pkg/embedding"
 )
 
 // SearchCommits searches for semantically similar commits using the HNSW index
@@ -27,13 +28,26 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 		return nil, fmt.Errorf("error importing index: %v", err)
 	}
 
-	// Create a simple vector from the query text
-	vector := make([]float32, 128)
-	for i, c := range query {
-		if i < 128 {
-			vector[i] = float32(c) / 255.0
+	// Get all commits to build vocabulary
+	gitCmd := exec.Command("git", "log", "--pretty=format:%H|||%s|||%aI")
+	output, err := gitCmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting git commits: %v", err)
+	}
+
+	// Build vocabulary from all commit messages
+	vocab := embedding.NewVocabulary()
+	commits := strings.Split(string(output), "\n")
+	for _, commit := range commits {
+		parts := strings.Split(commit, "|||")
+		if len(parts) == 3 {
+			vocab.AddDocument(parts[1]) // Add commit message
 		}
 	}
+	vocab.Finalize()
+
+	// Create vector from query using same vocabulary
+	vector := vocab.CreateVector(query)
 
 	// Search the graph
 	results := graph.Search(vector, limit)

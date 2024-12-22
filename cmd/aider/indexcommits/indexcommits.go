@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/coder/hnsw"
+	"github.com/jespino/mmdev/pkg/embedding"
 	"github.com/spf13/cobra"
 )
 
@@ -107,15 +108,18 @@ func runIndexCommits(cmd *cobra.Command, args []string) error {
 		hash := parts[0]
 		message := parts[1]
 
-		// Create a simple vector from the commit message
-		// This is a very basic approach - in a real implementation,
-		// you might want to use a proper embedding model
-		vector := make([]float32, 128)
-		for i, c := range message {
-			if i < 128 {
-				vector[i] = float32(c) / 255.0
+		// Build vocabulary from all commit messages first
+		vocab := embedding.NewVocabulary()
+		for _, c := range commits {
+			parts := strings.Split(c, "|||")
+			if len(parts) == 3 {
+				vocab.AddDocument(parts[1]) // Add commit message
 			}
 		}
+		vocab.Finalize()
+
+		// Create vector from commit message using TF-IDF
+		vector := vocab.CreateVector(message)
 
 		// Add the commit to the graph
 		node := hnsw.MakeNode(hash, vector)
