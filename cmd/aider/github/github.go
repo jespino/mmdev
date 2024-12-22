@@ -118,6 +118,7 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 	// Run aider with all files
 	args := []string{"--read", tmpFile.Name()}
 	args = append(args, patchFiles...)
+	var aiderCmd *exec.Cmd
 	aiderCmd = exec.Command("aider", args...)
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
