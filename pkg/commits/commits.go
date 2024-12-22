@@ -17,6 +17,10 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 	graph := hnsw.NewGraph[string]()
 	data, err := os.ReadFile(".commits.idx")
 	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "Warning: Commit index not found at .commits.idx - run 'mmdev aider index-commits' to create it\n")
+			return []string{}, nil
+		}
 		return nil, fmt.Errorf("error loading index: %v", err)
 	}
 	if err := graph.Import(bytes.NewReader(data)); err != nil {
