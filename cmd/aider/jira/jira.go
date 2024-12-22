@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/jespino/mmdev/internal/config"
+	"github.com/jespino/mmdev/pkg/commits"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/spf13/cobra"
@@ -104,9 +106,9 @@ func runJira(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run aider with all files
-	args := []string{"--read", tmpFile.Name()}
-	args = append(args, patchFiles...)
-	aiderCmd := exec.Command("aider", args...)
+	aiderArgs := []string{"--read", tmpFile.Name()}
+	aiderArgs = append(aiderArgs, patchFiles...)
+	aiderCmd := exec.Command("aider", aiderArgs...)
 	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
