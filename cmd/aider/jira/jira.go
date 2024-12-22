@@ -87,14 +87,26 @@ func runJira(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
+	// Search for related commits and create patch files
+	searchQuery := issue.Fields.Summary + "\n" + issue.Fields.Description
+	patchFiles, createdFiles, err := commits.SearchAndCreatePatchFiles(searchQuery, 3, 365*24*time.Hour)
+	if err != nil {
+		return fmt.Errorf("error processing commits: %v", err)
+	}
+	for _, file := range createdFiles {
+		defer os.Remove(file)
+	}
+
 	// Get current working directory
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("error getting current directory: %v", err)
 	}
 
-	// Run aider with explicit --read flag
-	aiderCmd := exec.Command("aider", "--read", tmpFile.Name())
+	// Run aider with all files
+	args := []string{"--read", tmpFile.Name()}
+	args = append(args, patchFiles...)
+	aiderCmd := exec.Command("aider", args...)
 	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr

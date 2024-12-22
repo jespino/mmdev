@@ -86,33 +86,14 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
 
-	// Search for related commits
+	// Search for related commits and create patch files
 	searchQuery := *issue.Title + "\n" + *issue.Body
-	relatedCommits, err := indexcommits.SearchCommits(searchQuery, 3, 365*24*time.Hour)
+	patchFiles, createdFiles, err := commits.SearchAndCreatePatchFiles(searchQuery, 3, 365*24*time.Hour)
 	if err != nil {
-		return fmt.Errorf("error searching commits: %v", err)
+		return fmt.Errorf("error processing commits: %v", err)
 	}
-
-	// Create temporary patch files for each related commit
-	var patchFiles []string
-	for i, hash := range relatedCommits {
-		patchFile, err := os.CreateTemp("", fmt.Sprintf("commit-%d-*.patch", i))
-		if err != nil {
-			return fmt.Errorf("error creating patch file: %v", err)
-		}
-		defer os.Remove(patchFile.Name())
-		patchFiles = append(patchFiles, "--read", patchFile.Name())
-
-		// Generate patch using git show
-		gitCmd := exec.Command("git", "show", hash)
-		patch, err := gitCmd.Output()
-		if err != nil {
-			return fmt.Errorf("error generating patch for commit %s: %v", hash, err)
-		}
-
-		if err := os.WriteFile(patchFile.Name(), patch, 0644); err != nil {
-			return fmt.Errorf("error writing patch file: %v", err)
-		}
+	for _, file := range createdFiles {
+		defer os.Remove(file)
 	}
 
 	// Get current working directory
