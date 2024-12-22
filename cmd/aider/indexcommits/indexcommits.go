@@ -23,8 +23,8 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 	if err != nil {
 		return nil, fmt.Errorf("error loading index: %v", err)
 	}
-	if err := graph.Load(data); err != nil {
-		return nil, fmt.Errorf("error loading index: %v", err)
+	if err := graph.UnmarshalBinary(data); err != nil {
+		return nil, fmt.Errorf("error unmarshaling index: %v", err)
 	}
 
 	// Create a simple vector from the query text
@@ -42,7 +42,7 @@ func SearchCommits(query string, limit int, maxAge time.Duration) ([]string, err
 	hashes := make([]string, 0, limit)
 	for _, result := range results {
 		// Get commit date
-		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.ID)
+		gitCmd := exec.Command("git", "show", "-s", "--format=%aI", result.Node.Value)
 		output, err := gitCmd.Output()
 		if err != nil {
 			continue
@@ -122,9 +122,9 @@ func runIndexCommits(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save the graph to disk
-	data, err := graph.Save()
+	data, err := graph.MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("error saving index: %v", err)
+		return fmt.Errorf("error marshaling index: %v", err)
 	}
 	if err := os.WriteFile(".commits.idx", data, 0644); err != nil {
 		return fmt.Errorf("error saving index: %v", err)
