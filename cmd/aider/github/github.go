@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v57/github"
+	"github.com/jespino/mmdev/cmd/aider/indexcommits"
 	"github.com/spf13/cobra"
 )
 
