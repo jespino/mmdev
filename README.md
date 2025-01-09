@@ -130,6 +130,7 @@ mmdev e2e cypress report     # Show Cypress test report
 ```bash
 mmdev aider index-commits         # Create semantic index of git commits
 mmdev aider github owner/repo#123 # Process GitHub issue with aider
+mmdev aider github-pr owner/repo#123 # Process GitHub Pull Request with aider
 mmdev aider jira PROJECT-123      # Process Jira issue with aider
 mmdev aider sentry ISSUE-ID       # Process Sentry issue with aider
 mmdev aider confluence PAGE-ID    # Process Confluence page with aider
