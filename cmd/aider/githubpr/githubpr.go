@@ -68,15 +68,31 @@ func runGitHubPR(cmd *cobra.Command, args []string) error {
 
 	// Write PR content and comments to file
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("Pull Request #%d: %s\n\n%s\n\n", prNum, *pr.Title, *pr.Body))
+	title := ""
+	if pr.Title != nil {
+		title = *pr.Title
+	}
+	body := ""
+	if pr.Body != nil {
+		body = *pr.Body
+	}
+	content.WriteString(fmt.Sprintf("Pull Request #%d: %s\n\n%s\n\n", prNum, title, body))
 
 	if len(comments) > 0 {
 		content.WriteString("Comments:\n")
 		for i, comment := range comments {
+			username := "unknown"
+			if comment.User != nil && comment.User.Login != nil {
+				username = *comment.User.Login
+			}
+			body := ""
+			if comment.Body != nil {
+				body = *comment.Body
+			}
 			content.WriteString(fmt.Sprintf("\n--- Comment %d by @%s ---\n%s\n",
 				i+1,
-				*comment.User.Login,
-				*comment.Body))
+				username,
+				body))
 		}
 	}
 
