@@ -3,6 +3,7 @@ package aider
 import (
 	"github.com/jespino/mmdev/cmd/aider/confluence"
 	"github.com/jespino/mmdev/cmd/aider/github"
+	"github.com/jespino/mmdev/cmd/aider/githubpr"
 	"github.com/jespino/mmdev/cmd/aider/indexcommits"
 	"github.com/jespino/mmdev/cmd/aider/jira"
 	"github.com/jespino/mmdev/cmd/aider/sentry"
@@ -19,6 +20,7 @@ func AiderCmd() *cobra.Command {
 	cmd.AddCommand(
 		confluence.NewCommand(),
 		github.NewCommand(),
+		githubpr.NewCommand(),
 		indexcommits.NewCommand(),
 		jira.NewCommand(),
 		sentry.NewCommand(),
