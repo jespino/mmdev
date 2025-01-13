@@ -9,6 +9,7 @@ import (
 	"github.com/jespino/mmdev/cmd/dates"
 	"github.com/jespino/mmdev/cmd/docker"
 	"github.com/jespino/mmdev/cmd/e2e"
+	"github.com/jespino/mmdev/cmd/plugin"
 	"github.com/jespino/mmdev/cmd/server"
 	"github.com/jespino/mmdev/cmd/start"
 	"github.com/jespino/mmdev/cmd/translate"
@@ -52,6 +53,7 @@ func main() {
 		config.ConfigCmd(),
 		dates.DatesCmd(),
 		translate.NewTranslateCmd(),
+		plugin.NewCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

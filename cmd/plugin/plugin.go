@@ -1,23 +1,16 @@
-package main
+package plugin
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/yourusername/yourproject/pkg/plugins/pluginctl"
+	"github.com/jespino/mmdev/pkg/plugins/pluginctl"
 )
 
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-var rootCmd = &cobra.Command{
+func NewCommand() *cobra.Command {
+	cmd := &cobra.Command{
 	Use:   "plugin",
 	Short: "Plugin management tool",
 }
@@ -87,18 +80,19 @@ var watchCmd = &cobra.Command{
 	RunE:  runWatch,
 }
 
-func init() {
-	rootCmd.AddCommand(deployCmd)
-	rootCmd.AddCommand(disableCmd)
-	rootCmd.AddCommand(enableCmd)
-	rootCmd.AddCommand(resetCmd)
-	rootCmd.AddCommand(logsCmd)
-	rootCmd.AddCommand(watchCmd)
+	cmd.AddCommand(deployCmd)
+	cmd.AddCommand(disableCmd)
+	cmd.AddCommand(enableCmd)
+	cmd.AddCommand(resetCmd)
+	cmd.AddCommand(logsCmd)
+	cmd.AddCommand(watchCmd)
 	
 	manifestCmd.AddCommand(manifestApplyCmd)
 	manifestCmd.AddCommand(manifestDistCmd)
 	manifestCmd.AddCommand(manifestCheckCmd)
-	rootCmd.AddCommand(manifestCmd)
+	cmd.AddCommand(manifestCmd)
+
+	return cmd
 }
 
 func getClient() (*pluginctl.Client, error) {
