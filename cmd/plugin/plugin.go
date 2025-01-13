@@ -22,6 +22,29 @@ var rootCmd = &cobra.Command{
 	Short: "Plugin management tool",
 }
 
+var manifestCmd = &cobra.Command{
+	Use:   "manifest",
+	Short: "Plugin manifest operations",
+}
+
+var manifestApplyCmd = &cobra.Command{
+	Use:   "apply",
+	Short: "Apply manifest to generate server/webapp files",
+	RunE:  runManifestApply,
+}
+
+var manifestDistCmd = &cobra.Command{
+	Use:   "dist",
+	Short: "Write manifest to dist directory",
+	RunE:  runManifestDist,
+}
+
+var manifestCheckCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Validate manifest",
+	RunE:  runManifestCheck,
+}
+
 var deployCmd = &cobra.Command{
 	Use:   "deploy <plugin-id> <bundle-path>",
 	Short: "Deploy a plugin",
@@ -71,6 +94,11 @@ func init() {
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(watchCmd)
+	
+	manifestCmd.AddCommand(manifestApplyCmd)
+	manifestCmd.AddCommand(manifestDistCmd)
+	manifestCmd.AddCommand(manifestCheckCmd)
+	rootCmd.AddCommand(manifestCmd)
 }
 
 func getClient() (*pluginctl.Client, error) {
@@ -125,4 +153,28 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return client.WatchLogs(context.Background(), args[0])
+}
+
+func runManifestApply(cmd *cobra.Command, args []string) error {
+	manifest, err := manifest.FindManifest()
+	if err != nil {
+		return fmt.Errorf("failed to find manifest: %w", err)
+	}
+	return manifest.Apply(manifest)
+}
+
+func runManifestDist(cmd *cobra.Command, args []string) error {
+	manifest, err := manifest.FindManifest()
+	if err != nil {
+		return fmt.Errorf("failed to find manifest: %w", err)
+	}
+	return manifest.Dist(manifest)
+}
+
+func runManifestCheck(cmd *cobra.Command, args []string) error {
+	manifest, err := manifest.FindManifest()
+	if err != nil {
+		return fmt.Errorf("failed to find manifest: %w", err)
+	}
+	return manifest.IsValid()
 }
