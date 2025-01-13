@@ -26,7 +26,8 @@ var (
 			MarginBottom(1)
 
 	dividerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#666666"))
+			Foreground(lipgloss.Color("#FF69B4")).
+			Bold(true)
 
 	suggestionStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#666666"))
@@ -548,19 +549,23 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "d":
-				divider := dividerStyle.Render(strings.Repeat("=", m.windowWidth))
-				if m.selectedPane == "server" {
-					m.serverViewContent.WriteString(divider + "\n")
-					m.serverViewport.SetContent(m.serverViewContent.String())
-					if m.serverAtBottom {
-						m.serverViewport.GotoBottom()
-					}
-				} else {
-					m.clientViewContent.WriteString(divider + "\n")
-					m.clientViewport.SetContent(m.clientViewContent.String())
-					if m.clientAtBottom {
-						m.clientViewport.GotoBottom()
-					}
+				width := m.windowWidth
+				if m.splitVertical {
+					width = m.windowWidth / 2
+				}
+				divider := dividerStyle.Render(strings.Repeat("=", width-2)) + "\n"
+				
+				// Add divider to both viewports
+				m.serverViewContent.WriteString(divider)
+				m.serverViewport.SetContent(m.serverViewContent.String())
+				if m.serverAtBottom {
+					m.serverViewport.GotoBottom()
+				}
+				
+				m.clientViewContent.WriteString(divider)
+				m.clientViewport.SetContent(m.clientViewContent.String())
+				if m.clientAtBottom {
+					m.clientViewport.GotoBottom()
 				}
 				return m, nil
 			case "s":
