@@ -25,6 +25,9 @@ var (
 			Padding(0, 1).
 			MarginBottom(1)
 
+	dividerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#666666"))
+
 	suggestionStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#666666"))
 
@@ -544,6 +547,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.restartServer()
 				}
 				return m, nil
+			case "d":
+				divider := dividerStyle.Render(strings.Repeat("=", m.windowWidth))
+				if m.selectedPane == "server" {
+					m.serverViewContent.WriteString(divider + "\n")
+					m.serverViewport.SetContent(m.serverViewContent.String())
+					if m.serverAtBottom {
+						m.serverViewport.GotoBottom()
+					}
+				} else {
+					m.clientViewContent.WriteString(divider + "\n")
+					m.clientViewport.SetContent(m.clientViewContent.String())
+					if m.clientAtBottom {
+						m.clientViewport.GotoBottom()
+					}
+				}
+				return m, nil
 			case "s":
 				m.splitVertical = !m.splitVertical
 				m.serverViewport.GotoBottom()
@@ -594,7 +613,7 @@ func (m *model) View() string {
 			commandArea = m.commandInput.View()
 		}
 	} else {
-		commandArea = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • :: command")
+		commandArea = helpStyle.Render("↑/↓: scroll • q: quit • r: restart server • s: toggle split • tab: switch • d: divider • :: command")
 	}
 
 	serverScrollPct := fmt.Sprintf("%d%%", int(m.serverViewport.ScrollPercent()*100))
