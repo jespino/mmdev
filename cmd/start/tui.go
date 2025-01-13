@@ -139,16 +139,57 @@ func initialModel() model {
 	return m
 }
 
+func wrapLine(text string, width int) []string {
+	if width <= 0 {
+		return []string{text}
+	}
+	
+	var lines []string
+	remaining := text
+	
+	for len(remaining) > width {
+		idx := width
+		// Try to break at last space before width
+		for i := idx; i >= 0; i-- {
+			if remaining[i] == ' ' {
+				idx = i
+				break
+			}
+		}
+		if idx == width {
+			// No space found, force break at width
+			lines = append(lines, remaining[:width])
+			remaining = remaining[width:]
+		} else {
+			lines = append(lines, remaining[:idx])
+			remaining = remaining[idx+1:] // Skip the space
+		}
+	}
+	if remaining != "" {
+		lines = append(lines, remaining)
+	}
+	return lines
+}
+
 func handleOutput(reader io.Reader, m *model, viewport string) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		text := scanner.Text() + "\n"
-		if viewport == "server" {
-			m.serverLogs.WriteString(text)
-		} else {
-			m.clientLogs.WriteString(text)
+		text := scanner.Text()
+		width := m.windowWidth
+		if m.splitVertical {
+			width = m.windowWidth / 2
 		}
-		viewportChan <- NewViewportLine{Viewport: viewport, Line: text}
+		
+		// Wrap the line
+		wrappedLines := wrapLine(text, width-2) // -2 for padding
+		for _, line := range wrappedLines {
+			if viewport == "server" {
+				m.serverLogs.WriteString(line + "\n")
+			} else {
+				m.clientLogs.WriteString(line + "\n")
+			}
+			viewportChan <- NewViewportLine{Viewport: viewport, Line: line + "\n"}
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("[%s] Scanner error: %v", viewport, err)
