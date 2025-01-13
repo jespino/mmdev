@@ -159,7 +159,7 @@ func runManifestApply(cmd *cobra.Command, args []string) error {
 }
 
 func runManifestDist(cmd *cobra.Command, args []string) error {
-	manifest, err := manifest.FindManifest()
+	m, err := manifest.FindManifest()
 	if err != nil {
 		return fmt.Errorf("failed to find manifest: %w", err)
 	}
@@ -167,9 +167,12 @@ func runManifestDist(cmd *cobra.Command, args []string) error {
 }
 
 func runManifestCheck(cmd *cobra.Command, args []string) error {
-	manifest, err := manifest.FindManifest()
+	m, err := manifest.FindManifest()
 	if err != nil {
 		return fmt.Errorf("failed to find manifest: %w", err)
 	}
-	return m.Validate()
+	if err := m.IsValid(); err != nil {
+		return fmt.Errorf("invalid manifest: %w", err)
+	}
+	return nil
 }
