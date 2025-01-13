@@ -102,11 +102,21 @@ func runGitHub(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error getting current directory: %v", err)
 	}
 
+	// Check if we're in a subdirectory
+	repoRoot, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return fmt.Errorf("error determining repository root: %v", err)
+	}
+	
 	// Run aider with all files
 	args = []string{"--read", tmpFile.Name()}
+	if strings.TrimSpace(string(repoRoot)) != currentDir {
+		fmt.Println("Running aider in subdirectory mode (--subtree-only)")
+		args = append(args, "--subtree-only")
+	}
 	args = append(args, patchFiles...)
 	aiderCmd := exec.Command("aider", args...)
-	aiderCmd.Dir = currentDir // Ensure aider runs in the repository root
+	aiderCmd.Dir = currentDir
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
 	aiderCmd.Stdin = os.Stdin
