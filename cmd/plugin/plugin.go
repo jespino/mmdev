@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/jespino/mmdev/pkg/plugins/manifest"
 	"github.com/jespino/mmdev/pkg/plugins/pluginctl"
 )
 
@@ -150,11 +151,11 @@ func runWatch(cmd *cobra.Command, args []string) error {
 }
 
 func runManifestApply(cmd *cobra.Command, args []string) error {
-	manifest, err := manifest.FindManifest()
+	m, err := manifest.FindManifest()
 	if err != nil {
 		return fmt.Errorf("failed to find manifest: %w", err)
 	}
-	return manifest.Apply(manifest)
+	return manifest.Apply(m)
 }
 
 func runManifestDist(cmd *cobra.Command, args []string) error {
@@ -162,7 +163,7 @@ func runManifestDist(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to find manifest: %w", err)
 	}
-	return manifest.Dist(manifest)
+	return manifest.Dist(m)
 }
 
 func runManifestCheck(cmd *cobra.Command, args []string) error {
@@ -170,5 +171,5 @@ func runManifestCheck(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to find manifest: %w", err)
 	}
-	return manifest.IsValid()
+	return m.Validate()
 }

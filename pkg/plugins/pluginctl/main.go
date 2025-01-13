@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourusername/yourproject/pkg/plugins/pluginctl"
+	"github.com/jespino/mmdev/pkg/plugins/pluginctl"
 )
 
 const commandTimeout = 120 * time.Second
