@@ -125,6 +125,21 @@ mmdev e2e cypress ui         # Open Cypress UI
 mmdev e2e cypress report     # Show Cypress test report
 ```
 
+### Plugin Commands
+
+```bash
+mmdev plugin manifest apply  # Generate server/webapp files from plugin manifest
+mmdev plugin manifest dist   # Write manifest to dist directory
+mmdev plugin manifest check  # Validate plugin manifest
+
+mmdev plugin deploy <plugin-id> <bundle-path>  # Deploy and enable a plugin
+mmdev plugin enable <plugin-id>   # Enable a plugin
+mmdev plugin disable <plugin-id>  # Disable a plugin
+mmdev plugin reset <plugin-id>    # Reset (disable/enable) a plugin
+mmdev plugin logs <plugin-id>     # Show plugin logs
+mmdev plugin watch <plugin-id>    # Watch plugin logs in real-time
+```
+
 ### AI-Assisted Development Commands
 
 ```bash
