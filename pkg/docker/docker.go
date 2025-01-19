@@ -101,7 +101,7 @@ var serviceConfigs = map[Service]ServiceConfig{
 		Image: "mcr.microsoft.com/playwright:v1.49.0-noble",
 	},
 	Postgres: {
-		Image: "postgres:12",
+		Image: "postgres:13",
 		ExposedPorts: map[string]string{
 			"5432": "5432",
 		},
