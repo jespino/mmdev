@@ -130,7 +130,7 @@ func runGitHubPR(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run aider with the content and patch files
-	aiderCmd := exec.Command("aider", "--read", tmpFile.Name(), patchFile.Name())
+	aiderCmd := exec.Command("aider", "--subtree-only", "--read", tmpFile.Name(), "--read", patchFile.Name())
 	aiderCmd.Dir = currentDir
 	aiderCmd.Stdout = os.Stdout
 	aiderCmd.Stderr = os.Stderr
