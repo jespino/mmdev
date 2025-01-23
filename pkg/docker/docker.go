@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -52,18 +51,6 @@ func (m *Manager) waitForPort(containerName, port string) error {
 		time.Sleep(time.Second)
 	}
 	return fmt.Errorf("timeout waiting for port %s", port)
-}
-
-func (m *Manager) waitForPostgres() error {
-	deadline := time.Now().Add(60 * time.Second)
-	for time.Now().Before(deadline) {
-		cmd := exec.Command("pg_isready", "-h", "localhost", "-p", "5432", "-U", "mmuser")
-		if err := cmd.Run(); err == nil {
-			return nil
-		}
-		time.Sleep(time.Second)
-	}
-	return fmt.Errorf("postgres is not ready")
 }
 
 func (m *Manager) waitForElasticsearch() error {
@@ -195,7 +182,7 @@ func (m *Manager) EnsureImage(image string) error {
 		var pullStatus struct {
 			Status         string `json:"status"`
 			ID             string `json:"id"`
-			Progress      string `json:"progress"`
+			Progress       string `json:"progress"`
 			ProgressDetail struct {
 				Current int64 `json:"current"`
 				Total   int64 `json:"total"`
@@ -430,11 +417,6 @@ func (m *Manager) Start() error {
 
 		// Additional service-specific health checks
 		switch service {
-		case Postgres:
-			if err := m.waitForPostgres(); err != nil {
-				return fmt.Errorf("postgres failed health check: %w", err)
-			}
-			fmt.Println("Postgres is fully ready")
 		case Elasticsearch:
 			if err := m.waitForElasticsearch(); err != nil {
 				return fmt.Errorf("elasticsearch failed health check: %w", err)
