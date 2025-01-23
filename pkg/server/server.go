@@ -85,7 +85,7 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 	}
 
 	fmt.Println("Compiling...")
-	
+
 	// Build the server binary
 	buildCmd := exec.Command("go", "build",
 		"-ldflags", strings.Join(ldflags, " "),
@@ -108,12 +108,13 @@ func (m *Manager) Start() (*exec.Cmd, error) {
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(),
 		"MM_SERVICESETTINGS_SITEURL=http://localhost:8065",
-		"MM_SERVICESETTINGS_LISTENADDRESS=:8065", 
+		"MM_SERVICESETTINGS_LISTENADDRESS=:8065",
 		"MM_SQLSETTINGS_DATASOURCE=postgres://mmuser:mostest@localhost/mattermost_test?sslmode=disable\u0026connect_timeout=10\u0026binary_parameters=yes",
 		"MM_SQLSETTINGS_DRIVERNAME=postgres",
 		"MM_LOGSETTINGS_ENABLECONSOLE=true",
 		"MM_LOGSETTINGS_CONSOLELEVEL=DEBUG",
 		"MM_LOGSETTINGS_ENABLEFILE=false",
+		"MM_LOGSETTINGS_ENABLECOLOR=true",
 		"MM_LOGSETTINGS_CONSOLEJSON=false",
 		"MM_FILESETTINGS_DIRECTORY=data/",
 		"MM_PLUGINSETTINGS_DIRECTORY=plugins",
