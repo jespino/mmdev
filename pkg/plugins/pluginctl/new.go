@@ -94,6 +94,37 @@ func CreateNewPlugin(ctx context.Context, pluginName string) error {
 	}
 
 	fmt.Printf("Plugin created successfully in %s\n", dirName)
+	
+	// Initialize git repository
+	fmt.Println("Initializing git repository...")
+	cmd = exec.CommandContext(ctx, "git", "init")
+	cmd.Dir = dirName
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to initialize git repository: %w", err)
+	}
+	
+	// Add all files to git
+	fmt.Println("Adding files to git...")
+	cmd = exec.CommandContext(ctx, "git", "add", ".")
+	cmd.Dir = dirName
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to add files to git: %w", err)
+	}
+	
+	// Create initial commit
+	fmt.Println("Creating initial commit...")
+	cmd = exec.CommandContext(ctx, "git", "commit", "-m", "Initial commit")
+	cmd.Dir = dirName
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to create initial commit: %w", err)
+	}
+
 	fmt.Println("To start developing your plugin:")
 	fmt.Printf("  cd %s\n", dirName)
 	fmt.Println("  make")
