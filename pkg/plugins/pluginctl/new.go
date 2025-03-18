@@ -18,8 +18,16 @@ func CreateNewPlugin(ctx context.Context, pluginName string) error {
 		return fmt.Errorf("invalid plugin name: %s - use only lowercase letters, numbers, and hyphens", pluginName)
 	}
 
-	// Get plugin description from user
+	// Get plugin display name from user
 	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter plugin display name: ")
+	displayName, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read display name: %w", err)
+	}
+	displayName = strings.TrimSpace(displayName)
+
+	// Get plugin description from user
 	fmt.Print("Enter plugin description: ")
 	description, err := reader.ReadString('\n')
 	if err != nil {
@@ -75,10 +83,13 @@ func CreateNewPlugin(ctx context.Context, pluginName string) error {
 		// Replace occurrences of "starter-template" with the new plugin name
 		newContent := strings.ReplaceAll(string(content), "starter-template", pluginName)
 
-		// If this is plugin.json, also update the description
+		// If this is plugin.json, also update the name and description
 		if filepath.Base(path) == "plugin.json" {
-			re := regexp.MustCompile(`"description": "(.*?)"`)
-			newContent = re.ReplaceAllString(newContent, fmt.Sprintf(`"description": "%s"`, description))
+			nameRe := regexp.MustCompile(`"name": "(.*?)"`)
+			newContent = nameRe.ReplaceAllString(newContent, fmt.Sprintf(`"name": "%s"`, displayName))
+			
+			descRe := regexp.MustCompile(`"description": "(.*?)"`)
+			newContent = descRe.ReplaceAllString(newContent, fmt.Sprintf(`"description": "%s"`, description))
 		}
 
 		// Write back to file if content changed
