@@ -88,6 +88,11 @@ func (c *Client) WatchLogs(ctx context.Context, pluginID string) error {
 	return watchLogs(ctx, c.client, pluginID)
 }
 
+// NewPlugin creates a new plugin from the starter template
+func (c *Client) NewPlugin(ctx context.Context, pluginName string) error {
+	return CreateNewPlugin(ctx, pluginName)
+}
+
 func getClient(ctx context.Context) (*model.Client4, error) {
 	socketPath := os.Getenv("MM_LOCALSOCKETPATH")
 	if socketPath == "" {

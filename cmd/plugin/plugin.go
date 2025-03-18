@@ -81,12 +81,20 @@ var watchCmd = &cobra.Command{
 	RunE:  runWatch,
 }
 
+var newCmd = &cobra.Command{
+	Use:   "new <plugin-name>",
+	Short: "Create a new plugin from the starter template",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runNew,
+}
+
 	cmd.AddCommand(deployCmd)
 	cmd.AddCommand(disableCmd)
 	cmd.AddCommand(enableCmd)
 	cmd.AddCommand(resetCmd)
 	cmd.AddCommand(logsCmd)
 	cmd.AddCommand(watchCmd)
+	cmd.AddCommand(newCmd)
 	
 	manifestCmd.AddCommand(manifestApplyCmd)
 	manifestCmd.AddCommand(manifestDistCmd)
@@ -148,6 +156,14 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return client.WatchLogs(context.Background(), args[0])
+}
+
+func runNew(cmd *cobra.Command, args []string) error {
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+	return client.NewPlugin(cmd.Context(), args[0])
 }
 
 func runManifestApply(cmd *cobra.Command, args []string) error {
